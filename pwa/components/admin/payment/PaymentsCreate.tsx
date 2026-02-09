@@ -19,14 +19,21 @@ const ReservationField = ({ choices = [], isLoading = false, setSelection, defau
         setSelection(selectedChoice);
         if (isDefined(selectedChoice)) {
             if (isDefinedAndNotVoid(selectedChoice.prepayments)) {
-                const details = selectedChoice.prepayments.map(p => ({
-                    mode: 'web', 
-                    amount: isDefined(p.prix) ? p.prix : isDefined(p.cout) ? p.cout : 0,
-                    prepayment: p['@id']
-                }));
+                let details = [];
+                selectedChoice.prepayments.map(p => {
+                    if (isDefinedAndNotVoid(p.details)) {
+                        details = [...details, ...p.details.map(d => ({...d, prepayment: p['@id']}))];
+                    } else {
+                        details = [...details, {
+                            mode: 'web', 
+                            amount: isDefined(p.prix) ? p.prix : isDefined(p.cout) ? p.cout : 0,
+                            prepayment: p['@id']
+                        }];
+                    }
+                });
                 setValue('details', details);
             } else {
-                setValue('details', [{mode: 'cb', amount: selectedChoice.prix ?? ''}])
+                setValue('details', [{mode: paymentMode[0]?.id ?? 'cb', amount: selectedChoice.prix ?? ''}])
             }
         } else {
             setValue('details', defaultDetails);
@@ -82,7 +89,7 @@ export const PaymentsCreate = () => {
     const dataProvider = useDataProvider();
     const notify = useNotify();
     const redirect = useRedirect();
-    const defaultDetails = [{ mode: '', amount: '' }];
+    const defaultDetails = [{ mode: paymentMode[0]?.id ?? 'cb', amount: '' }];
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [reservationsMemo, setReservationsMemo] = useState([]);
     const [selection, setSelection] = useState(null);
@@ -202,6 +209,8 @@ export const PaymentsCreate = () => {
                             source="mode"
                             label="Mode"
                             choices={ paymentMode }
+                            validate={required()}
+                            defaultValue={paymentMode[0]?.id}
                         />
                         <NumberInput source="amount" label="Montant (€)" validate={required()}/>
                     </SimpleFormIterator>

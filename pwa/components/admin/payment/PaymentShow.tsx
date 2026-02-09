@@ -51,6 +51,7 @@ export const PaymentShow = () => {
                 <ArrayField source="details">
                     <Datagrid
                         optimized
+                        rowClick={false}
                         bulkActionButtons={false}
                         sx={{
                             '& .RaDatagrid-headerCell': { backgroundColor: '#ededed', fontWeight: 'lighter' },
@@ -61,6 +62,21 @@ export const PaymentShow = () => {
                             source="mode"
                             label="Mode de paiement"
                             render={({mode}) => getChipMode(mode)}
+                        />
+                        <FunctionField
+                            source="prepayment"
+                            label="Détails"
+                            render={({prepayment}) => isDefined(prepayment) ? 
+                                <span className="text-xs italic">
+                                <span>
+                                    {isDefined(prepayment.paymentId) ? prepayment.paymentId?.startsWith('#') ? prepayment.paymentId : `#${prepayment.paymentId}` : ''}
+                                    {`${isDefined(prepayment.paymentId) && isDefined(prepayment.offreur) ? ' - ' : ''}${ prepayment.offreur ?? ''}`}
+                                    <br/>
+                                </span>
+                                <span className="text-grey-500">{(new Date(prepayment.date ?? '')).toLocaleDateString()}</span>
+                                </span>
+                                : ''
+                            }
                         />
                         <FunctionField
                             source="amount"

@@ -26,6 +26,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
         new GetCollection(
             paginationClientEnabled: true,
             paginationClientItemsPerPage: true,
+            normalizationContext: ['groups' => ['Payment:list']],
             filters: [
                 'app.filter.payment.name',
                 'app.filter.payment.date',
@@ -41,7 +42,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
             itemUriTemplate: '/payments/{id}{._format}'
         ),
         new Get(
-            uriTemplate: '/payments/{id}{._format}'
+            uriTemplate: '/payments/{id}{._format}',
+            normalizationContext: ['groups' => ['Payment:read']]
         ),
         new Put(
             uriTemplate: '/payments/{id}{._format}',
@@ -51,7 +53,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
         ),
     ],
     normalizationContext: [
-        AbstractNormalizer::GROUPS => ['Payment:read'],
+        // AbstractNormalizer::GROUPS => ['Payment:read'],
         AbstractObjectNormalizer::SKIP_NULL_VALUES => true,
     ],
     denormalizationContext: [
@@ -67,45 +69,45 @@ class Payment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100, nullable: true)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?string $reference = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?string $label = null;
 
     #[ORM\Column(length: 100, nullable: true)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?string $reservationCode = null;
 
     /**
      * @var Collection<int, PaymentDetail>
      */
     #[ORM\OneToMany(targetEntity: PaymentDetail::class, mappedBy: 'payment', cascade: ['persist', 'remove'])]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private Collection $details;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private ?string $remarques = null;
 
     /**
      * @var Collection<int, Origine>
      */
     #[ORM\ManyToMany(targetEntity: Origine::class)]
-    #[Groups(groups: ['Payment:write', 'Payment:read'])]
+    #[Groups(groups: ['Payment:write', 'Payment:read', 'Payment:list'])]
     private Collection $origine;
 
     public function __construct()

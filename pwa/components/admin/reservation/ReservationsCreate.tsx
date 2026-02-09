@@ -364,7 +364,9 @@ export const ReservationsCreate = () => {
         <TextInput source="telephone" label="N° de téléphone" validate={required()}/>
         <TextInput source="email" label="Adresse email"/>
         <NumberInput source="quantite" label="Nombre de passager(s)" min={ 1 } defaultValue={ 1 } validate={required()}/>
-        <ReferenceInput reference="circuits" source="circuit" label="Circuit"/>
+        <ReferenceInput reference="circuits" source="circuit">
+          <SelectInput label="Circuit" validate={required()}/>
+        </ReferenceInput>
         <OptionInput client={ client } enabledCombinaisons={ enabledCombinaisons }/>
         <FilteredPiloteInput circuits={ circuits } client={ client } selectedQuantite={ selectedQuantite }  defaultStart={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) }/>
         <FilteredAeronefInput client={ client } selectedQuantite={ selectedQuantite } defaultStart={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) }/>

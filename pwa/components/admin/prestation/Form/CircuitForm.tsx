@@ -48,6 +48,7 @@ export const CircuitForm: React.FC = ({ selectedCircuit, setSelectedCircuit, isU
               className={`relative z-20 w-full appearance-none rounded-lg border border-stroke bg-transparent px-12 py-2 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input ${
                 isCircuitSelected ? "text-black dark:text-white" : ""
               } h-[41px]`}
+              required
             >
               <option value="" disabled className="text-body dark:text-bodydark">
                 Choisissez un circuit

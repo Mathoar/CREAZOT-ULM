@@ -36,26 +36,26 @@ export const EncodedMetarTaf = ({ code }) => {
         :
         <>
             <h3><b>METAR</b></h3>
-            { isDefined(metar) && metar !== "" &&
+            { isDefined(metar?.observed) &&
                 <p>
                     <i className="text-xs">
                     Le {new Date(metar.observed).toLocaleDateString()} à {new Date(metar.observed).toLocaleTimeString()}
                     </i>
                     <br/>
-                    {metar.raw_text}
                 </p>
             }
+            <p>{ metar?.raw_text ?? '' }</p>
             <br/>
             <h2><b>TAF</b></h2>
-            { isDefined(taf) && taf !== "" &&
+            { isDefined(taf?.timestamp) &&
                 <p>
                     <i className="text-xs">
-                        Du {new Date(taf.timestamp.from).toLocaleDateString()} {new Date(taf.timestamp.from).toLocaleTimeString()}{" "}
-                        au {new Date(taf.timestamp.to).toLocaleDateString()} {new Date(taf.timestamp.to).toLocaleTimeString()}
+                        Du {new Date(taf.timestamp?.from ?? '').toLocaleDateString()} {new Date(taf.timestamp?.from ?? '').toLocaleTimeString()}{" "}
+                        au {new Date(taf.timestamp?.to ?? '').toLocaleDateString()} {new Date(taf.timestamp?.to ?? '').toLocaleTimeString()}
                     </i>
                     <br/>
-                    {taf.raw_text} 
-                </p>
+                </p> 
             }
+            <p>{ taf?.raw_text ?? '' }</p>
         </>
 };

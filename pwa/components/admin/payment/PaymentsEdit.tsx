@@ -1,10 +1,11 @@
-import { ArrayInput, DateInput, Edit, ReferenceArrayInput, ReferenceInput, SelectArrayInput, SelectInput, SimpleFormIterator, useRecordContext } from "react-admin";
+import { ArrayInput, DateInput, Edit, FormDataConsumer, ReferenceArrayInput, ReferenceInput, SelectArrayInput, SelectInput, SimpleFormIterator, useRecordContext } from "react-admin";
 import { SimpleForm, TextInput, NumberInput } from "react-admin";
 import { clientWithOriginContact, clientWithPartners, paymentMode } from "../../../app/lib/client";
 import { getFormattedValueForBackEnd, isDefined, isDefinedAndNotVoid } from "../../../app/lib/utils";
 import { useClient } from "../ClientProvider";
 import { useFormContext } from "react-hook-form";
 import { useEffect } from "react";
+import { Box } from "@mui/material";
 
 const PartnersInput = ({ client }) => { 
 
@@ -38,20 +39,47 @@ export const PaymentsEdit = () => {
   return (
     <Edit transform={transform}>
         <SimpleForm>
-          <TextInput source="reference" label="Code du paiement" disabled={ true }/>
+          <TextInput source="reference" label="Code du paiement" disabled={true}/>
           <DateInput source="date" label="Date du paiement" />
           <TextInput source="reservationCode" label="Code de réservation"/>
           <TextInput source="name" label="Nom de la réservation"/>
           <TextInput source="label" label="Détail (si pas de réservation)"/>
-          <ArrayInput source="details" label="" defaultValue={[{ mode: '', montant: '' }]}>
+          <ArrayInput source="details" label="" defaultValue={[{mode: paymentMode[0]?.id ?? 'cb', montant: ''}]}>
               <SimpleFormIterator inline disableAdd={false} disableRemove={false}>
-                  <SelectInput
-                      source="mode"
-                      label="Mode"
-                      choices={ paymentMode }
-                  />
-                  <NumberInput source="amount" label="Montant (€)"/>
-                  <TextInput source="prepayment.code" label="Prépaiement" readOnly/>
+                <FormDataConsumer>
+                        {({formData, scopedFormData}) =>
+                        <Box 
+                            display="flex" 
+                            flexWrap="nowrap" 
+                            gap={1.5} 
+                            alignItems="flex-start" 
+                            width="100%"
+                            sx={{ 
+                              '& .MuiFormControl-root': { marginBottom: 0 }
+                            }}
+                          >
+                            <SelectInput
+                                source="mode"
+                                label="Mode"
+                                choices={paymentMode}
+                                defaultValue={paymentMode[0]?.id ?? 'cb'}
+                            />
+                            <NumberInput source="amount" label="Montant (€)"/>
+                            <TextInput 
+                              label="Prépaiement"
+                              source={isDefined(scopedFormData?.prepayment?.paymentId) ? "prepayment.paymentId" : "prepayment.code" }
+                              format={ value => !isDefined(value) ? '' : 
+                                (isDefined(scopedFormData?.prepayment?.paymentId) && !value.startsWith('#') ? `#${value}` : value)
+                              }
+                              helperText={`
+                                ${ scopedFormData?.prepayment?.offreur ?? ''}
+                                ${isDefined(scopedFormData?.prepayment?.date) ? ` le ${(new Date(scopedFormData.prepayment.date)).toLocaleDateString()}` : ''}
+                              `}
+                              readOnly
+                            />
+                          </Box>
+                  }
+                    </FormDataConsumer>
               </SimpleFormIterator>
           </ArrayInput>
           <PartnersInput client={ client }/>

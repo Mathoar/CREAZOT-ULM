@@ -7,6 +7,8 @@ import { useClient } from '../../admin/ClientProvider';
 const Oidc = forwardRef((props, ref: ForwardedRef<any>) => {
 
     const { client } = useClient();
+    const url = client?.url ?? 'https://localhost';
+    const authUrl = url !== 'https://localhost' ? `${url}/oidc/` : 'http://localhost:8080';
 
     return (
         <MenuItem
@@ -15,7 +17,7 @@ const Oidc = forwardRef((props, ref: ForwardedRef<any>) => {
         {...props}
         >
              <a
-                href={`${ client?.url ?? 'https://localhost' }/oidc/`}
+                href={ authUrl }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center w-full no-underline text-inherit"

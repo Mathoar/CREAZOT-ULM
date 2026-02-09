@@ -3,14 +3,15 @@
 namespace App\Service;
 
 use App\Entity\Client;
-use Symfony\Component\Mailer\Transport;
-use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\Mailer\MailerInterface;
 use App\Service\ClientGetter;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class DynamicMailerFactory
 {
-    public function __construct(private ClientGetter $clientGetter) {}
+    public function __construct(private ClientGetter $clientGetter, private MessageBusInterface $messageBus) {}
 
     public function getMailerForClient(): ?MailerInterface
     {
@@ -21,6 +22,6 @@ class DynamicMailerFactory
             throw new \RuntimeException("Le client n’a pas de DSN MailJet configuré.");
 
         $transport = Transport::fromDsn($dsn);
-        return new Mailer($transport);
+        return new Mailer($transport, $this->messageBus);
     }
 }

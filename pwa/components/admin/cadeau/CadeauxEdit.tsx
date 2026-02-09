@@ -1,4 +1,4 @@
-import { SimpleForm, DateInput, Edit, TextInput, ReferenceInput, BooleanInput, NumberInput, ReferenceArrayInput  } from "react-admin";
+import { SimpleForm, DateInput, Edit, TextInput, ReferenceInput, BooleanInput, NumberInput, ReferenceArrayInput, ArrayInput, SimpleFormIterator, FormDataConsumer, SelectInput  } from "react-admin";
 import { Box } from "@mui/material";
 import { DateExpirationInput } from "./DateExpirationInput";
 import { PersonsInput } from "./PersonsInput";
@@ -6,8 +6,8 @@ import { MessageInput } from "./MessageInput";
 import { PrixInput } from "./PrixInput";
 import { SendEmailInput } from "./SendEmailInput";
 import { useClient } from '../../admin/ClientProvider';
-import { getFormattedValueForBackEnd, isDefinedAndNotVoid } from "../../../app/lib/utils";
-import { clientWithOptions, clientWithPartners } from "../../../app/lib/client";
+import { getFormattedValueForBackEnd, isDefined, isDefinedAndNotVoid } from "../../../app/lib/utils";
+import { clientWithOptions, clientWithPartners, paymentMode } from "../../../app/lib/client";
 import { useFormContext } from "react-hook-form";
 import { useEffect } from "react";
 
@@ -43,7 +43,8 @@ export const CadeauxEdit = () => {
         origine: isDefinedAndNotVoid(data.origines) ? data.origines.map(o => getFormattedValueForBackEnd(o)) : [],
         circuit: getFormattedValueForBackEnd(data?.circuit),
         options: getFormattedValueForBackEnd(data?.options),
-        option: getFormattedValueForBackEnd(data.option)
+        option: getFormattedValueForBackEnd(data.option),
+        details: isDefinedAndNotVoid(data.details) ? data.details.map(d => ({...d, prepayment: isDefined(d?.prepayment) ? getFormattedValueForBackEnd(d.prepayment) : null })) : [],
 
     };
     return formattedData;
@@ -74,9 +75,15 @@ export const CadeauxEdit = () => {
           </Box>
           <OptionsInput client={ client }/>
           <PartnersInput client={ client }/>
-          <TextInput source="paymentId" label="N° du paiement"/>
           <MessageInput />
+          <TextInput source="paymentId" label="Id du paiement"/>
           <PrixInput />
+          <ArrayInput source="details" label="" defaultValue={[{mode: paymentMode[0]?.id ?? 'cb', montant: ''}]}>
+            <SimpleFormIterator inline disableAdd={false} disableRemove={false}>
+              <SelectInput source="mode" label="Mode" choices={paymentMode}/>
+              <NumberInput source="amount" label="Montant (€)"/>
+            </SimpleFormIterator>
+          </ArrayInput>
           <SendEmailInput />
           <BooleanInput source="used" label="Bon déjà utilisé"/>
         </SimpleForm>

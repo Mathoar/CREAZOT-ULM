@@ -11,7 +11,7 @@ import { Providers } from "./providers";
 import { auth } from "./auth";
 
 export const metadata: Metadata = {
-  title: 'Planetair974 - Administration'
+  title: 'C6L - Administration'
 }
  
 export const viewport: Viewport = {

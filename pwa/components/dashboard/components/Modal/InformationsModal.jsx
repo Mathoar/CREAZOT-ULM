@@ -87,6 +87,7 @@ export const InformationsModal = ({ selectedReservation, setSelectedReservation,
                                 
                                 { isDefined(selectedReservation.option) ?  <><i>{ selectedReservation.option.nom }</i><br/></>  : <></> }
                                 { getResourceInformations() }
+                                { isDefined(selectedReservation.paid) && selectedReservation.paid && <span className="text-sm bold leading-relaxed text-green-600 dark:text-green-400"><br/>PAYÉ</span>}
                             </p>
                             { isDefined(selectedReservation.remarques) && selectedReservation.remarques !== "" &&
                                 <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">

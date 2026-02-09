@@ -2,9 +2,7 @@ import { type NextPage } from "next";
 import {
   Datagrid,
   List,
-  TextField,
   CreateButton,
-  ExportButton,
   TopToolbar,
   EditButton,
   SimpleList,
@@ -213,8 +211,12 @@ const DetailsExpansion = () => {
           source="prepayment"
           render={({prepayment}) => isDefined(prepayment) ? 
             <span className="text-xs italic">
-              <span>{ `${ prepayment.paymentId.startsWith('#') ? prepayment.paymentId : `#${ prepayment.paymentId }` } - ${ prepayment.offreur }` }<br/></span>
-              <span className="text-grey-500">{(new Date(prepayment.date)).toLocaleDateString()}</span>
+              <span>
+                {isDefined(prepayment.paymentId) ? prepayment.paymentId?.startsWith('#') ? prepayment.paymentId : `#${prepayment.paymentId}` : ''}
+                {`${isDefined(prepayment.paymentId) && isDefined(prepayment.offreur) ? ' - ' : ''}${ prepayment.offreur ?? ''}`}
+                <br/>
+              </span>
+              <span className="text-grey-500">{(new Date(prepayment.date ?? '')).toLocaleDateString()}</span>
             </span>
             : ''
           }
@@ -232,7 +234,8 @@ const getChipMode = mode => {
 };
 
 const getModeList = details => {
-  const uniqueModes = Array.from(new Set(details.map(({ mode }) => mode)));
+  const sanitizedDetails = isDefinedAndNotVoid(details) ? details : [];
+  const uniqueModes = Array.from(new Set(sanitizedDetails.map(({ mode }) => mode)));
   return uniqueModes.map((mode, i) => {
     const modeWithColor = paymentMode.find(p => p.id === mode)
     // @ts-ignore
@@ -260,11 +263,11 @@ const CustomBody = (props) => {
     const filteredData = isLoading || !data ? [] :
       data.map(payment => {
           const modeFilter = filterValues['details.mode']?.toLowerCase();
-          const newDetails = modeFilter ? payment.details.filter(detail => detail.mode ? matchesStartOfWord(detail.mode, modeFilter) : false): payment.details;
+          const newDetails = modeFilter ? (payment.details?.filter(detail => detail.mode ? matchesStartOfWord(detail.mode, modeFilter) : false) ?? []) : (payment.details ?? []);
           return { ...payment, details: newDetails };
       }).filter(payment => payment.details.length > 0);
 
-    const total = filteredData.reduce((sum, row) => sum + row.details.reduce((s, c) => s+= c.amount, 0), 0);
+    const total = filteredData.reduce((sum, row) => sum + row?.details?.reduce((s, c) => s+= (c?.amount ?? 0), 0), 0);
 
     return (
       <Fragment>
@@ -292,11 +295,11 @@ const MobileFooter = (props) => {
     const filteredData = isLoading || !data ? [] :
       data.map(payment => {
           const modeFilter = filterValues['details.mode']?.toLowerCase();
-          const newDetails = modeFilter ? payment.details.filter(detail => detail.mode ? matchesStartOfWord(detail.mode, modeFilter) : false): payment.details;
+          const newDetails = modeFilter ? (payment.details?.filter(detail => detail.mode ? matchesStartOfWord(detail.mode, modeFilter) : false) ?? []): (payment.details ?? []);
           return { ...payment, details: newDetails };
       }).filter(payment => payment.details.length > 0);
 
-    const total = filteredData.reduce((sum, row) => sum + row.details.reduce((s, c) => s+= c.amount, 0), 0);
+    const total = filteredData.reduce((sum, row) => sum + row?.details?.reduce((s, c) => s+= (c?.amount ?? 0), 0), 0);
 
     return (
       <div style={{
@@ -336,7 +339,7 @@ const CustomDatagrid = ({ client }) => {
         <FunctionField
           source="name"
           label="Total"
-          render={({ details }) => (details.reduce((sum, current) => sum += current.amount, 0)).toFixed(2) + "€" }
+          render={({ details }) => (details.reduce((sum, current) => sum += (current?.amount ?? 0), 0)).toFixed(2) + "€" }
           sx={{textAlign: 'center'}}
         />
         <p className="text-right">
@@ -374,7 +377,7 @@ export const PaymentsList: NextPage<Props> = ({ data, hubURL, page }) => {
               primaryText={({ name, label }) =>  isNotBlank(name) ? name : (isNotBlank(label) ? label : '')}
               // @ts-ignore
               secondaryText={({ details, date }) => <div>{ getModeList(details) }<br/>{ `${ (new Date(date)).toLocaleDateString("fr-FR", options) } ` }</div>}
-              tertiaryText={({ details }) => (details.reduce((sum, current) => sum += current.amount, 0)).toFixed(2) + "€" }
+              tertiaryText={({ details }) => (details?.reduce((sum, current) => sum += (current?.amount ?? 0), 0) ?? 0).toFixed(2) + "€" }
               linkType="show"
             />
             <MobileFooter/>

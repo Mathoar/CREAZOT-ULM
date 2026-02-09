@@ -5,7 +5,6 @@ import { Datagrid,
   TextInput,
   BooleanInput,
   CreateButton,
-  ExportButton,
   TopToolbar,
   DateField,
   DateInput,
@@ -227,7 +226,7 @@ export const CadeauxList: NextPage<Props> = ({ data, hubURL, page }) => {
             <Datagrid rowClick={ false } sx={{ '& .RaDatagrid-headerCell': {backgroundColor: '#ededed', fontWeight: "lighter"}}}>
                 <FunctionField
                   label="Code"
-                  render={({code, fin}) => <><span>{code ?? ''}</span><br/></> }
+                  render={({code, paymentId}) => <><span>{isDefined(paymentId) ? (paymentId?.startsWith('#') ? paymentId : `#${paymentId}`) : code}</span><br/>{isDefined(paymentId)  ? <span className="text-gray-500 text-xs italic">{ code }</span> : <></> }</> }
                 />
                 <FunctionField
                   label="Personne(s)"
