@@ -5,9 +5,9 @@ namespace App\Service\DataInitializer;
 class Data
 {
     private $client = [
-        'name' => 'Planetair974',
-        'email' => 'planetair974@gmail.com',
-        'phone' => '+262 692 61 92 04',
+        'name' => 'C6L',
+        'email' => 'creazot.re@gmail.com',
+        'phone' => '+262 692 42 29 33',
         'color' => '#d32f2f',
         'lat' => -21.1351,
         'lng' => 55.5114,
@@ -15,11 +15,11 @@ class Data
         'opacity' => 0.7,
         'active' => true,
         'timezone' => 'Indian/Reunion',
-        'address' => '9 allée des champignons',
-        'zipcode' => '97450',
-        'city' => 'Saint-Louis',
+        'address' => '19 Chemin Raphaël',
+        'zipcode' => '97410',
+        'city' => 'Saint-Pierre',
         'website' => 'https://www.planetair974.fr',
-        'url' => 'https://admin.planetair974.re',
+        'url' => 'https://c6l.creazot.com',
         'hasReservation' => true,
         'hasPassengerRegistration' => true,
         'hasOptions' => true,

@@ -69,7 +69,7 @@ export const getMetarOrTaf = (icao, request = "metar", decoded = false) => {
   const config = { 
       method: 'get',
       url: `https://api.checkwx.com/${ request }/${ icao }${ decoded && '/decoded' }`,
-      headers: { 'X-API-Key': '2643ee8e1e864bfb9a13c98b4b' }
+      headers: { 'X-API-Key': '29dc40470e28443981e038f70957336f' }
   };
   return axios(config)
           .then(function (response) {
