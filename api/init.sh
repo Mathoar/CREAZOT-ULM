@@ -15,6 +15,12 @@ until pg_isready -h database -p 5432 -U $POSTGRES_USER > /dev/null 2>&1; do
 done
 echo "✅ PostgreSQL est prêt."
 
+# ⚡ Vider et régénérer le cache Symfony pour l'environnement actuel
+echo "🧹 Vidage et génération du cache Symfony..."
+php bin/console cache:clear --no-warmup --env=$APP_ENV
+php bin/console cache:warmup --env=$APP_ENV
+echo "✅ Cache Symfony généré."
+
 # ⚙️ Exécuter les migrations
 echo "📦 Lancement des migrations Doctrine..."
 php bin/console doctrine:migrations:migrate --no-interaction

@@ -1,6 +1,8 @@
 services:        
   php:
     image: ${PHP_DOCKER_IMAGE}
+    env_file:
+      - .env
     depends_on:
       - database
     restart: unless-stopped
@@ -51,6 +53,8 @@ services:
 
   pwa:
     image: ${PWA_DOCKER_IMAGE}
+    env_file:
+      - .env
     environment:
       AUTH_TRUST_HOST: "true"
       NEXT_PUBLIC_ENTRYPOINT: http://php
@@ -59,11 +63,14 @@ services:
       NEXT_PUBLIC_OIDC_SERVER_URL: ${OIDC_SERVER_URL:-http://localhost:8080/realms/demo}
       NEXT_PUBLIC_OIDC_SERVER_URL_INTERNAL: ${OIDC_SERVER_URL_INTERNAL:-http://keycloak:8080/realms/demo}
       NEXT_PUBLIC_OIDC_AUTHORIZATION_CLIENT_ID: ${OIDC_AUTHORIZATION_CLIENT_ID:-api-platform-api}
+      NEXT_PUBLIC_API_BASE_URL: https://${SERVER_NAME}
       AUTH_SECRET: ${AUTH_SECRET:-!ChangeMe!}
       NEXTAUTH_URL: ${AUTH_URL:-https://localhost}
 
   database:
     image: postgres:16.4-alpine
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
@@ -74,6 +81,8 @@ services:
 
   keycloak-database:
     image: postgres:16.4-alpine
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${KEYCLOAK_POSTGRES_DB:-keycloak}
       POSTGRES_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD:-!ChangeMe!}
@@ -83,10 +92,12 @@ services:
 
   keycloak:
     image: ${KEYCLOAK_DOCKER_IMAGE}
+    env_file:
+      - .env
     environment:
       KC_DB: postgres
       KC_HTTP_RELATIVE_PATH: ${KEYCLOAK_HTTP_RELATIVE_PATH:-/}
-      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://localhost:8080/}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
       KC_DB_URL_HOST: keycloak-database
       KC_DB_URL_DATABASE: ${KEYCLOAK_POSTGRES_DB:-keycloak}
       KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER:-keycloak}

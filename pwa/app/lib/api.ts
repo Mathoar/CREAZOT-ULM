@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const ENV = (!process.env.NEXT_PUBLIC_NODE_ENV || process.env.NEXT_PUBLIC_NODE_ENV === "development") ? "development" : "production" ;
-export const API_DOMAIN = "https://admin.planetair974.re";
+export const API_DOMAIN = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 export async function get(route: string) {
     return axios.get(API_DOMAIN + route);
@@ -12,6 +11,7 @@ export async function deleteEntity(route: string) {
 }
 
 export async function post(route: string, entity: object) {
+    console.log(API_DOMAIN);
     return axios.post(API_DOMAIN + route, entity);
 }
 

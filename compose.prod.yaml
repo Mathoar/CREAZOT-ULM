@@ -27,10 +27,11 @@ services:
     image: ${PWA_DOCKER_IMAGE}
     build:
       context: ./pwa
-      target: prod
+      target: prod  
       args:
         AUTH_SECRET: ${AUTH_SECRET:-!ChangeMe!}
         NEXT_PUBLIC_OIDC_SERVER_URL: ${OIDC_SERVER_URL:-http://localhost:8080/realms/demo}
+        NEXT_PUBLIC_API_BASE_URL: https://${SERVER_NAME:-localhost}
     environment:
       AUTH_SECRET: ${AUTH_SECRET:-!ChangeMe!}
       NEXT_PUBLIC_OIDC_SERVER_URL: ${OIDC_SERVER_URL:-http://localhost:8080/realms/demo}
@@ -53,7 +54,7 @@ services:
     environment:
       KC_DB: postgres
       KC_HTTP_RELATIVE_PATH: ${KEYCLOAK_HTTP_RELATIVE_PATH:-/}
-      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://localhost:8080}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
       KEYCLOAK_PRODUCTION: "true"
       KC_DB_URL_HOST: keycloak-database
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-!ChangeMe!}
