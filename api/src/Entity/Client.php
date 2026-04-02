@@ -24,9 +24,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ApiFilter(SearchFilter::class, properties: ['slug' => 'exact'])]
 #[ApiResource(
     uriTemplate: '/clients{._format}',
     operations: [
@@ -72,14 +75,14 @@ class Client
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(groups: ['Client:write', 'Client:read'])]
+    #[Groups(groups: ['Client:write', 'Client:read', 'Profil_pilote:read', 'User:read', 'ClientAccessRequest:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Client:write', 'Client:read'])]
+    #[Groups(groups: ['Client:write', 'Client:read', 'Profil_pilote:read', 'User:read', 'ClientAccessRequest:read'])]
     private ?string $name = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, unique: true, nullable: true)]
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $slug = null;
 
@@ -115,7 +118,7 @@ class Client
 
     #[ORM\Column(length: 7, nullable: true)]
     #[Assert\Regex('/^#[0-9A-Fa-f]{6}$/')]
-    #[Groups(groups: ['Client:write', 'Client:read'])]
+    #[Groups(groups: ['Client:write', 'Client:read', 'Profil_pilote:read', 'User:read', 'ClientAccessRequest:read'])]
     private ?string $color = null;
 
     #[ORM\Column(nullable: true)]
@@ -144,7 +147,7 @@ class Client
     private ?float $opacity = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Client:write', 'Client:read'])]
+    #[Groups(groups: ['Client:write', 'Client:read', 'User:read', 'ClientAccessRequest:read'])]
     private ?bool $active = null;
 
     #[ORM\Column(nullable: true)]
@@ -263,6 +266,62 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?bool $useAvailabilityFilter = null;
 
+    #[ORM\ManyToOne(targetEntity: PricingCategory::class)]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private ?PricingCategory $pricingCategory = null;
+
+    /**
+     * @var Collection<int, ModulePack>
+     */
+    #[ORM\ManyToMany(targetEntity: ModulePack::class)]
+    #[ORM\JoinTable(name: 'client_module_pack')]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private Collection $modulePacks;
+
+    #[ORM\Column(length: 20, nullable: true, options: ['default' => 'trial'])]
+    #[Groups(groups: ['Client:read', 'Client:write', 'User:read'])]
+    private ?string $subscriptionStatus = 'trial';
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private ?\DateTimeImmutable $trialEndsAt = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private ?int $maxAeronefs = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:read'])]
+    private ?float $monthlyBasePrice = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private ?string $odooCustomerId = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private ?string $odooSubscriptionId = null;
+
+    #[ORM\Column(length: 20, nullable: true, options: ['default' => 'monthly'])]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?string $billingCycle = 'monthly';
+
+    #[ORM\Column(nullable: true, options: ['default' => 30.0])]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?float $annualDiscount = 30.0;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?\DateTimeImmutable $nextBillingDate = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?\DateTimeImmutable $lastInvoiceDate = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:read'])]
+    private ?int $odooLastInvoiceId = null;
+
     /**
      * @var Collection<int, Airport>
      */
@@ -297,10 +356,22 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?bool $hasGroupUpdate = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasNotam = null;
+
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'clients')]
+    private Collection $users;
+
     public function __construct()
     {
         $this->airports = new ArrayCollection();
         $this->cameras = new ArrayCollection();
+        $this->users = new ArrayCollection();
+        $this->modulePacks = new ArrayCollection();
     }
 
     #[Groups(groups: ['Client:read'])]
@@ -1001,6 +1072,213 @@ class Client
     public function setHasGroupUpdate(?bool $hasGroupUpdate): static
     {
         $this->hasGroupUpdate = $hasGroupUpdate;
+
+        return $this;
+    }
+
+
+    public function getHasNotam(): ?bool
+    {
+        return $this->hasNotam;
+    }
+
+    public function setHasNotam(?bool $hasNotam): static
+    {
+        $this->hasNotam = $hasNotam;
+
+        return $this;
+    }
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->addClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            $user->removeClient($this);
+        }
+
+        return $this;
+    }
+
+    public function getPricingCategory(): ?PricingCategory
+    {
+        return $this->pricingCategory;
+    }
+
+    public function setPricingCategory(?PricingCategory $pricingCategory): static
+    {
+        $this->pricingCategory = $pricingCategory;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ModulePack>
+     */
+    public function getModulePacks(): Collection
+    {
+        return $this->modulePacks;
+    }
+
+    public function addModulePack(ModulePack $modulePack): static
+    {
+        if (!$this->modulePacks->contains($modulePack)) {
+            $this->modulePacks->add($modulePack);
+        }
+
+        return $this;
+    }
+
+    public function removeModulePack(ModulePack $modulePack): static
+    {
+        $this->modulePacks->removeElement($modulePack);
+
+        return $this;
+    }
+
+    public function getSubscriptionStatus(): ?string
+    {
+        return $this->subscriptionStatus;
+    }
+
+    public function setSubscriptionStatus(?string $subscriptionStatus): static
+    {
+        $this->subscriptionStatus = $subscriptionStatus;
+
+        return $this;
+    }
+
+    public function getTrialEndsAt(): ?\DateTimeImmutable
+    {
+        return $this->trialEndsAt;
+    }
+
+    public function setTrialEndsAt(?\DateTimeImmutable $trialEndsAt): static
+    {
+        $this->trialEndsAt = $trialEndsAt;
+
+        return $this;
+    }
+
+    public function getMaxAeronefs(): ?int
+    {
+        return $this->maxAeronefs;
+    }
+
+    public function setMaxAeronefs(?int $maxAeronefs): static
+    {
+        $this->maxAeronefs = $maxAeronefs;
+
+        return $this;
+    }
+
+    public function getMonthlyBasePrice(): ?float
+    {
+        return $this->monthlyBasePrice;
+    }
+
+    public function setMonthlyBasePrice(?float $monthlyBasePrice): static
+    {
+        $this->monthlyBasePrice = $monthlyBasePrice;
+
+        return $this;
+    }
+
+    public function getOdooCustomerId(): ?string
+    {
+        return $this->odooCustomerId;
+    }
+
+    public function setOdooCustomerId(?string $odooCustomerId): static
+    {
+        $this->odooCustomerId = $odooCustomerId;
+
+        return $this;
+    }
+
+    public function getOdooSubscriptionId(): ?string
+    {
+        return $this->odooSubscriptionId;
+    }
+
+    public function setOdooSubscriptionId(?string $odooSubscriptionId): static
+    {
+        $this->odooSubscriptionId = $odooSubscriptionId;
+
+        return $this;
+    }
+
+    public function getBillingCycle(): ?string
+    {
+        return $this->billingCycle;
+    }
+
+    public function setBillingCycle(?string $billingCycle): static
+    {
+        $this->billingCycle = $billingCycle;
+
+        return $this;
+    }
+
+    public function getAnnualDiscount(): ?float
+    {
+        return $this->annualDiscount;
+    }
+
+    public function setAnnualDiscount(?float $annualDiscount): static
+    {
+        $this->annualDiscount = $annualDiscount;
+
+        return $this;
+    }
+
+    public function getNextBillingDate(): ?\DateTimeImmutable
+    {
+        return $this->nextBillingDate;
+    }
+
+    public function setNextBillingDate(?\DateTimeImmutable $nextBillingDate): static
+    {
+        $this->nextBillingDate = $nextBillingDate;
+
+        return $this;
+    }
+
+    public function getLastInvoiceDate(): ?\DateTimeImmutable
+    {
+        return $this->lastInvoiceDate;
+    }
+
+    public function setLastInvoiceDate(?\DateTimeImmutable $lastInvoiceDate): static
+    {
+        $this->lastInvoiceDate = $lastInvoiceDate;
+
+        return $this;
+    }
+
+    public function getOdooLastInvoiceId(): ?int
+    {
+        return $this->odooLastInvoiceId;
+    }
+
+    public function setOdooLastInvoiceId(?int $odooLastInvoiceId): static
+    {
+        $this->odooLastInvoiceId = $odooLastInvoiceId;
 
         return $this;
     }

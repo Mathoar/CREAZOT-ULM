@@ -208,7 +208,7 @@ export const syncDocuments = async (documents, session) => {
   return results;
 };
 
-export const uploadImages = async (data, session) => {
+export const uploadImages = async (data, session, clientId = null) => {
     const uploadPromises = images.map(async (image) => {
         const value = data[image.name];
     
@@ -219,11 +219,16 @@ export const uploadImages = async (data, session) => {
             : null;
     
         if (file) {
-          // Nouveau fichier envoyé
           const opacity = image.type === 'pdfbackground' ? data.opacity : image.opacity;
           const formData = new FormData();
           formData.append('file', file);
           formData.append('type', image.type);
+          if (clientId) {
+            const numId = typeof clientId === 'string' && clientId.includes('/')
+              ? clientId.split('/').pop()
+              : String(clientId);
+            formData.append('clientId', numId);
+          }
           if (opacity !== null && opacity !== undefined) {
             formData.append('opacity', opacity);
           }
@@ -265,8 +270,6 @@ export const sanitizeData = (data, previousData) => {
     const registrationPax = data.hasPassengerRegistration;
     const sanitized = {
         ...data,
-        airports: isDefinedAndNotVoid(data.airports) ? data.airports.map(a => getFormattedValueForBackEnd(a)) : [],
-        cameras: isDefinedAndNotVoid(data.cameras) ? data.cameras.map(c => getFormattedValueForBackEnd(c)) : [],
         thanksTitle: registrationPax && isDefined(data.thanksTitle) ? data.thanksTitle : '',
         thanksMessage: registrationPax && isDefined(data.thanksMessage) ? data.thanksMessage : ''
     };
@@ -275,6 +278,8 @@ export const sanitizeData = (data, previousData) => {
         sanitized.emailServer = data.emailParams;
 
     delete sanitized.emailParams;
+    delete sanitized.airports;
+    delete sanitized.cameras;
 
     return sanitized;
 };

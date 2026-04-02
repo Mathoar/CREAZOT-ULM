@@ -42,12 +42,34 @@ import disponibiliteResourceProps from "./disponibilite";
 import airportResourceProps from "./airport";
 import cameraResourceProps from "./camera";
 import expenseResourceProps from "./expense";
+import pricingCategoryResourceProps from "./pricingCategory";
+import pricingTierResourceProps from "./pricingTier";
+import modulePackResourceProps from "./modulePack";
+import modulePackPriceResourceProps from "./modulePackPrice";
+import SubscriptionDashboard from "./subscription/SubscriptionDashboard";
+import UserGuard from "./guard/UserGuard";
+import ClientAttachmentRequest from "./guard/ClientAttachmentRequest";
+import clientAccessRequestResourceProps from "./clientAccessRequest";
+import { SiteSettingsList } from "./siteSettings/SiteSettingsList";
+import { SiteSettingsEdit } from "./siteSettings/SiteSettingsEdit";
+
+const getClientHeaders = () => {
+  try {
+    const raw = sessionStorage.getItem('client');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.id) return { 'X-Client-Id': String(parsed.id) };
+    }
+  } catch (e) {}
+  return {};
+};
 
 const apiDocumentationParser = (session: Session) => async () => {
   try {
     return await parseHydraDocumentation(ENTRYPOINT, {
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
+        ...getClientHeaders(),
       },
     });
   } catch (result) {
@@ -89,6 +111,7 @@ const AdminAdapter = ({
         ...options,
         headers: {
           Authorization: `Bearer ${session?.accessToken}`,
+          ...getClientHeaders(),
         },
       }),
     apiDocumentationParser: apiDocumentationParser(session),
@@ -126,7 +149,8 @@ const AdminWithOIDC = () => {
   }
 
   return (
-      // @ts-ignore
+    <UserGuard>
+      {/* @ts-ignore */}
       <AdminAdapter session={session}>
         <ResourceGuesser name="clients" {...clientResourceProps}/>
         <ResourceGuesser name="prestations" {...prestationResourceProps} />
@@ -152,12 +176,21 @@ const AdminWithOIDC = () => {
         <ResourceGuesser name="airports" {...airportResourceProps}/>
         <ResourceGuesser name="cameras" {...cameraResourceProps}/>
         <ResourceGuesser name="expenses" {...expenseResourceProps}/>
+        <ResourceGuesser name="pricing-categories" {...pricingCategoryResourceProps}/>
+        <ResourceGuesser name="pricing-tiers" {...pricingTierResourceProps}/>
+        <ResourceGuesser name="module-packs" {...modulePackResourceProps}/>
+        <ResourceGuesser name="module-pack-prices" {...modulePackPriceResourceProps}/>
+        <ResourceGuesser name="site-settings" list={SiteSettingsList} edit={SiteSettingsEdit} />
+        <ResourceGuesser name="client_access_requests" {...clientAccessRequestResourceProps}/>
         <CustomRoutes>
           <Route path="/landings" element={<LandingsList />} />
           <Route path="/convert" element={<ReservationCreate />} />
           <Route path="/convert/:id" element={<ReservationCreate />} />
+          <Route path="/subscriptions" element={<SubscriptionDashboard />} />
+          <Route path="/request-access" element={<ClientAttachmentRequest />} />
         </CustomRoutes>
       </AdminAdapter>
+    </UserGuard>
   );
 };
 

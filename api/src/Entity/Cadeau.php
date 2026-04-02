@@ -59,36 +59,37 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
     security: 'is_granted("OIDC_USER")',
     mercure: true
 )]
-class Cadeau
+class Cadeau implements TenantAwareInterface
 {
+    use TenantAwareTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $code = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $beneficiaire = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $offreur = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?\DateTimeInterface $fin = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $paymentId = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?bool $used = null;
 
     #[ORM\ManyToOne]
@@ -100,7 +101,7 @@ class Cadeau
     private ?Option $option = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?float $cout = null;
 
     /**
@@ -111,11 +112,11 @@ class Cadeau
     private Collection $origine;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $email = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $message = null;
 
     #[ORM\Column(nullable: true)]
@@ -126,11 +127,11 @@ class Cadeau
     private Collection $reservations;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?int $quantite = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne]
@@ -138,32 +139,24 @@ class Cadeau
     private ?Combinaison $options = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?float $prix = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?bool $gift = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $telephone = null;
-
-    /**
-     * @var Collection<int, PaymentDetail>
-     */
-    #[ORM\OneToMany(targetEntity: PaymentDetail::class, mappedBy: 'cadeau', cascade: ['persist', 'remove'])]
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read'])]
-    private Collection $details;
 
     public function __construct()
     {
         $this->origine = new ArrayCollection();
         $this->reservations = new ArrayCollection();
-        $this->details = new ArrayCollection();
     }
 
-    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'Payment:list'])]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read'])]
     public function getName(): ?string
     {
         return !is_null($this->code) && !is_null($this->beneficiaire) ? $this->code . " - " . $this->beneficiaire : "";
@@ -448,36 +441,6 @@ class Cadeau
     public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, PaymentDetail>
-     */
-    public function getDetails(): Collection
-    {
-        return $this->details;
-    }
-
-    public function addDetail(PaymentDetail $detail): static
-    {
-        if (!$this->details->contains($detail)) {
-            $this->details->add($detail);
-            $detail->setCadeau($this);
-        }
-
-        return $this;
-    }
-
-    public function removeDetail(PaymentDetail $detail): static
-    {
-        if ($this->details->removeElement($detail)) {
-            // set the owning side to null (unless already changed)
-            if ($detail->getCadeau() === $this) {
-                $detail->setCadeau(null);
-            }
-        }
 
         return $this;
     }

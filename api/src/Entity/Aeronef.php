@@ -20,6 +20,8 @@ use App\Doctrine\Orm\Filter\AvailableAeronefFilter;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use App\Entity\TenantAwareInterface;
+use App\Entity\TenantAwareTrait;
 
 #[ORM\Entity(repositoryClass: AeronefRepository::class)]
 #[ApiResource(
@@ -37,7 +39,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
             filters: [AvailableAeronefFilter::class]
         ),
         new Post(
-            itemUriTemplate: '/aeronefs/{id}{._format}'
+            itemUriTemplate: '/aeronefs/{id}{._format}',
+            security: 'is_granted("ROLE_SUPER_ADMIN")'
         ),
         new Get(
             uriTemplate: '/aeronefs/{id}{._format}'
@@ -61,8 +64,9 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
     mercure: true
 )]
 #[ApiFilter(AvailableAeronefFilter::class)]
-class Aeronef
+class Aeronef implements TenantAwareInterface
 {
+    use TenantAwareTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

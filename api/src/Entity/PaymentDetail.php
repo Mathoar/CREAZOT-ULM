@@ -49,20 +49,21 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
     security: 'is_granted("OIDC_USER")',
     mercure: true
 )]
-class PaymentDetail
+class PaymentDetail implements TenantAwareInterface
 {
+    use TenantAwareTrait;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'Cadeau:write', 'Cadeau:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list', 'Expense:write', 'Expense:read', 'Entretien:read', 'Reservation:read'])]
+    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'PaymentDetail:read', 'Payment:read', 'Expense:write', 'Expense:read', 'Entretien:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'Cadeau:write', 'Cadeau:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list', 'Expense:write', 'Expense:read', 'Entretien:read', 'Reservation:read'])]
+    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'PaymentDetail:read', 'Payment:read', 'Expense:write', 'Expense:read', 'Entretien:read'])]
     private ?string $mode = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'Cadeau:write', 'Cadeau:read', 'PaymentDetail:read', 'Payment:read', 'Payment:list', 'Expense:write', 'Expense:read', 'Entretien:read', 'Reservation:read'])]
+    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'PaymentDetail:read', 'Payment:read', 'Expense:write', 'Expense:read', 'Entretien:read'])]
     private ?float $amount = null;
 
     #[ORM\ManyToOne(inversedBy: 'details')]
@@ -70,16 +71,12 @@ class PaymentDetail
     private ?Payment $payment = null;
 
     #[ORM\ManyToOne]
-    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'Payment:read', 'Payment:list'])] 
+    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'PaymentDetail:read', 'Payment:read'])]
     private ?Cadeau $prepayment = null;
 
     #[ORM\ManyToOne(inversedBy: 'details')]
     #[Groups(groups: ['PaymentDetail:read'])]
     private ?Expense $expense = null;
-
-    #[ORM\ManyToOne(inversedBy: 'details')]
-    #[Groups(groups: ['PaymentDetail:read'])]
-    private ?Cadeau $cadeau = null;
 
     public function getId(): ?int
     {
@@ -142,18 +139,6 @@ class PaymentDetail
     public function setExpense(?Expense $expense): static
     {
         $this->expense = $expense;
-
-        return $this;
-    }
-
-    public function getCadeau(): ?Cadeau
-    {
-        return $this->cadeau;
-    }
-
-    public function setCadeau(?Cadeau $cadeau): static
-    {
-        $this->cadeau = $cadeau;
 
         return $this;
     }
