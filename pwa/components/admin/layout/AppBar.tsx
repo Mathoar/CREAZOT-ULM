@@ -1,0 +1,141 @@
+import { AppBar, UserMenu, TitlePortal } from "react-admin";
+import { useDataProvider } from "react-admin";
+import Logout from "./Logout";
+import Flight from "./Flight";
+import Image from "next/image";
+import { Link } from 'react-router-dom';
+import Reservation from "./Reservation";
+import { isDefined, isDefinedAndNotVoid } from "../../../app/lib/utils";
+import { useClient } from '../../admin/ClientProvider';
+import { useSiteSettings } from '../SiteSettingsProvider';
+import GlobalLoader from "../../admin/layout/GlobalLoader";
+import Oidc from "./Oidc";
+import { useEffect, useState, forwardRef } from "react";
+import Payment from "./Payment";
+import { useSessionContext } from "../../admin/SessionContextProvider";
+import CarnetVol from "./CarnetVol";
+import { clientWithIndividualFlightLogs, clientWithPaymentManagement, clientWithReservationManagement } from "../../../app/lib/client";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import { ListItemIcon, ListItemText, MenuItem } from "@mui/material";
+
+const RequestAccessLink = forwardRef<HTMLLIElement>((props, ref) => {
+  return (
+    <MenuItem ref={ref} {...props}>
+      <Link to="/request-access" className="flex">
+        <ListItemIcon><GroupAddIcon fontSize="small" /></ListItemIcon>
+        <ListItemText>Demander un rattachement</ListItemText>
+      </Link>
+    </MenuItem>
+  );
+});
+RequestAccessLink.displayName = "RequestAccessLink";
+
+const PassengerFormLink = forwardRef<HTMLLIElement>((props, ref) => {
+  const { client } = useClient();
+  if (!client?.slug || !client?.hasPassengerRegistration) return null;
+  return (
+    <MenuItem
+      ref={ref}
+      onClick={() => window.open(`/${client.slug}`, '_blank')}
+      {...props}
+    >
+      <ListItemIcon><OpenInNewIcon fontSize="small" /></ListItemIcon>
+      <ListItemText>Formulaire passager</ListItemText>
+    </MenuItem>
+  );
+});
+
+const CustomAppBar = () => {
+
+  const { session } = useSessionContext();
+  const user = session?.user;
+  const dataProvider = useDataProvider();
+  const { client, loading } = useClient();
+  const { siteSettings } = useSiteSettings();
+  const authorizedProfiles = ['pro', 'instructeur', 'secretariat'];
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [fallback, setFallback] = useState(false);
+
+  const baseUrl = siteSettings?.url?.replace(/\/+$/, "") ?? "";
+  const logoPath = client?.logo?.startsWith("/") ? client.logo : `/${client?.logo ?? "images/logo.png"}`;
+  const logoSrc = `${baseUrl}${logoPath}`;
+
+  const getLogoUrl = () => {
+    const defaultLogo = `${baseUrl}/images/logo.png`;
+    return fallback ? defaultLogo : (logoSrc || defaultLogo);
+  };
+
+  useEffect(() => getProfile(), []);
+
+  const getProfile = () => {
+    if (isDefined(user)) {
+      setProfileLoading(true);
+      // @ts-ignore
+      dataProvider.getList('profil_pilotes',{ filter: { 'pilote.email': user.email }, sort: {id: 'ASC' } })
+                  .then(({ data }) => {
+                    setProfile(data[0]);
+                    setProfileLoading(false);
+                  });
+
+    }
+  };
+
+  const isAuthorized = profile => {
+    if (isDefined(profile)) {
+      const { pilotQualifications } = profile;
+      const authorizedSet = new Set(authorizedProfiles);
+      if (isDefinedAndNotVoid(pilotQualifications))
+        return pilotQualifications.map(q => q.qualification.slug).some(item => authorizedSet.has(item));
+    }
+    return false;
+  };
+
+  {/* @ts-ignore  */}
+  const isAdmin = (user) => isDefined(user) && user.roles.find(r => r === "admin");
+  
+  return loading || profileLoading ? <GlobalLoader/> : 
+    isDefined(client) && (
+      <AppBar
+        sx={{ backgroundColor: client.color || 'primary' }}
+        userMenu={
+          <UserMenu>
+            {/* @ts-ignore  */}
+            { clientWithReservationManagement(client) && isAdmin(user) && <Reservation /> }
+            <Flight />
+            {/* @ts-ignore  */}
+            { clientWithPaymentManagement(client) && (isAdmin(user) || (isDefined(profile) && isAuthorized(profile))) && <Payment /> }
+            {/* @ts-ignore  */}
+            { isAdmin(user) && <Oidc /> }
+            {/* @ts-ignore  */}
+            { clientWithIndividualFlightLogs(client) && isDefined(profile) && <CarnetVol/> }
+            <RequestAccessLink />
+            <PassengerFormLink />
+            <Logout />
+          </UserMenu>
+        }
+      >
+        <TitlePortal />
+        <div className="flex-1">
+          <Link to="/">
+            <div style={{ position: "relative", width: "auto", height: 44, maxWidth: 160, minWidth: 44 }}>
+              <Image
+                alt={"logo " + client.name}
+                src={getLogoUrl()}
+                width={160}
+                height={44}
+                onError={() => setFallback(true)}
+                style={{ width: "auto", height: 44, maxWidth: 160, objectFit: "contain" }}
+                unoptimized
+              />
+            </div>
+
+          </Link>
+          
+        </div>
+      </AppBar>
+    )
+};
+
+export default CustomAppBar;

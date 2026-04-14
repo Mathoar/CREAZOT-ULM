@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic'Ciel — Carte des Contextes</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-dim: #0c4a6e;
+    --green: #4ade80;
+    --green-bg: #052e16;
+    --orange: #fb923c;
+    --orange-bg: #431407;
+    --red: #f87171;
+    --red-bg: #450a0a;
+    --purple: #c084fc;
+    --purple-bg: #2e1065;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: .5rem;
+  }
+  .header p {
+    color: var(--text-muted);
+    font-size: .95rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+    max-width: 1200px;
+    margin: 0 auto 3rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: all .2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .card:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .card.master::before { background: var(--accent); }
+  .card.vapi::before  { background: var(--purple); }
+  .card.ai::before    { background: var(--green); }
+  .card.billing::before { background: var(--orange); }
+  .card.deploy::before  { background: var(--red); }
+  .card.maint::before   { background: var(--text-muted); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: .75rem;
+  }
+  .card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .card.master .card-icon { background: var(--accent-dim); }
+  .card.vapi .card-icon   { background: var(--purple-bg); }
+  .card.ai .card-icon     { background: var(--green-bg); }
+  .card.billing .card-icon{ background: var(--orange-bg); }
+  .card.deploy .card-icon { background: var(--red-bg); }
+  .card.maint .card-icon  { background: var(--surface-hover); }
+
+  .badge {
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: .25rem .6rem;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-ok   { background: var(--green-bg); color: var(--green); }
+  .badge-warn { background: var(--orange-bg); color: var(--orange); }
+  .badge-master { background: var(--accent-dim); color: var(--accent); }
+
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: .35rem;
+  }
+  .card .filename {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    margin-bottom: .75rem;
+    opacity: .8;
+  }
+  .card p.desc {
+    font-size: .85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+  }
+  .tag {
+    font-size: .7rem;
+    padding: .2rem .5rem;
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--border);
+    font-size: .75rem;
+    color: var(--text-muted);
+  }
+
+  .btn-open {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--accent);
+    text-decoration: none;
+    padding: .3rem .6rem;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    transition: all .15s ease;
+    background: transparent;
+    cursor: pointer;
+  }
+  .btn-open:hover {
+    background: var(--accent-dim);
+  }
+
+  .section-title {
+    max-width: 1200px;
+    margin: 0 auto 1.25rem;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .guide {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+  .guide h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+    color: var(--accent);
+  }
+  .guide table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+  }
+  .guide th {
+    text-align: left;
+    padding: .6rem .75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .guide td {
+    padding: .6rem .75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .guide tr:last-child td { border-bottom: none; }
+  .guide tr:hover td { background: var(--surface-hover); }
+  .guide code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: .8rem;
+    background: var(--bg);
+    padding: .15rem .4rem;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  .prompt-box {
+    max-width: 1200px;
+    margin: 1.5rem auto 0;
+    background: var(--accent-dim);
+    border: 1px solid rgba(56,189,248,.3);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .prompt-box .icon { font-size: 1.5rem; flex-shrink: 0; }
+  .prompt-box .text { font-size: .9rem; color: var(--text); line-height: 1.5; }
+  .prompt-box code {
+    background: rgba(0,0,0,.3);
+    padding: .2rem .5rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+  }
+
+  .migration {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+  .migration h2 {
+    font-size: 1.1rem;
+    margin-bottom: .5rem;
+    color: var(--orange);
+  }
+  .migration .subtitle {
+    font-size: .85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .migration .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .migration .step:last-child { border-bottom: none; }
+  .migration .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-done .step-num { background: var(--green-bg); color: var(--green); }
+  .step-active .step-num { background: var(--orange-bg); color: var(--orange); border: 2px solid var(--orange); }
+  .step-pending .step-num { background: var(--surface-hover); color: var(--text-muted); }
+  .migration .step-content h4 {
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
+  }
+  .step-done .step-content h4 { color: var(--green); }
+  .step-active .step-content h4 { color: var(--orange); }
+  .step-pending .step-content h4 { color: var(--text-muted); }
+  .migration .step-content p {
+    font-size: .8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .migration .step-content .detail {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    margin-top: .25rem;
+  }
+  .migration .stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .migration .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    text-align: center;
+  }
+  .migration .stat .val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .migration .stat .lbl {
+    font-size: .7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Logic'Ciel — Carte des Contextes</h1>
+  <p>Mémoire persistante du projet entre les sessions IA. Cliquez sur une carte pour ouvrir le fichier dans Cursor.</p>
+</div>
+
+<div class="section-title">Fichiers contexte</div>
+
+<div class="grid">
+
+  <div class="card master" onclick="openInCursor('.cursor/rules/context.mdc')">
+    <div class="card-top">
+      <div class="card-icon">🏗️</div>
+      <span class="badge badge-master">Maître</span>
+    </div>
+    <h3>Vue d'ensemble</h3>
+    <div class="filename">.cursor/rules/context.mdc</div>
+    <p class="desc">Stack technique, infrastructure, arborescence, modules client, entités Doctrine, architecture multi-tenant, migration Planetair974, clients actifs.</p>
+    <div class="card-tags">
+      <span class="tag">Symfony</span>
+      <span class="tag">Next.js</span>
+      <span class="tag">Docker</span>
+      <span class="tag">19 modules</span>
+      <span class="tag">Multi-tenant</span>
+      <span class="tag" style="background:#166534;color:#bbf7d0">Migration Planetair ✅</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : <strong>toujours</strong></span>
+      <span class="badge badge-ok" id="status-master">✓ À jour</span>
+    </div>
+  </div>
+
+  <div class="card vapi" onclick="openInCursor('.cursor/rules/context-vapi.mdc')">
+    <div class="card-top">
+      <div class="card-icon">🎙️</div>
+      <span class="badge badge-ok" id="status-vapi">✓ À jour</span>
+    </div>
+    <h3>Assistant Vocal — Vapi.ai</h3>
+    <div class="filename">.cursor/rules/context-vapi.mdc</div>
+    <p class="desc">Routes admin et webhook, VapiService, panneau frontend, configuration voice provider, bug fixes historiques.</p>
+    <div class="card-tags">
+      <span class="tag">VapiService</span>
+      <span class="tag">Webhook</span>
+      <span class="tag">11labs</span>
+      <span class="tag">ClientsEdit.tsx</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers Vapi</span>
+      <span>~60 lignes</span>
+    </div>
+  </div>
+
+  <div class="card ai" onclick="openInCursor('.cursor/rules/context-ai.mdc')">
+    <div class="card-top">
+      <div class="card-icon">🤖</div>
+      <span class="badge badge-ok" id="status-ai">✓ À jour</span>
+    </div>
+    <h3>IA — Kimi, Score OPS, Météo</h3>
+    <div class="filename">.cursor/rules/context-ai.mdc</div>
+    <p class="desc">Kimi K2.5 (Moonshot), briefing météo, interprétation NOTAM, Score OPS, proxy NOAA/Notamify, conditions d'affichage frontend.</p>
+    <div class="card-tags">
+      <span class="tag">KimiAiService</span>
+      <span class="tag">ScoreOps</span>
+      <span class="tag">METAR/TAF</span>
+      <span class="tag">NOTAM</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers IA/météo</span>
+      <span>~80 lignes</span>
+    </div>
+  </div>
+
+  <div class="card billing" onclick="openInCursor('.cursor/rules/context-billing.mdc')">
+    <div class="card-top">
+      <div class="card-icon">💰</div>
+      <span class="badge badge-ok" id="status-billing">✓ À jour</span>
+    </div>
+    <h3>Facturation — Odoo</h3>
+    <div class="filename">.cursor/rules/context-billing.mdc</div>
+    <p class="desc">JSON-RPC Odoo SaaS, PricingCategory, PricingTier, ModulePack, calcul mensuel, sync bidirectionnelle, BillingCronCommand.</p>
+    <div class="card-tags">
+      <span class="tag">OdooApiService</span>
+      <span class="tag">ModulePack</span>
+      <span class="tag">PricingTier</span>
+      <span class="tag">CRON</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers facturation</span>
+      <span>~90 lignes</span>
+    </div>
+  </div>
+
+  <div class="card deploy" onclick="openInCursor('.cursor/rules/context-deploy.mdc')">
+    <div class="card-top">
+      <div class="card-icon">🚀</div>
+      <span class="badge badge-ok" id="status-deploy">✓ À jour</span>
+    </div>
+    <h3>Déploiement & Debugging</h3>
+    <div class="filename">.cursor/rules/context-deploy.mdc</div>
+    <p class="desc">Procédures Docker (build, cp, restart), schema Doctrine, logs, pièges connus (cache, compose files, paths).</p>
+    <div class="card-tags">
+      <span class="tag">Docker</span>
+      <span class="tag">Doctrine</span>
+      <span class="tag">Cache</span>
+      <span class="tag">DigitalOcean</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers Docker/config</span>
+      <span>~100 lignes</span>
+    </div>
+  </div>
+
+  <div class="card vapi" onclick="openInCursor('.cursor/rules/context-preferences.mdc')" style="cursor:pointer">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--accent-dim)">👤</div>
+      <span class="badge badge-ok" id="status-prefs">✓ À jour</span>
+    </div>
+    <h3>Préférences Développeur</h3>
+    <div class="filename">.cursor/rules/context-preferences.mdc</div>
+    <p class="desc">Langue, style de travail, règles de déploiement, conventions de code, comportement en cas de bug. Personnalise l'agent dès le départ.</p>
+    <div class="card-tags">
+      <span class="tag">Français</span>
+      <span class="tag">No auto-deploy</span>
+      <span class="tag">Conventions</span>
+      <span class="tag">Debug workflow</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : <strong>toujours</strong></span>
+      <span>~45 lignes</span>
+    </div>
+  </div>
+
+  <div class="card ai" onclick="openInCursor('.cursor/rules/context-code-map.mdc')">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--green-bg)">🗂️</div>
+      <span class="badge badge-ok" id="status-codemap">✓ À jour</span>
+    </div>
+    <h3>Cartographie du Code</h3>
+    <div class="filename">.cursor/rules/context-code-map.mdc</div>
+    <p class="desc">Chaque fichier PHP et React avec son rôle, ses dépendances et ses relations. Entités, Controllers, Services, Providers, Dashboard, Guards.</p>
+    <div class="card-tags">
+      <span class="tag">8 Entités</span>
+      <span class="tag">7 Controllers</span>
+      <span class="tag">9 Services</span>
+      <span class="tag">~15 CRUD React</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers code</span>
+      <span>~170 lignes</span>
+    </div>
+  </div>
+
+  <div class="card deploy" onclick="openInCursor('.cursor/rules/context-git.mdc')" style="cursor:pointer">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--red-bg)">🔀</div>
+      <span class="badge badge-ok" id="status-git">✓ À jour</span>
+    </div>
+    <h3>Git & Workflow</h3>
+    <div class="filename">.cursor/rules/context-git.mdc</div>
+    <p class="desc">Périmètre repo, branches (local vs serveur), conventions de commit, workflow de déploiement direct, alertes sécurité.</p>
+    <div class="card-tags">
+      <span class="tag">main (local)</span>
+      <span class="tag">No CI/CD</span>
+      <span class="tag">Docker deploy</span>
+      <span class="tag">No .gitignore</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : <strong>toujours</strong></span>
+      <span>~70 lignes</span>
+    </div>
+  </div>
+
+  <div class="card maint" onclick="openInCursor('.cursor/rules/context-maintenance.mdc')">
+    <div class="card-top">
+      <div class="card-icon">🔧</div>
+      <span class="badge badge-ok" id="status-maint">✓ À jour</span>
+    </div>
+    <h3>Règle de Maintenance</h3>
+    <div class="filename">.cursor/rules/context-maintenance.mdc</div>
+    <p class="desc">Règle Cursor : rappelle à l'agent de proposer la mise à jour des contextes après chaque session significative.</p>
+    <div class="card-tags">
+      <span class="tag">Règle auto</span>
+      <span class="tag">Proactive</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : toujours (règle)</span>
+      <span>~40 lignes</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-title">Features livrées</div>
+
+<div class="grid">
+  <div class="card master" onclick="window.open('migration-planetair.html','_blank')" style="cursor:pointer">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--green-bg)">✈️</div>
+      <span class="badge badge-ok">✅ Terminée</span>
+    </div>
+    <h3>Migration Planetair → Logic'Ciel</h3>
+    <div class="filename">docs/migration-planetair.html</div>
+    <p class="desc">Migration complète de la base Planetair-Gestion (mono-tenant) vers Logic'Ciel SaaS (client_id = 5). ~16 300 lignes, 30 tables, 25 users.</p>
+    <div class="card-tags">
+      <span class="tag">client_id = 5</span>
+      <span class="tag">+10 000 offset</span>
+      <span class="tag">09/04/2026</span>
+      <span class="tag" style="background:#431407;color:#fb923c">43 médias manuels</span>
+    </div>
+    <div class="card-footer">
+      <span>Phases 1-4 validées</span>
+      <span>Phase 5 UI : à tester</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Chantier en cours</div>
+
+<div class="grid">
+  <div class="card vapi" onclick="window.open('assistants-ia.html','_blank')" style="cursor:pointer">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--purple-bg)">🧠</div>
+      <span class="badge badge-warn">Phase 4/13</span>
+    </div>
+    <h3>Assistants IA — Paramétrisation Métier</h3>
+    <div class="filename">docs/assistants-ia.html</div>
+    <p class="desc">Rendre VAPI (vocal) et IA Réservation (email) opérationnels avec un contexte métier dynamique et paramétrable par client SaaS. Plan de test complet (72 tests), 18 problèmes/lacunes identifiés.</p>
+    <div class="card-tags">
+      <span class="tag" style="background:#052e16;color:#4ade80">Backend déployé</span>
+      <span class="tag" style="background:#431407;color:#fb923c">18 problèmes/lacunes</span>
+      <span class="tag" style="background:#2e1065;color:#c084fc">72 tests planifiés</span>
+      <span class="tag" style="background:#2e1065;color:#c084fc">12 fichiers impactés</span>
+    </div>
+    <div class="card-footer">
+      <span>Plan de test complet rédigé</span>
+      <span>AssistantContextBuilder à créer</span>
+    </div>
+  </div>
+</div>
+
+<div class="migration">
+  <h2>Avancement — Assistants IA (révisé 09/04/2026)</h2>
+  <p class="subtitle">13 phases — diagnostic complet + plan de test dans <a href="assistants-ia.html" style="color:var(--accent)">la page dédiée</a> (72 tests, 18 problèmes/lacunes, 12 fichiers)</p>
+
+  <div class="step step-done">
+    <div class="step-num">1</div>
+    <div class="step-content"><h4>Backend VAPI déployé</h4><p>5 routes, 2 clients actifs</p></div>
+  </div>
+  <div class="step step-done">
+    <div class="step-num">2</div>
+    <div class="step-content"><h4>Backend IA Email déployé</h4><p>4 routes + commande poll</p></div>
+  </div>
+  <div class="step step-done">
+    <div class="step-num">3</div>
+    <div class="step-content"><h4>Analyse flux métier + plan de test</h4><p>17 champs Reservation, 18 problèmes/lacunes, 72 tests planifiés</p></div>
+  </div>
+  <div class="step step-active">
+    <div class="step-num">4</div>
+    <div class="step-content"><h4>AssistantContextBuilder</h4><p>Service central : collecte métier + prompt dynamique — 15 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">4b</div>
+    <div class="step-content"><h4>Historique messages</h4><p>Champ <code>messages</code> sur ConversationThread + appendMessage()</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">5</div>
+    <div class="step-content"><h4>ReservationFactory</h4><p>Code auto, statut, couleur, origine auto-créée, option, cadeau, email conf — 14 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">6</div>
+    <div class="step-content"><h4>Intégration VAPI</h4><p>Prompt dynamique + check_gift_code + ReservationFactory + appendMessage — 17 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">7</div>
+    <div class="step-content"><h4>Intégration Email IA</h4><p>Prompt dynamique + création résa auto + anti double-booking — 8 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">8</div>
+    <div class="step-content"><h4>Client + Frontend</h4><p>Consignes + preview prompt + update VAPI — 6 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">8b</div>
+    <div class="step-content"><h4>Sécurité + réponse admin</h4><p>Webhook secret + endpoint reply manuel</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">9</div>
+    <div class="step-content"><h4>Dashboard conversations</h4><p>Timeline messages, décisions IA, actions admin — 11 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">10</div>
+    <div class="step-content"><h4>Mise en service Email</h4><p>IMAP, CRON, test complet — 6 tests</p></div>
+  </div>
+  <div class="step step-pending">
+    <div class="step-num">11</div>
+    <div class="step-content"><h4>Tests E2E + transversaux</h4><p>11 scénarios E2E + 5 transversaux — 16 tests</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="val">3 / 13</div><div class="lbl">Phases</div></div>
+    <div class="stat"><div class="val">18</div><div class="lbl">Problèmes</div></div>
+    <div class="stat"><div class="val">72</div><div class="lbl">Tests</div></div>
+    <div class="stat"><div class="val">2</div><div class="lbl">Services à créer</div></div>
+    <div class="stat"><div class="val">12</div><div class="lbl">Fichiers impactés</div></div>
+  </div>
+</div>
+
+<div class="section-title">Guide de mise à jour</div>
+
+<div class="guide">
+  <h2>Quel fichier mettre à jour selon le changement ?</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Type de changement</th>
+        <th>Fichier(s) concerné(s)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Nouvelle entité / champ Doctrine</td>
+        <td><code>context.mdc</code></td>
+      </tr>
+      <tr>
+        <td>Nouveau module client (boolean)</td>
+        <td><code>context.mdc</code></td>
+      </tr>
+      <tr>
+        <td>Nouvelle route / controller</td>
+        <td><code>context.mdc</code> + fichier domaine</td>
+      </tr>
+      <tr>
+        <td>Modification Vapi (routes, tools, webhook)</td>
+        <td><code>context-vapi.mdc</code></td>
+      </tr>
+      <tr>
+        <td>Modification IA / météo / Score OPS</td>
+        <td><code>context-ai.mdc</code></td>
+      </tr>
+      <tr>
+        <td>Modification facturation / Odoo / packs</td>
+        <td><code>context-billing.mdc</code></td>
+      </tr>
+      <tr>
+        <td>Changement infra / Docker / déploiement</td>
+        <td><code>context-deploy.mdc</code></td>
+      </tr>
+      <tr>
+        <td>Bug fix critique (pattern à retenir)</td>
+        <td>Fichier domaine concerné</td>
+      </tr>
+      <tr>
+        <td>Nouveau domaine fonctionnel</td>
+        <td>Créer un <code>context-*.mdc</code></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="prompt-box">
+  <div class="icon">💡</div>
+  <div class="text">
+    En fin de session, demandez à l'agent Cursor :<br>
+    <code>« Mets à jour les fichiers context concernés par cette session »</code>
+  </div>
+</div>
+
+<script>
+  const PROJECT_ROOT = '/Users/mhoar/Desktop/CREAZOT-ULM';
+
+  function openInCursor(relativePath) {
+    const fullPath = PROJECT_ROOT + '/' + relativePath;
+    window.location.href = 'vscode://file' + fullPath;
+  }
+
+  const dates = {
+    master:  '2026-04-09',
+    vapi:    '2026-04-09',
+    ai:      '2026-04-09',
+    billing: '2026-03-26',
+    deploy:  '2026-03-26',
+    prefs:   '2026-03-26',
+    codemap: '2026-04-09',
+    git:     '2026-03-26',
+    maint:   '2026-03-26',
+  };
+
+  function checkStaleness() {
+    const now = new Date();
+    Object.entries(dates).forEach(([key, dateStr]) => {
+      const d = new Date(dateStr);
+      const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+      const el = document.getElementById('status-' + key);
+      if (!el) return;
+      if (diffDays > 30) {
+        el.textContent = '⚠ ' + diffDays + 'j';
+        el.className = 'badge badge-warn';
+      } else {
+        el.textContent = '✓ ' + dateStr;
+        el.className = 'badge badge-ok';
+      }
+    });
+  }
+  checkStaleness();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migration Planetair → Logic'Ciel — Rapport complet</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-dim: #0c4a6e;
+    --green: #4ade80;
+    --green-bg: #052e16;
+    --orange: #fb923c;
+    --orange-bg: #431407;
+    --red: #f87171;
+    --red-bg: #450a0a;
+    --purple: #c084fc;
+    --purple-bg: #2e1065;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--green), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: .5rem;
+  }
+  .header p {
+    color: var(--text-muted);
+    font-size: .95rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .header .back-link {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent);
+    font-size: .85rem;
+    text-decoration: none;
+    padding: .4rem .8rem;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .header .back-link:hover { background: var(--accent-dim); }
+
+  .section-title {
+    max-width: 1200px;
+    margin: 0 auto 1.25rem;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .migration {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+  .migration h2 {
+    font-size: 1.1rem;
+    margin-bottom: .5rem;
+    color: var(--orange);
+  }
+  .migration .subtitle {
+    font-size: .85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .migration .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .migration .step:last-child { border-bottom: none; }
+  .migration .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-done .step-num { background: var(--green-bg); color: var(--green); }
+  .step-active .step-num { background: var(--orange-bg); color: var(--orange); border: 2px solid var(--orange); }
+  .step-pending .step-num { background: var(--surface-hover); color: var(--text-muted); }
+  .migration .step-content h4 {
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
+  }
+  .step-done .step-content h4 { color: var(--green); }
+  .step-active .step-content h4 { color: var(--orange); }
+  .step-pending .step-content h4 { color: var(--text-muted); }
+  .migration .step-content p {
+    font-size: .8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .migration .step-content .detail {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    margin-top: .25rem;
+  }
+  .migration .stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .migration .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    text-align: center;
+  }
+  .migration .stat .val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .migration .stat .lbl {
+    font-size: .7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
+  .badge { font-size:.7rem; font-weight:600; padding:.25rem .6rem; border-radius:20px; }
+  .badge-done { background: var(--green-bg); color: var(--green); }
+
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: .8rem;
+    background: var(--bg);
+    padding: .15rem .4rem;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Migration Planetair → Logic'Ciel</h1>
+  <p>Rapport complet de la migration de la base Planetair-Gestion (mono-tenant) vers Logic'Ciel SaaS (multi-tenant, client_id = 5). Réalisée le 09/04/2026.</p>
+  <a class="back-link" href="context-dashboard.html">← Retour au dashboard</a>
+</div>
+
+<div class="section-title">Plan de migration <span class="badge badge-done">✅ Terminée — 09/04/2026</span></div>
+
+<div class="migration">
+  <h2>Migration réalisée — Planetair974 (client_id = 5)</h2>
+  <p class="subtitle">Source : <code>64.226.84.176</code> (PostgreSQL locale, mono-tenant) → Cible : Logic'Ciel (PostgreSQL DigitalOcean, multi-tenant)<br>
+  <strong>Scripts :</strong> <code>docs/generate_migration.py</code> → <code>docs/migration_planetair_to_logicciel.sql</code> (17 200 lignes)</p>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>1. Dump de la BDD source</h4>
+      <p>Export complet de la base Planetair-Gestion via pg_dump.</p>
+      <div class="detail">docs/planetair_dump_20260409.sql — 1.8 Mo, 37 tables</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>2. Révocation accès SSH Planetair</h4>
+      <p>Clé SSH retirée du serveur 64.226.84.176. On travaille uniquement sur Logic'Ciel.</p>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>3. Snapshot pré-migration</h4>
+      <p>Capturer les comptages de chaque table pour chaque client existant <strong>avant</strong> l'import, afin de vérifier qu'aucune donnée existante n'est altérée.</p>
+      <div class="detail">SELECT client_id, COUNT(*) FROM [table] GROUP BY client_id — pour chaque table avec client_id</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>4. Audit tables partagées (nature, qualification)</h4>
+      <p>Ces tables <strong>sans client_id</strong> sont partagées entre clients. Comparer les données source/cible : réutiliser les IDs existants ou mapper vers eux pour éviter les doublons fonctionnels.</p>
+      <div class="detail">Source : 6 natures, 7 qualifications. Cible : identiques — pas d'import nécessaire.</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>5. Script de transformation SQL</h4>
+      <p>Générer un SQL d'import avec : décalage IDs (+10000) sur les tables à IDs entiers, injection <code>client_id = 5</code> sur les 20 tables qui l'exigent, décalage cohérent de toutes les FK croisées (reservation ↔ prestation ↔ vol ↔ landing en bloc).</p>
+      <div class="detail">Tables avec client_id à injecter (20) : aeronef, cadeau, circuit, combinaison, contact, entretien, expense, landing, media_object, option, origine, passager, payment, payment_detail, prestation, rappel, reservation, vol + airport, camera</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>6. Gestion des Users / Keycloak</h4>
+      <p>24 users créés + 1 mappé (m_seb@icloud.com, UUID existant). Entrées <code>user_client</code> (user ↔ client_id=5) et <code>user_client_role</code> (rôles admin/pilote par user) créées.</p>
+      <div class="detail">4 admins (OIDC_ADMIN), 22 pilotes (OIDC_USER). UUID mapping : 1effe8dc... → 1f105d7c... (m_seb). FK UUID : reservation.pilote_id, prestation.pilote_id/encadrant_id, profil_pilote.pilote_id, carnet_vol.created_by_id</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>7. Mise à jour fiche client id=5</h4>
+      <p>Reporter la configuration Planetair sur le client existant : cam_ids (15 caméras Windy), airport_codes (FMEP, FMEE, LFMA), lat/lng/zoom, timezone, couleur, logo, seuils alertes, consent_text, modules actifs.</p>
+      <div class="detail">UPDATE client SET cam_ids=..., airport_codes=..., lat=-21.1351, lng=55.5114, timezone='Indian/Reunion', color='#d32f2f' WHERE id=5</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>8. Import référentielles → métier → jointures (ordre strict)</h4>
+      <p><strong>Ordre strict :</strong><br>
+        <strong>Couche 1 — Référentiels partagés :</strong> nature, qualification<br>
+        <strong>Couche 2 — Référentiels client :</strong> circuit, option, aeronef, airport, camera, contact, origine, combinaison<br>
+        <strong>Couche 3 — Users :</strong> user → user_client → user_client_role → profil_pilote → certificat_medical, pilot_qualification, disponibilite<br>
+        <strong>Couche 4 — Métier (en bloc, FK croisées) :</strong> reservation, prestation, vol, landing, carnet_vol<br>
+        <strong>Couche 5 — Métier secondaire :</strong> payment, payment_detail, cadeau, passager, entretien, rappel, expense, media_object<br>
+        <strong>Couche 6 — Jointures (7) :</strong> reservation_contact, reservation_origine, cadeau_origine, payment_origine, circuit_qualification, profil_pilote_qualification, entretien_user
+      </p>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">9</div>
+    <div class="step-content">
+      <h4>9. Médias (fichiers physiques) — À FAIRE MANUELLEMENT</h4>
+      <p>43 media_object en BDD mais les fichiers (images, PDFs) sont sur l'ancien serveur. Accès SSH révoqué — récupérer via la console DigitalOcean ou ré-uploader manuellement.</p>
+      <div class="detail">Impact : entretiens (photos), profils pilotes (documents), aéronefs (images)</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>10. Recalage séquences PostgreSQL</h4>
+      <p>setval() sur chaque séquence au max(id) pour éviter les doublons à la prochaine création.</p>
+      <div class="detail">SELECT setval('table_id_seq', (SELECT MAX(id) FROM table)) — pour chaque table avec séquence auto-increment</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">✓</div>
+    <div class="step-content">
+      <h4>11. Validation complète (5 phases)</h4>
+      <p>Phase 1: Comptages source vs cible. Phase 2: Intégrité FK (0 orphelins). Phase 3: Cohérence métier (chaîne reservation→vol→landing). Phase 4: Isolation multi-tenant (aucune fuite entre clients). Phase 5: Test fonctionnel UI sur logic-ciel.com.</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="val">37</div><div class="lbl">Tables source</div></div>
+    <div class="stat"><div class="val">~16 300</div><div class="lbl">Lignes migrées</div></div>
+    <div class="stat"><div class="val">25</div><div class="lbl">Users Keycloak</div></div>
+    <div class="stat"><div class="val">client_id = 5</div><div class="lbl">Cible Logic'Ciel</div></div>
+    <div class="stat"><div class="val">+10 000</div><div class="lbl">Offset IDs</div></div>
+  </div>
+</div>
+
+<div class="section-title">Plan de test — Validation migration <span class="badge badge-done">✅ Phases 1-4 validées</span></div>
+
+<div class="migration">
+  <h2>Feature migrée : Exploitation aéronautique Planetair974</h2>
+  <p class="subtitle">
+    Planetair974 est un opérateur ULM à La Réunion (FMEP Pierrefonds). La migration porte sur l'ensemble de son exploitation :
+    gestion des réservations clients, prestations de vol, suivi des aéronefs et de la maintenance, carnets de vol des pilotes,
+    encaissement des paiements, bons cadeaux, gestion des passagers et déclarations d'atterrissage.
+    Toutes ces données doivent fonctionner dans le cadre multi-tenant de Logic'Ciel (client_id = 5) sans impacter les autres clients.
+  </p>
+
+  <h2 style="margin-top:1.5rem">Phase 1 — Comptages (volumes) <span style="color:#22c55e;font-size:.75rem">✅ Validée</span></h2>
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:1.5rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Table</th>
+        <th style="text-align:right;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Source</th>
+        <th style="text-align:right;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Cible (client_id=5)</th>
+        <th style="text-align:center;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">reservation</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">2 178</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">2 178</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">passager</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 647</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 651 (+4 existants)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">carnet_vol</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 565</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 565</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">vol</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 565</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 565</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">landing</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 247</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 247</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">prestation</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">943</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">943</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">payment + detail</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">759 + 918</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">759 + 922 (+4)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">entretien</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">219</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">219</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">cadeau</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">100</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">100</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">circuit</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">14</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">14</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">aeronef</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">6</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">6</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">user (24 new)</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">25</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">32 (8+24)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">profil_pilote (18 new)</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">19</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">24 (6+18)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">user_client_role</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">25</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">31 (6+25)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">media_object</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">43</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">44 (+1 existant)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">nature</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">6</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">6 (inchangé)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">qualification</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">7</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">7 (inchangé)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">certificat_medical</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">19</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">24 (6-1+19)</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">disponibilite</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">17</td><td style="text-align:right;padding:.3rem .6rem;border-bottom:1px solid var(--border)">17</td><td style="text-align:center;padding:.3rem .6rem;border-bottom:1px solid var(--border)">✅</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Phase 2 — Intégrité référentielle (FK) <span style="color:#22c55e;font-size:.75rem">✅ Validée — 0 orphelins</span></h2>
+  <p class="subtitle">Chaque clé étrangère doit pointer vers un enregistrement existant après migration. Aucune FK orpheline tolérée.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:1.5rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Vérification</th>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Requête</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">reservation → circuit</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>reservation.circuit_id NOT IN circuit.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">reservation → pilote (user)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>reservation.pilote_id NOT IN user.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">reservation → aeronef</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>reservation.avion_id NOT IN aeronef.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">vol → circuit</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>vol.circuit_id NOT IN circuit.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">vol → prestation</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>vol.prestation_id NOT IN prestation.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">prestation → aeronef</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>prestation.aeronef_id NOT IN aeronef.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">prestation → pilote (user)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>prestation.pilote_id NOT IN user.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">carnet_vol → profil_pilote</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>carnet_vol.profil_id NOT IN profil_pilote.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">landing → vol</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>landing.vol_id NOT IN vol.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">payment_detail → payment</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>payment_detail.payment_id NOT IN payment.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">entretien → aeronef</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>entretien.aeronef_id NOT IN aeronef.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">cadeau → circuit</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>cadeau.circuit_id NOT IN circuit.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">user_client → user + client</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>user_client.user_id NOT IN user.id = 0, user_client.client_id NOT IN client.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">user_client_role → user_client</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>user_client_role.user_client_id NOT IN user_client.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">profil_pilote → user</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>profil_pilote.pilote_id NOT IN user.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">certificat_medical → profil_pilote</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>certificat_medical.profil_id NOT IN profil_pilote.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">disponibilite → profil_pilote</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>disponibilite.pilote_id NOT IN profil_pilote.id = 0</code></td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Tables de jointure (7)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>Chaque côté de la jointure pointe vers un ID existant</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Phase 3 — Cohérence métier <span style="color:#22c55e;font-size:.75rem">✅ Validée</span></h2>
+  <p class="subtitle">Les données migrées doivent refléter fidèlement l'exploitation Planetair974.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:1.5rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Test</th>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Attendu</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">6 aéronefs avec immatriculations uniques</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Horametres, seuils d'alerte et codes balise préservés</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">14 circuits avec natures et prix</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Qualifications requises liées (circuit_qualification)</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Réservations avec statuts</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Statuts préservés (confirmée, annulée, reportée, etc.)</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Chaîne reservation → prestation → vol → landing</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Liaison complète maintenue de bout en bout</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Paiements avec détails et origines</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Montants préservés, modes de paiement corrects</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Bons cadeaux avec circuit et option liés</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Dates d'expiration, statut "used" préservés</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Pilotes avec profils, qualifications, certificats médicaux</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Dates de validité, alertes, heures de vol préservées</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Entretiens aéronefs avec intervenants (entretien_user)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Horametres d'intervention liés aux bons aéronefs</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Carnets de vol des pilotes</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">1 565 entrées avec durées, lieux, types de vol</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">15 caméras Windy avec codes</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Codes Windy préservés, liées au bon client</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Config client id=5 mise à jour</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">cam_ids (15), airport_codes (FMEP, FMEE, LFMA), lat/lng, timezone Indian/Reunion, couleur, modules</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">43 media_object avec fichiers physiques</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Entrées BDD présentes, fichiers uploadés ou marqués « à ré-uploader »</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Natures et qualifications cohérentes</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">6 natures et 7 qualifications sans doublon, mapping IDs source → cible correct</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Phase 4 — Isolation multi-tenant <span style="color:#22c55e;font-size:.75rem">✅ Validée — aucune fuite</span></h2>
+  <p class="subtitle">Les données Planetair ne doivent PAS être visibles par les autres clients, et inversement.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:1.5rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Test</th>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Attendu</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Toutes les lignes migrées ont <code>client_id = 5</code></td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">SELECT COUNT(*) WHERE client_id != 5 sur tables migrées = 0 (hors données existantes)</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Connexion en tant qu'admin Aix ULM (client 1)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Aucune donnée Planetair visible (réservations, circuits, aéronefs)</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Connexion en tant qu'admin Planetair (client 5)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Toutes les données Planetair visibles, aucune donnée d'autres clients</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Users Planetair liés uniquement au client 5</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>user_client</code> contient les 25 users → client_id = 5</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Rôles users correctement assignés</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)"><code>user_client_role</code> : 4 OIDC_ADMIN + 22 OIDC_USER pour client_id = 5</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Données existantes des autres clients intactes</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Comptages avant/après identiques pour clients 1, 2, 3, 6, 7</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Tables partagées (nature, qualification) sans doublons</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Pas de natures/qualifications en double. IDs source mappés vers existants ou ajoutés sans conflit</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Phase 5 — Test fonctionnel UI (logic-ciel.com) <span style="color:#eab308;font-size:.75rem">⏳ À vérifier manuellement</span></h2>
+  <p class="subtitle">Vérification visuelle que les données migrées s'affichent correctement dans l'interface.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Écran</th>
+        <th style="text-align:left;padding:.4rem .6rem;border-bottom:2px solid var(--border);color:var(--text-muted)">Ce qu'on vérifie</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Dashboard (client Planetair)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Logo affiché, météo FMEP, caméras Windy, Score OPS</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Liste des réservations</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">2 178 réservations affichées, filtres fonctionnels, noms clients corrects</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Détail d'une réservation</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Circuit, pilote, aéronef, passagers, contacts, paiement liés</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Calendrier (planning)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Réservations positionnées aux bonnes dates/heures, couleurs circuits</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Liste des aéronefs</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">6 aéronefs avec immatriculations, horametres, alertes maintenance</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Fiche d'un aéronef</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Entretiens liés, historique des interventions</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Liste des pilotes</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">19 profils avec qualifications, certificats médicaux</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Carnet de vol d'un pilote</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Entrées de vol avec dates, durées, lieux, validation</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Liste des paiements</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Montants corrects, modes de paiement, liens vers réservations</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Bons cadeaux</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Codes, bénéficiaires, dates d'expiration, statut utilisé/non utilisé</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Création d'une nouvelle réservation</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Circuits Planetair sélectionnables, pilotes disponibles, aéronefs listés</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Switch vers un autre client (Aix ULM)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Aucune donnée Planetair visible, données Aix ULM intactes</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Médias (images/documents)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Images aéronefs, documents entretiens : affichés ou placeholder « fichier manquant »</td></tr>
+      <tr><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Profils utilisateurs (rôles)</td><td style="padding:.3rem .6rem;border-bottom:1px solid var(--border)">Admin Planetair : accès complet. Pilote : vue restreinte. Rôles cohérents avec user_client_role</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

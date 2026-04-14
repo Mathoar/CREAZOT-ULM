@@ -1,0 +1,250 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity;
+
+use ApiPlatform\Metadata\ApiProperty;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Put;
+use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use Symfony\Component\Uid\Uuid;
+use App\Entity\ProfilPilote;
+
+/**
+ * A person (alive, dead, undead, or fictional).
+ *
+ * @see https://schema.org/Person
+ */
+#[ApiResource(
+    types: ['https://schema.org/Person'],
+    operations: [
+        new GetCollection(
+            uriTemplate: '/users{._format}',
+            itemUriTemplate: '/users/{id}{._format}',
+            security: 'is_granted("OIDC_USER")',
+            filters: [
+                'app.filter.user.admin.name',
+                'app.filter.user.email',
+                'app.filter.user.profil'
+            ],
+            paginationClientItemsPerPage: true
+        ),
+        new Get(
+            uriTemplate: '/users/{id}{._format}',
+            security: 'is_granted("OIDC_ADMIN") or object === user'
+        ),
+        new Put(
+            uriTemplate: '/users/{id}{._format}',
+            security: 'is_granted("OIDC_ADMIN")'
+        ),
+    ],
+    normalizationContext: [
+        AbstractNormalizer::GROUPS => ['User:read'],
+        AbstractObjectNormalizer::SKIP_NULL_VALUES => true,
+    ],
+    denormalizationContext: [
+        AbstractNormalizer::GROUPS => ['User:write'],
+    ],
+)]
+#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Table(name: '`user`')]
+#[UniqueEntity('email')]
+class User implements UserInterface
+{
+    /**
+     * @see https://schema.org/identifier
+     */
+    #[ApiProperty(types: ['https://schema.org/identifier'])]
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\CustomIdGenerator(class: UuidGenerator::class)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[Groups(groups: ['User:read', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Profil_pilote:read', 'Disponibilite:read'])]
+    #[ORM\Id]
+    private ?Uuid $id = null;
+
+    /**
+     * @see https://schema.org/email
+     */
+    #[ORM\Column(unique: true)]
+    #[Groups(groups: ['User:read', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Profil_pilote:read', 'CarnetVol:read', 'Disponibilite:read'])]
+    public ?string $email = null;
+
+    /**
+     * @see https://schema.org/givenName
+     */
+    #[ApiProperty(types: ['https://schema.org/givenName'])]
+    #[Groups(groups: ['User:read', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Profil_pilote:read', 'Landing:read', 'CarnetVol:read', 'Disponibilite:read'])]
+    #[ORM\Column]
+    public ?string $firstName = null;
+
+    /**
+     * @see https://schema.org/familyName
+     */
+    #[ApiProperty(types: ['https://schema.org/familyName'])]
+    #[Groups(groups: ['User:read', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Profil_pilote:read', 'Landing:read', 'CarnetVol:read', 'Disponibilite:read'])]
+    #[ORM\Column]
+    public ?string $lastName = null;
+
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
+
+    #[ORM\OneToOne(targetEntity: ProfilPilote::class, mappedBy:'pilote', cascade: ['persist', 'remove'])]
+    #[Groups(groups: ['User:read', 'Prestation:read', 'Vol:read'])]
+    private ?ProfilPilote $profilPilote = null;
+
+    #[ORM\Column(type: 'string', length: 255, unique: true, nullable: true)]
+    private ?string $keycloakId = null;
+
+    /**
+     * @var Collection<int, Client>
+     */
+    #[ORM\ManyToMany(targetEntity: Client::class, inversedBy: 'users')]
+    #[ORM\JoinTable(name: 'user_client')]
+    #[Groups(groups: ['User:read', 'User:write', 'Profil_pilote:read'])]
+    private Collection $clients;
+
+    public function __construct()
+    {
+        $this->clients = new ArrayCollection();
+    }
+
+    public function getId(): ?Uuid
+    {
+        return $this->id;
+    }
+
+    public function eraseCredentials(): void
+    {
+    }
+
+    /**
+     * @return array<int, string>
+     */
+   public function getRoles(): array
+    {
+        $roles = $this->roles;
+
+        // garantit qu'un utilisateur a toujours au moins ROLE_USER
+        if (!in_array('ROLE_USER', $roles)) {
+            $roles[] = 'ROLE_USER';
+        }
+
+        return array_unique($roles);
+    }
+
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    /**
+     * @see https://schema.org/name
+     */
+    #[ApiProperty(iris: ['https://schema.org/name'])]
+    #[Groups(groups: ['User:read', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Landing:read'])]
+    public function getName(): ?string
+    {
+        if (!$this->firstName && !$this->lastName) {
+            return null;
+        }
+
+        return trim(\sprintf('%s %s', $this->firstName, $this->lastName));
+    }
+
+    public function setId(Uuid $id): self
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * @param array<int, string> $roles
+     */
+    public function setRoles(array $roles): self
+    {
+        $this->roles = $roles;
+
+        return $this;
+    }
+
+    public function getProfilPilote(): ?ProfilPilote
+    {
+        return $this->profilPilote;
+    }
+
+    public function setProfilPilote(?ProfilPilote $profilPilote): self
+    {
+        $this->profilPilote = $profilPilote;
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function getFirstName(): ?string
+    {
+        return $this->firstName;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+
+    public function getKeycloakId(): ?string
+    {
+        return $this->keycloakId;
+    }
+
+    public function setKeycloakId(?string $keycloakId): self
+    {
+        $this->keycloakId = $keycloakId;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Client>
+     */
+    public function getClients(): Collection
+    {
+        return $this->clients;
+    }
+
+    public function addClient(Client $client): static
+    {
+        if (!$this->clients->contains($client)) {
+            $this->clients->add($client);
+        }
+
+        return $this;
+    }
+
+    public function removeClient(Client $client): static
+    {
+        $this->clients->removeElement($client);
+
+        return $this;
+    }
+
+    public function hasClient(Client $client): bool
+    {
+        return $this->clients->contains($client);
+    }
+}

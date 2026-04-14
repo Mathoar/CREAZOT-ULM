@@ -1,0 +1,235 @@
+"use client";
+
+import Head from "next/head";
+import { useEffect, useRef } from "react";
+import { type DataProvider, defaultTheme, CustomRoutes } from "react-admin";
+import { Route } from 'react-router-dom';
+import { signIn } from "next-auth/react";
+import SyncLoader from "react-spinners/SyncLoader";
+import { fetchHydra, HydraAdmin, hydraDataProvider, ResourceGuesser } from "@api-platform/admin";
+import { parseHydraDocumentation } from "@api-platform/api-doc-parser";
+import { type Session } from "../../app/auth";
+import authProvider from "../../components/admin/authProvider";
+import Layout from "./layout/Layout";
+import { ENTRYPOINT } from "../../config/entrypoint";
+import prestationResourceProps from "./prestation";
+import circuitResourceProps from "./circuit";
+import volResourceProps from "./vol/";
+import i18nProvider from "./i18nProvider";
+import Dashboard from "../dashboard/components/Dashboard/Dashboard";
+import entretienResourceProps from "./entretien";
+import { MembersList } from "./members/MembersList";
+import aeronefResourceProps from "./aeronef";
+import passagerResourceProps from "./passager";
+import userResourceProps from "./user";
+import reservationResourceProps from "./reservation";
+import origineResourceProps from "./origine";
+import contactResourceProps from "./contact";
+import cadeauResourceProps from "./cadeau";
+import combinaisonResourceProps from "./combinaison";
+import profileResourceProps from "./profile";
+import qualificationResourceProps from "./qualification";
+import natureResourceProps from "./nature";
+import optionResourceProps from "./option";
+import clientResourceProps from "./client";
+import paymentResourceProps from "./payment";
+import { LandingsList } from "./landing/LandingsList";
+import rappelResourceProps from "./rappel";
+import { ReservationCreate } from "./cadeau/ReservationCreate";
+import { useSessionContext, SessionContextProvider } from "../admin/SessionContextProvider";
+import { useClient } from "../admin/ClientProvider";
+import carnetVolResourceProps from "./carnetVol";
+import disponibiliteResourceProps from "./disponibilite";
+import airportResourceProps from "./airport";
+import cameraResourceProps from "./camera";
+import expenseResourceProps from "./expense";
+import pricingCategoryResourceProps from "./pricingCategory";
+import pricingTierResourceProps from "./pricingTier";
+import modulePackResourceProps from "./modulePack";
+import modulePackPriceResourceProps from "./modulePackPrice";
+import SubscriptionDashboard from "./subscription/SubscriptionDashboard";
+import UserGuard from "./guard/UserGuard";
+import ClientAttachmentRequest from "./guard/ClientAttachmentRequest";
+import clientAccessRequestResourceProps from "./clientAccessRequest";
+import { SiteSettingsList } from "./siteSettings/SiteSettingsList";
+import { SiteSettingsEdit } from "./siteSettings/SiteSettingsEdit";
+import icaoReferenceResourceProps from "./icaoReference";
+import countryCodeResourceProps from "./countryCode";
+import taxRateResourceProps from "./taxRate";
+import flightRuleResourceProps from "./flightRule";
+import conversationThreadResourceProps from "./conversationThread";
+
+const getClientHeaders = () => {
+  try {
+    const raw = sessionStorage.getItem('client');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.id) return { 'X-Client-Id': String(parsed.id) };
+    }
+  } catch (e) {}
+  return {};
+};
+
+const apiDocumentationParser = (session: Session) => async () => {
+  try {
+    return await parseHydraDocumentation(ENTRYPOINT, {
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+        ...getClientHeaders(),
+      },
+    });
+  } catch (result) {
+    // @ts-ignore
+    const { api, response, status } = result;
+    if (status !== 401 || !response) {
+      throw result;
+    }
+
+    return {
+      api,
+      response,
+      status,
+    };
+  }
+};
+
+const myTheme = {
+  ...defaultTheme,
+  palette: {
+      mode: 'light',
+  }
+};
+
+const AdminAdapter = ({
+  session,
+  children,
+}: {
+  session: Session;
+  children?: React.ReactNode | undefined;
+}) => {
+  // @ts-ignore
+  const dataProvider = useRef<DataProvider>();
+
+  dataProvider.current = hydraDataProvider({
+    entrypoint: ENTRYPOINT,
+    httpClient: (url: URL, options = {}) =>
+      fetchHydra(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+          ...getClientHeaders(),
+        },
+      }),
+    apiDocumentationParser: apiDocumentationParser(session),
+  });
+
+  return (
+    <HydraAdmin
+      requireAuth
+      authProvider={authProvider}
+      // @ts-ignore
+      dataProvider={dataProvider.current}
+      entrypoint={window.origin}
+      i18nProvider={i18nProvider}
+      dashboard={ Dashboard }
+      darkTheme={ null }
+      layout={Layout}
+    >
+      {!!children && children}      
+    </HydraAdmin>
+  );
+};
+
+const AdminWithOIDC = () => {
+  const { session, status } = useSessionContext();
+
+  if (status === "loading") {
+    return <SyncLoader size={8} color="#46B6BF" />;
+  }
+
+  // @ts-ignore
+  if (!session || session?.error === "RefreshAccessTokenError") {
+    (async () => await signIn("keycloak"))();
+
+    return;
+  }
+
+  return (
+    <UserGuard>
+      {/* @ts-ignore */}
+      <AdminAdapter session={session}>
+        <ResourceGuesser name="clients" {...clientResourceProps}/>
+        <ResourceGuesser name="prestations" {...prestationResourceProps} />
+        <ResourceGuesser name="vols" {...volResourceProps}/>
+        <ResourceGuesser name="passagers" {...passagerResourceProps}/>
+        <ResourceGuesser name="circuits" {...circuitResourceProps}/>
+        <ResourceGuesser name="aeronefs" {...aeronefResourceProps}/>
+        <ResourceGuesser name="options" {...optionResourceProps}/>
+        <ResourceGuesser name="natures" {...natureResourceProps}/>
+        <ResourceGuesser name="qualifications" {...qualificationResourceProps}/>
+        <ResourceGuesser name="combinaisons" {...combinaisonResourceProps}/>
+        <ResourceGuesser name="cadeaux" {...cadeauResourceProps}/>
+        <ResourceGuesser name="contacts" {...contactResourceProps}/>
+        <ResourceGuesser name="origines" {...origineResourceProps}/>
+        <ResourceGuesser name="entretiens" {...entretienResourceProps}/>
+        <ResourceGuesser name="users" {...userResourceProps}/>
+        <ResourceGuesser name="profil_pilotes" {...profileResourceProps}/>
+        <ResourceGuesser name="reservations" {...reservationResourceProps}/>
+        <ResourceGuesser name="rappels" {...rappelResourceProps}/>
+        <ResourceGuesser name="payments" {...paymentResourceProps}/>
+        <ResourceGuesser name="carnet_vols" {...carnetVolResourceProps}/>
+        <ResourceGuesser name="disponibilites" {...disponibiliteResourceProps}/>
+        <ResourceGuesser name="airports" {...airportResourceProps}/>
+        <ResourceGuesser name="cameras" {...cameraResourceProps}/>
+        <ResourceGuesser name="expenses" {...expenseResourceProps}/>
+        <ResourceGuesser name="pricing-categories" {...pricingCategoryResourceProps}/>
+        <ResourceGuesser name="pricing-tiers" {...pricingTierResourceProps}/>
+        <ResourceGuesser name="module-packs" {...modulePackResourceProps}/>
+        <ResourceGuesser name="module-pack-prices" {...modulePackPriceResourceProps}/>
+        <ResourceGuesser name="site-settings" list={SiteSettingsList} edit={SiteSettingsEdit} />
+        <ResourceGuesser name="icao_references" {...icaoReferenceResourceProps} />
+        <ResourceGuesser name="country_codes" {...countryCodeResourceProps} />
+        <ResourceGuesser name="tax_rates" {...taxRateResourceProps} />
+        <ResourceGuesser name="flight_rules" {...flightRuleResourceProps} />
+        <ResourceGuesser name="conversation_threads" {...conversationThreadResourceProps}/>
+        <ResourceGuesser name="client_access_requests" {...clientAccessRequestResourceProps}/>
+        <CustomRoutes>
+          <Route path="/landings" element={<LandingsList />} />
+          <Route path="/convert" element={<ReservationCreate />} />
+          <Route path="/convert/:id" element={<ReservationCreate />} />
+          <Route path="/subscriptions" element={<SubscriptionDashboard />} />
+          <Route path="/request-access" element={<ClientAttachmentRequest />} />
+          <Route path="/members" element={<MembersList />} />
+        </CustomRoutes>
+      </AdminAdapter>
+    </UserGuard>
+  );
+};
+
+const Admin = () => {
+
+  const { client } = useClient();
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.has("error")) {
+        url.searchParams.delete("error");
+        window.history.replaceState({}, document.title, url.pathname + (url.search ? url.search : "") + url.hash);
+    }
+  }, []);
+
+  return (
+  <>
+    <Head>
+      <title>{client?.name ?? "Administration"}</title>
+    </Head>  
+
+    <SessionContextProvider>
+        {/*@ts-ignore*/}
+        <AdminWithOIDC />
+    </SessionContextProvider>
+  </>
+)};
+
+export default Admin;

@@ -1,0 +1,160 @@
+// 'use server';
+
+import { z } from 'zod';
+import axios from 'axios';
+import { post, get, API_DOMAIN } from './api';;
+import { RedirectType, redirect } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+ 
+const FormSchema = z.object({
+  id: z.number(),
+  nom: z.string({invalid_type_error: 'Entrez votre nom de famille s\'il vous plaît.'}),
+  prenom: z.string({invalid_type_error: 'Entrez votre prénom s\'il vous plaît.'}),
+  email: z.string({invalid_type_error: 'Entrez votre adresse email s\'il vous plaît.'}),
+  telephone: z.string({invalid_type_error: 'Entrez votre numéro de téléphone s\'il vous plaît.'}),
+  date: z.date(),
+});
+
+export type State = {
+    errors?: {
+      nom?: string[];
+      prenom?: string[];
+      email?: string[];
+      telephone?: string[];
+    };
+    message?: string | null;
+}
+
+export type SymfonyError = {
+    response?: string[];
+}
+
+ 
+const CreatePassenger = FormSchema.omit({ id: true, date: true });
+
+export async function createPassenger(prevState: State, formData: FormData) {
+
+    const validatedFields = CreatePassenger.safeParse({
+        nom: formData.get('lastname'),
+        prenom: formData.get('name'),
+        email: formData.get('email'),
+        telephone: formData.get('phone')
+    });
+
+    if (!validatedFields.success) {
+        return {
+          errors: validatedFields.error.flatten().fieldErrors,
+          message: 'Des informations sont manquantes. La création du passager n\'a pas pu aboutir.',
+        };
+    }
+
+    const { nom, prenom, email, telephone } = validatedFields.data;
+    const clientId = formData.get('clientId') as string;
+    const slug = formData.get('slug') as string;
+    const date = new Date().toISOString().split('T')[0];
+
+    const headers: Record<string, string> = {};
+    if (clientId) {
+        headers['X-Client-Id'] = clientId;
+    }
+
+    try {
+        await post('/passagers', {nom, prenom, email, telephone, date}, headers)
+        toast.success(`Merci ${prenom}. Bon vol à vous !`, {duration: 3000})
+    } catch (error) {
+        const violations = error.response?.data?.violations || [];
+        const message = violations.length <= 1 ? 'Une erreur bloque la validation.' : 'Des erreurs bloquent la validation.';
+        const errors = violations.reduce((a, v) => ({ ...a, [v.propertyPath]: v.message}), {});
+        toast.error(message, {duration: 3000})
+        return {message, errors};
+    }
+
+    const redirectPath = slug
+        ? `/${slug}/thanks?firstname=${encodeURIComponent(prenom)}`
+        : `/thanks?firstname=${encodeURIComponent(prenom)}`;
+    redirect(redirectPath, RedirectType.replace);
+}
+
+export const getMetarOrTaf = (icao: string, request = "metar", decoded = false, session: any = null) => {
+  return axios({
+    method: 'get',
+    url: `${API_DOMAIN}/admin/weather/${request}/${icao}`,
+    headers: {
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+    },
+    timeout: 15000,
+  })
+    .then((response) => response.data)
+    .catch((error) => {
+      console.error(`${request.toUpperCase()} fetch error:`, error);
+      return { results: 0, data: [] };
+    });
+};
+
+export const getNotams = (icao: string, session: any = null) => {
+  return axios({
+    method: 'get',
+    url: `${API_DOMAIN}/admin/weather/notam/${icao}`,
+    headers: {
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+    },
+    timeout: 20000,
+  })
+    .then((response) => response.data)
+    .catch((error) => {
+      console.error('NOTAM fetch error:', error);
+      return [];
+    });
+};
+
+export const analyzeNotamAi = (notamRaw: string, icao: string, session: any = null) => {
+  return axios({
+    method: 'post',
+    url: `${API_DOMAIN}/admin/ai/notam`,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+    },
+    data: { raw: notamRaw, icao },
+    timeout: 30000,
+  }).then((r) => r.data);
+};
+
+export const briefMeteoAi = (metarRaw: string, tafRaw: string, icao: string, session: any = null) => {
+  return axios({
+    method: 'post',
+    url: `${API_DOMAIN}/admin/ai/meteo-brief`,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+    },
+    data: { metar: metarRaw, taf: tafRaw, icao },
+    timeout: 30000,
+  }).then((r) => r.data);
+};
+
+export const getScoreOps = (icao: string, session: any = null, clientId: number = null) => {
+  return axios({
+    method: 'get',
+    url: `${API_DOMAIN}/admin/score-ops/${icao}`,
+    headers: {
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...(clientId ? { 'X-Client-Id': String(clientId) } : {}),
+    },
+    timeout: 60000,
+  }).then((r) => r.data);
+};
+
+export const saveScoreOps = (icao: string, data: any, session: any = null, clientId: number = null) => {
+  return axios({
+    method: 'post',
+    url: `${API_DOMAIN}/admin/score-ops/${icao}/save`,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...(clientId ? { 'X-Client-Id': String(clientId) } : {}),
+    },
+    data,
+    timeout: 15000,
+  }).then((r) => r.data);
+};

@@ -1,0 +1,223 @@
+import { TextInput, FileInput, FileField, NumberInput, BooleanInput, SelectInput, TabbedForm, required, useRedirect, useNotify, TimeInput, ReferenceInput, AutocompleteInput } from "react-admin";
+import { Create } from "react-admin";
+import { colors, objectToFormData, timezones, fileInputSX, sanitizeData } from "../../../app/lib/client";
+import { Typography, Divider, Box } from '@mui/material';
+import { ColorPreview } from './ColorPreview';
+import { ThanksOptions } from './ThanksOptions';
+import { useClient } from '../../admin/ClientProvider';
+import { useSessionContext } from "../../admin/SessionContextProvider";
+
+export const ClientsCreate = () => {
+
+    const notify = useNotify();
+    const redirect = useRedirect();
+    const { updateClient } = useClient();
+    const { session } = useSessionContext();
+
+    const onSubmit = async data => {
+        const sanitizedData = sanitizeData(data);
+        const formData = objectToFormData(sanitizedData);
+        try {
+            // @ts-ignore
+            const response = await fetch('/clients', { method: 'POST', body: formData, headers: {'Authorization': `Bearer ${session?.accessToken}`}});
+        
+            if (!response.ok) throw new Error('Erreur lors de l’envoi');
+
+            const newClient = await response.json();
+
+            updateClient(newClient);
+            notify('Le client a bien été enregistré.', { type: 'success' });
+            redirect('list', 'clients');
+          } catch (error) {
+            notify('Erreur : ' + error.message, { type: 'error' });
+          }
+    };
+
+    return (
+        <Create redirect="list">
+            <TabbedForm 
+                onSubmit={ onSubmit }
+                defaultValues={(record) => ({
+                    active: true,
+                    timezone: timezones[0].id,
+                    color: colors[0].id,
+                    lat: 0,
+                    lng: 0,
+                    zoom: 9,
+                    opacity: 1,
+                    hasPassengerRegistration: false,
+                    hasOptions: false, 
+                    hasPartners: false,
+                    hasGifts: false,
+                    hasReservation: false,
+                    hasOriginContact: false,
+                    hasLandingManagement: false,
+                    hasEmailConfirmation: false,
+                    hasPaymentManagement: false,
+                    hasMicrotrakTag: false,
+                    hasWebshop: false,
+                    seuilMedical: 30,
+                    seuilQualifications: 30,
+                    hasIndividualFlightLogs: false,
+                    useAvailabilityFilter: false,
+                    hasExpensesManagement: false,
+                    hasGroupUpdate: false,
+                    hasNotam: false,
+                    minHours: (new Date()).setHours(0, 0, 0),
+                    maxHours: (new Date()).setHours(23, 59, 59)
+                })}
+            >
+                <TabbedForm.Tab label="Informations">
+                    <TextInput source="name" label="Nom" validate={required()}/>
+                    <TextInput source="address" label="Adresse" validate={required()}/>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1} display="flex" alignItems="center">
+                            <TextInput source="zipcode" label="Code postal" validate={required()}/>
+                        </Box>
+                        <Box flex={2}>
+                            <TextInput source="city" label="Ville" validate={required()}/>
+                        </Box>
+                    </Box>
+                    <TextInput source="email" label="Adresse email" validate={required()}/>
+                    <TextInput source="phone" label="N° de téléphone" validate={required()}/>
+                    <TextInput source="website" label="Site web"/>
+                    <TextInput source="emailServer" label="Serveur d'email"/>
+                    <TextInput source="emailAddressSender" label="Adresse email d'envoi"/>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <TimeInput source="minHours" label="Heure de démarrage"/>
+                        </Box>
+                        <Box flex={1}>
+                            <TimeInput source="maxHours" label="Heure de fin"/>
+                        </Box>
+                    </Box>
+                    <ReferenceInput source="countryCode" reference="country_codes" sort={{ field: "code", order: "ASC" }}>
+                        <AutocompleteInput
+                            optionText={(record: any) => record ? `${record.code} - ${record.label}` : ""}
+                            label="Code pays (TVA)"
+                            fullWidth
+                            helperText="Détermine les taux de TVA applicables"
+                        />
+                    </ReferenceInput>
+                    <BooleanInput source="active" label="Utilisateur actif" />
+                </TabbedForm.Tab>
+                <TabbedForm.Tab label="Options">
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasReservation" label="Réservations" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="hasOptions" label="Options" fullWidth/>
+                        </Box>
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasPartners" label="Partenariat" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="hasOriginContact" label="Origine du contact" fullWidth/>  
+                        </Box> 
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                                <BooleanInput source="hasLandingManagement" label="Gestion des atterrissages" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="hasPassengerRegistration" label="Enregistrement des passagers" fullWidth/>
+                        </Box>
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasMicrotrakTag" label="Balise(s) Microtrak" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="hasWebshop" label="Site e-commerce lié" fullWidth/>
+                        </Box>
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasIndividualFlightLogs" label="Carnets de vols individuels" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="useAvailabilityFilter" label="Fitrer sur les disponibilités" fullWidth/>
+                        </Box>
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasPaymentManagement" label="Gestion des paiements" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="hasGifts" label="Gestion des prépaiements" fullWidth/>
+                        </Box>
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasExpensesManagement" label="Gestion des dépenses" fullWidth/>
+                        </Box>
+                        <Box flex={1}>
+                            <BooleanInput source="hasGroupUpdate" label="Mise à jour des groupes" fullWidth/>
+                        </Box>
+                    </Box>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <BooleanInput source="hasNotam" label="NOTAMs / SNOWTAMs" fullWidth/>
+                        </Box>
+                        <Box flex={1}/>
+                    </Box>
+                    <Divider sx={{ mt: 2, borderBottomWidth: 2, borderColor: '#666' }} />
+                </TabbedForm.Tab>
+                <TabbedForm.Tab label="Dashboard">
+                    <ColorPreview/>
+                    <SelectInput source="timezone" choices={ timezones } validate={required()}/>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <NumberInput source="lat" label="Latitude" fullWidth />
+                        </Box>
+                        <Box flex={1}>
+                            <NumberInput source="lng" label="Longitude" fullWidth />
+                        </Box>
+                    </Box>
+                    <NumberInput source="zoom" label="Zoom"  min={ 1 } max={ 15 }/>
+                    <Divider sx={{ mt: 2, borderBottomWidth: 2, borderColor: '#666' }} />
+                    <Typography variant="h6" gutterBottom>
+                        Seuils d'alerte
+                    </Typography>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <NumberInput source="seuilMedical" label="Alerte sur les certificats médicaux" min={ 0 } helperText="Nb de jour(s) avant la fin de validité"/>
+                        </Box>
+                        <Box flex={1}>
+                            <NumberInput source="seuilQualifications" label="Alerte sur les qualifications" min={ 0 } helperText="Nb de jour(s) avant la fin de validité"/>
+                        </Box>
+                    </Box>
+                    <ThanksOptions/>
+                </TabbedForm.Tab>
+                <TabbedForm.Tab label="Images">
+                    <FileInput label="Logo" source="logo" accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] }} sx={ fileInputSX }>
+                        <FileField source="src" title="title" />
+                    </FileInput> 
+                    <FileInput label="Icone GPS" source="mapIcon" accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] }} sx={ fileInputSX }>
+                        <FileField source="src" title="title" />
+                    </FileInput> 
+                    <FileInput label="Favicon" source="favicon" accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] }} sx={ fileInputSX }>
+                        <FileField source="src" title="title" />
+                    </FileInput>
+                    <FileInput label="Image de la page de remerciement" source="thanksImage" accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] }} sx={ fileInputSX }>
+                        <FileField source="src" title="title" />
+                    </FileInput>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={2}>
+                            <FileInput label="Arrière plan PDF" source="pdfBackground" accept={{ 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] }} sx={ fileInputSX }>
+                                <FileField source="src" title="title" />
+                            </FileInput>
+                        </Box>
+                        <Box flex={1} display="flex" alignItems="center" pt={2}>
+                            <NumberInput source="opacity" label="Opacité" min={ 0 } max={ 1 } fullWidth />
+                        </Box>
+                    </Box>
+                </TabbedForm.Tab>
+                
+            </TabbedForm>
+        </Create>
+    )
+};

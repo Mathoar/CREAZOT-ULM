@@ -1,0 +1,110 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    microtrak.api_key: '%env(MICROTRAK_API_KEY)%'
+    wix.webhook_secret: '%env(WIX_WEBHOOK_SECRET)%'
+    image.client_dir: '/srv/api/public/images/client'
+    image.shared_dir: '/srv/api/public/images'
+    image.public_dir: '/srv/api/public'
+    media.dir: '/media'
+    # image.client_dir: '%kernel.project_dir%/public/images/client'
+    # image.shared_dir: '%kernel.project_dir%/public/images'
+    # image.public_dir: '%kernel.project_dir%/public'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+    App\Controller\MicrotrakProxyController:
+        arguments:
+            $microtrakApiKey: '%microtrak.api_key%'
+
+    App\Controller\ShopController:
+        arguments:
+            $webhookSecret: '%wix.webhook_secret%'
+
+    App\Service\Export\ExportUtils:
+        arguments:
+            $mediaUrl: '%media.dir%'
+
+    App\DataTransformer\ClientInputDataTransformer:
+        arguments:
+            $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'
+            $validator: '@api_platform.validator'
+            $fileUploader: '@App\Service\FileUploader'
+            $itemProvider: '@api_platform.doctrine.orm.state.item_provider'
+        tags: [ 'api_platform.state_processor' ]
+
+    App\Service\Export\VolExportFilter: ~
+    App\Service\Export\CameraExportFilter: ~
+    App\Service\Export\CadeauExportFilter: ~
+    App\Service\Export\OrigineExportFilter: ~
+    App\Service\Export\AeronefExportFilter: ~
+    App\Service\Export\CircuitExportFilter: ~
+    App\Service\Export\ExpenseExportFilter: ~
+    App\Service\Export\LandingExportFilter: ~
+    App\Service\Export\PaymentExportFilter: ~
+    App\Service\Export\AirportExportFilter: ~
+    App\Service\Export\PassagerExportFilter: ~
+    App\Service\Export\EntretienExportFilter: ~
+    App\Service\Export\CarnetVolExportFilter: ~
+    App\Service\Export\PrestationExportFilter: ~
+    App\Service\Export\ReservationExportFilter: ~
+    App\Service\Export\ProfilPiloteExportFilter: ~
+    App\Service\Export\DisponibiliteExportFilter: ~
+
+    App\Service\Export\ExportFilterManager:
+        arguments:
+            $filters:
+                - '@App\Service\Export\VolExportFilter'
+                - '@App\Service\Export\CameraExportFilter'
+                - '@App\Service\Export\CadeauExportFilter'
+                - '@App\Service\Export\OrigineExportFilter'
+                - '@App\Service\Export\AeronefExportFilter'
+                - '@App\Service\Export\CircuitExportFilter'
+                - '@App\Service\Export\ExpenseExportFilter'
+                - '@App\Service\Export\LandingExportFilter'
+                - '@App\Service\Export\PaymentExportFilter'
+                - '@App\Service\Export\AirportExportFilter'
+                - '@App\Service\Export\PassagerExportFilter'
+                - '@App\Service\Export\EntretienExportFilter'
+                - '@App\Service\Export\CarnetVolExportFilter'
+                - '@App\Service\Export\PrestationExportFilter'
+                - '@App\Service\Export\ReservationExportFilter'
+                - '@App\Service\Export\ProfilPiloteExportFilter'
+                - '@App\Service\Export\DisponibiliteExportFilter'
+
+    App\Service\KeycloakAdminService:
+        arguments:
+            $keycloakBaseUrl: '%env(KEYCLOAK_BASE_URL)%'
+            $keycloakRealm: '%env(KEYCLOAK_REALM)%'
+            $keycloakAdminUser: '%env(KEYCLOAK_ADMIN_USER)%'
+            $keycloakAdminPassword: '%env(KEYCLOAK_ADMIN_PASSWORD)%'
+
+    App\EventListener\SubscriptionGuardListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 5 }
+
+when@test:
+    services:
+        App\Tests\Api\Security\:
+            resource: '../tests/Api/Security/'
+            autowire: true
+            autoconfigure: true
+            public: true

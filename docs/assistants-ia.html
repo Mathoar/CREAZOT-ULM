@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assistants IA — Paramétrisation Métier Dynamique</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-dim: #0c4a6e;
+    --green: #4ade80;
+    --green-bg: #052e16;
+    --orange: #fb923c;
+    --orange-bg: #431407;
+    --red: #f87171;
+    --red-bg: #450a0a;
+    --purple: #c084fc;
+    --purple-bg: #2e1065;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--purple), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: .5rem;
+  }
+  .header p {
+    color: var(--text-muted);
+    font-size: .95rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .header .back-link {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent);
+    font-size: .85rem;
+    text-decoration: none;
+    padding: .4rem .8rem;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .header .back-link:hover { background: var(--accent-dim); }
+
+  .section-title {
+    max-width: 1200px;
+    margin: 2.5rem auto 1.25rem;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .panel {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+  .panel h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .panel h2.purple { color: var(--purple); }
+  .panel h2.orange { color: var(--orange); }
+  .panel h2.green  { color: var(--green); }
+  .panel h2.accent { color: var(--accent); }
+  .panel h2.red    { color: var(--red); }
+
+  .panel .subtitle {
+    font-size: .85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+  }
+  th {
+    text-align: left;
+    padding: .6rem .75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  td {
+    padding: .6rem .75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-hover); }
+
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: .8rem;
+    background: var(--bg);
+    padding: .15rem .4rem;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: .7rem;
+    padding: .2rem .5rem;
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    margin: .1rem;
+  }
+  .tag-ok   { background: var(--green-bg); color: var(--green); border-color: transparent; }
+  .tag-warn { background: var(--orange-bg); color: var(--orange); border-color: transparent; }
+  .tag-err  { background: var(--red-bg); color: var(--red); border-color: transparent; }
+  .tag-info { background: var(--purple-bg); color: var(--purple); border-color: transparent; }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-done .step-num { background: var(--green-bg); color: var(--green); }
+  .step-active .step-num { background: var(--orange-bg); color: var(--orange); border: 2px solid var(--orange); }
+  .step-pending .step-num { background: var(--surface-hover); color: var(--text-muted); }
+  .step-content h4 {
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
+  }
+  .step-done .step-content h4 { color: var(--green); }
+  .step-active .step-content h4 { color: var(--orange); }
+  .step-pending .step-content h4 { color: var(--text-muted); }
+  .step-content p {
+    font-size: .8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .step-content .detail {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    margin-top: .25rem;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    text-align: center;
+    min-width: 80px;
+  }
+  .stat .val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat .lbl {
+    font-size: .7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
+  .arch-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+  .col-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .col-panel h3 {
+    font-size: .9rem;
+    margin-bottom: .75rem;
+  }
+  .col-panel.purple h3 { color: var(--purple); }
+  .col-panel.green h3 { color: var(--green); }
+  .col-panel.orange h3 { color: var(--orange); }
+  .col-panel ul {
+    list-style: none;
+    font-size: .8rem;
+    color: var(--text-muted);
+  }
+  .col-panel li {
+    padding: .3rem 0;
+    padding-left: 1rem;
+    position: relative;
+  }
+  .col-panel li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: .55rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .col-panel.purple li::before { background: var(--purple); }
+  .col-panel.green li::before { background: var(--green); }
+  .col-panel.orange li::before { background: var(--orange); }
+
+  .alert {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: .85rem;
+    line-height: 1.5;
+    display: flex;
+    gap: .75rem;
+    align-items: flex-start;
+  }
+  .alert-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .alert-red {
+    background: var(--red-bg);
+    border: 1px solid rgba(248,113,113,.3);
+    color: var(--red);
+  }
+  .alert-orange {
+    background: var(--orange-bg);
+    border: 1px solid rgba(251,146,60,.3);
+    color: var(--orange);
+  }
+  .alert-green {
+    background: var(--green-bg);
+    border: 1px solid rgba(74,222,128,.3);
+    color: var(--green);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Assistants IA — Paramétrisation Métier</h1>
+  <p>Rendre les assistants VAPI (vocal) et IA Réservation (email) pleinement opérationnels avec un contexte métier dynamique et paramétrable par client SaaS.</p>
+  <a class="back-link" href="context-dashboard.html">Retour au dashboard</a>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Diagnostic serveur (09/04/2026)</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="accent">Inventaire des fichiers en production</h2>
+  <p class="subtitle">Tous les fichiers backend sont présents dans le container <code>creazot-ulm-php-1</code> (<code>/app/</code>). Le schéma BDD est synchrone.</p>
+
+  <div class="two-col">
+    <div class="col-panel purple">
+      <h3>VAPI — Assistant Vocal</h3>
+      <ul>
+        <li><code>VapiService.php</code> — 237 lignes, CRUD Vapi.ai</li>
+        <li><code>VapiAdminController.php</code> — setup / delete / status / test</li>
+        <li><code>VapiWebhookController.php</code> — 276 lignes, 3 tool-calls</li>
+        <li><code>AvailabilityService.php</code> — 328 lignes, moteur dispos</li>
+        <li>5 routes actives, logs OK, 0 erreurs</li>
+      </ul>
+    </div>
+    <div class="col-panel green">
+      <h3>Email IA — Assistant Réservation</h3>
+      <ul>
+        <li><code>ReservationAiService.php</code> — 265 lignes, orchestration Kimi</li>
+        <li><code>EmailChannelService.php</code> — 185 lignes, IMAP/SMTP</li>
+        <li><code>ConversationManager.php</code> — 126 lignes, CRUD threads</li>
+        <li><code>AiReservationController.php</code> — 159 lignes, 4 routes</li>
+        <li><code>PollInboundEmailsCommand.php</code> — commande <code>app:poll-inbound-emails</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 class="accent">État des clients</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Client</th>
+        <th>vapi_assistant_id</th>
+        <th>Voice</th>
+        <th>Email IA</th>
+        <th>ai_reservation_email</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Aix ULM</td>
+        <td>—</td>
+        <td><span class="tag">OFF</span></td>
+        <td><span class="tag">OFF</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Skyquest</td>
+        <td>—</td>
+        <td><span class="tag">OFF</span></td>
+        <td><span class="tag">OFF</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>Planetair974</strong></td>
+        <td><code>6bf9...d1737</code></td>
+        <td><span class="tag tag-ok">ON</span></td>
+        <td><span class="tag tag-ok">ON</span></td>
+        <td><span class="tag tag-err">NON CONFIGURÉ</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Air Aventures</td>
+        <td>—</td>
+        <td><span class="tag">OFF</span></td>
+        <td><span class="tag">OFF</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Survol Réunion</td>
+        <td><code>f007...dad6b</code></td>
+        <td><span class="tag tag-ok">ON</span></td>
+        <td><span class="tag">OFF</span></td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Données métier — Planetair974 (base référence)</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="purple">Catalogue des circuits (prestations)</h2>
+  <p class="subtitle">14 circuits actifs, 6 natures de vol, qualifications variables par prestation</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Nom</th>
+        <th>Prix</th>
+        <th>Durée</th>
+        <th>Nature</th>
+        <th>Qualifications requises</th>
+        <th>Encadrant</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>BAPT</code></td><td>Baptême</td><td>60 &euro;</td><td>20 min</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>V30</code></td><td>Vol 30min</td><td>100 &euro;</td><td>30 min</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>2V</code></td><td>2 Pitons</td><td>130 &euro;</td><td>45 min</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>CC</code></td><td>Cirques &amp; Cascades</td><td>140 &euro;</td><td>50 min</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>3CV</code></td><td>Patrimoine</td><td>170 &euro;</td><td>1h</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>3CVL</code></td><td>Intégral</td><td>210 &euro;</td><td>1h15</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>MNE</code></td><td>Vol Adapté</td><td>170 &euro;</td><td>1h</td><td>VLO</td><td>Pro, Instructeur</td><td></td></tr>
+      <tr><td><code>INIT</code></td><td>Initiation</td><td>135 &euro;</td><td>30 min</td><td>VEF</td><td>Instructeur</td><td><span class="tag tag-warn">OUI</span></td></tr>
+      <tr><td><code>INST</code></td><td>Instruction</td><td>135 &euro;</td><td>1h</td><td>VEF</td><td>Instructeur</td><td><span class="tag tag-warn">OUI</span></td></tr>
+      <tr><td><code>ENT</code></td><td>Entraînement</td><td>0 &euro;</td><td>1h</td><td>VEF</td><td>Pro, Instructeur, Multi, Emport</td><td></td></tr>
+      <tr><td><code>LOC</code></td><td>Location</td><td>110 &euro;</td><td>1h</td><td>N/A</td><td>Pro, Instructeur, Multi, Emport</td><td></td></tr>
+      <tr><td><code>PARA</code></td><td>Largage Parachutiste</td><td>90 &euro;</td><td>20 min</td><td>VAPO</td><td>Largage para</td><td></td></tr>
+      <tr><td><code>PHOTO</code></td><td>Photos</td><td>180 &euro;</td><td>1h</td><td>VAPO</td><td>Vol photo</td><td></td></tr>
+      <tr><td><code>VDC</code></td><td>Vol de Contrôle</td><td>0 &euro;</td><td>30 min</td><td>Autre</td><td>Pro, Instructeur</td><td></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="purple">Configuration opérationnelle Planetair</h2>
+  <div class="two-col">
+    <div>
+      <table>
+        <thead><tr><th>Paramètre</th><th>Valeur</th></tr></thead>
+        <tbody>
+          <tr><td>Horaire début</td><td><code>06:00</code> (local)</td></tr>
+          <tr><td>Horaire fin</td><td><code>18:30</code> (local)</td></tr>
+          <tr><td>Fuseau</td><td><code>Indian/Reunion</code> (UTC+4)</td></tr>
+          <tr><td>Filtre disponibilités</td><td><span class="tag tag-ok">ACTIF</span></td></tr>
+          <tr><td>Module réservation</td><td><span class="tag tag-ok">ACTIF</span></td></tr>
+          <tr><td>Options</td><td><span class="tag tag-ok">ACTIF</span></td></tr>
+          <tr><td>Email confirmation</td><td><span class="tag tag-ok">ACTIF</span></td></tr>
+          <tr><td>Enregistrement passagers</td><td><span class="tag tag-ok">ACTIF</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <table>
+        <thead><tr><th>Ressource</th><th>Quantité</th></tr></thead>
+        <tbody>
+          <tr><td>Aéronefs total</td><td>6</td></tr>
+          <tr><td>Aéronefs disponibles</td><td>3 (F-JDQJ, F-JIXJ, F-JLMT)</td></tr>
+          <tr><td>Pilotes</td><td>22 pilots + 4 admins</td></tr>
+          <tr><td>Qualifications</td><td>7 (Pro, Instructeur, Photo, Para, Multi, Emport, Secrétariat)</td></tr>
+          <tr><td>Combinaisons / options</td><td>5 (porte-photos, tarifs groupés)</td></tr>
+          <tr><td>Réservations historiques</td><td>2 178</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 class="purple">Natures de vol (table partagée)</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Code</th><th>Label</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>VLO</code></td><td>Vol Local à titre Onéreux</td></tr>
+      <tr><td>2</td><td><code>VSO</code></td><td>Vol à Sensation à titre Onéreux</td></tr>
+      <tr><td>3</td><td><code>VEF</code></td><td>Vol d'Entraînement ou de Formation</td></tr>
+      <tr><td>4</td><td><code>VAPO</code></td><td>Vol pour Activité Particulière à titre Onéreux</td></tr>
+      <tr><td>5</td><td><code>AUTRE</code></td><td>Autre Activité</td></tr>
+      <tr><td>6</td><td><code>N/A</code></td><td>Non Applicable</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Problèmes identifiés</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="red">5 problèmes bloquants</h2>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">1</div>
+    <div>
+      <strong>Prompt VAPI statique et vide</strong><br>
+      <code>buildAssistantPrompt()</code> ne contient aucun catalogue de circuits. Le <code>$clientId</code> est reçu mais jamais utilisé.
+      Le LLM ne sait pas quelles prestations existent sans appeler <code>list_services</code> à chaque conversation.
+      Aucune info sur les horaires, le fuseau, les règles métier du club.
+    </div>
+  </div>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">2</div>
+    <div>
+      <strong>Résolution de circuit incohérente</strong><br>
+      <code>check_availability</code> accepte code OU sous-chaîne du nom (souple).
+      <code>confirm_reservation</code> accepte uniquement le code exact (strict).
+      Le LLM vocal ne mentionne pas les codes aux clients &rarr; échec potentiel à la confirmation.
+    </div>
+  </div>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">3</div>
+    <div>
+      <strong>Email IA : pas de création automatique de réservation</strong><br>
+      <code>ReservationAiService</code> mène au statut <code>awaiting_club</code> mais ne crée jamais la <code>Reservation</code>.
+      <code>AiReservationController::validateReservation</code> crée sans vérifier <code>isSlotAvailable</code> &rarr; risque de double booking.
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">4</div>
+    <div>
+      <strong>CRON email non configuré</strong><br>
+      La commande <code>app:poll-inbound-emails</code> existe mais aucun cron ne l'appelle.
+      Aucun client n'a d'<code>aiReservationEmail</code> ni de credentials IMAP configurés.
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">5</div>
+    <div>
+      <strong>Aucune personnalisation par client</strong><br>
+      Le prompt est identique pour tous les clubs (seul le nom change).
+      Aucune consigne spécifique, aucun circuit, aucune règle métier injectée.
+      Chaque club a des prestations, horaires, qualifications complètement différentes.
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Périmètre réservation — Analyse champ par champ</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="red">Données requises pour une réservation valide</h2>
+  <p class="subtitle">Comparaison entre ce que l'entité <code>Reservation</code> attend, ce que VAPI remplit, et ce que l'Email IA remplit actuellement.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Champ</th>
+        <th>Type</th>
+        <th>Criticité</th>
+        <th>VAPI (vocal)</th>
+        <th>Email IA</th>
+        <th>Commentaire</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>client</code></td>
+        <td>ManyToOne</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>VAPI : via {clientId} URL. Email : pas de création de résa</td>
+      </tr>
+      <tr>
+        <td><code>nom</code></td>
+        <td>string</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-warn">EXTRAIT</span></td>
+        <td>VAPI : demandé par le LLM. Email : extrait dans <code>extracted.customer_name</code> mais jamais utilisé pour créer la résa</td>
+      </tr>
+      <tr>
+        <td><code>circuit</code></td>
+        <td>ManyToOne</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-warn">EXTRAIT</span></td>
+        <td>VAPI : résolu par code. Email : extrait dans <code>extracted.circuit_code</code></td>
+      </tr>
+      <tr>
+        <td><code>debut</code></td>
+        <td>datetime</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-warn">EXTRAIT</span></td>
+        <td>VAPI : date + time combinés. Email : <code>preferred_date</code> + <code>preferred_time</code></td>
+      </tr>
+      <tr>
+        <td><code>fin</code></td>
+        <td>datetime</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Calculé depuis <code>circuit.duree</code></td>
+      </tr>
+      <tr>
+        <td><code>avion</code></td>
+        <td>ManyToOne</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>VAPI : via <code>isSlotAvailable</code>. Email : jamais assigné</td>
+      </tr>
+      <tr>
+        <td><code>pilote</code></td>
+        <td>ManyToOne</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>VAPI : via <code>isSlotAvailable</code>. Email : jamais assigné</td>
+      </tr>
+      <tr>
+        <td><code>statut</code></td>
+        <td>string</td>
+        <td><span class="tag tag-err">REQUIS</span></td>
+        <td><span class="tag tag-warn">PROBLÈME</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>VAPI met <code>confirmé</code> mais la BDD utilise <code>VALIDATED</code>, <code>WAITING</code>, etc.</td>
+      </tr>
+      <tr>
+        <td><code>prix</code></td>
+        <td>float</td>
+        <td><span class="tag tag-warn">IMPORTANT</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Copié depuis <code>circuit.prix</code>. Ne gère pas les options / remises</td>
+      </tr>
+      <tr>
+        <td><code>quantite</code></td>
+        <td>int</td>
+        <td><span class="tag tag-warn">IMPORTANT</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-warn">EXTRAIT</span></td>
+        <td>VAPI : demandé (défaut 1). Email : <code>extracted.quantity</code></td>
+      </tr>
+      <tr>
+        <td><code>code</code></td>
+        <td>string</td>
+        <td><span class="tag tag-warn">IMPORTANT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Format <code>RESA-{timestamp}-{random}</code> — jamais généré par les assistants</td>
+      </tr>
+      <tr>
+        <td><code>email</code></td>
+        <td>string</td>
+        <td><span class="tag tag-warn">IMPORTANT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-warn">DISPO</span></td>
+        <td>VAPI : jamais demandé. Email : disponible via <code>customerEmail</code> du thread</td>
+      </tr>
+      <tr>
+        <td><code>telephone</code></td>
+        <td>string</td>
+        <td><span class="tag tag-warn">IMPORTANT</span></td>
+        <td><span class="tag tag-warn">PARTIEL</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>VAPI : optionnel dans tool-call, mais dispo via <code>call.customer.number</code></td>
+      </tr>
+      <tr>
+        <td><code>color</code></td>
+        <td>string</td>
+        <td><span class="tag">OPTIONNEL</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Couleur aléatoire pour le calendrier — non géré</td>
+      </tr>
+      <tr>
+        <td><code>option</code></td>
+        <td>ManyToOne</td>
+        <td><span class="tag tag-warn">MÉTIER</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Ex: Porte Photos (20&euro;). Les options ne sont jamais proposées</td>
+      </tr>
+      <tr>
+        <td><code>origine</code></td>
+        <td>ManyToMany</td>
+        <td><span class="tag tag-warn">MÉTIER</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Devrait auto-tagger "Assistant Vocal IA" ou "Assistant Email IA"</td>
+      </tr>
+      <tr>
+        <td><code>cadeau</code></td>
+        <td>ManyToOne</td>
+        <td><span class="tag tag-warn">MÉTIER</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Bon cadeau : le client peut appeler avec un code cadeau. Non géré</td>
+      </tr>
+      <tr>
+        <td><code>remarques</code></td>
+        <td>text</td>
+        <td><span class="tag">OPTIONNEL</span></td>
+        <td><span class="tag tag-ok">OK</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>VAPI : "Réservation créée via assistant vocal IA (Vapi)"</td>
+      </tr>
+      <tr>
+        <td><code>paid</code></td>
+        <td>bool</td>
+        <td><span class="tag">OPTIONNEL</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td><span class="tag tag-err">ABSENT</span></td>
+        <td>Toujours <code>false</code> par défaut (paiement sur place)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="red">Problèmes de cohérence métier</h2>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">!</div>
+    <div>
+      <strong>Statut incompatible</strong><br>
+      VAPI crée les réservations avec statut <code>confirmé</code> mais la BDD Planetair utilise <code>VALIDATED</code>, <code>WAITING</code>, <code>WEATHER_REPORT</code>, <code>PASSENGER_CANCEL</code>, etc.
+      Le statut <code>confirmé</code> n'existe nulle part dans les données existantes. Risque : la réservation n'apparaît pas dans les filtres / vues du calendrier.
+      <br><br><strong>Solution :</strong> utiliser <code>WAITING</code> pour les créations IA (en attente de validation admin) ou <code>VALIDATED</code> si auto-confirmé.
+    </div>
+  </div>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">!</div>
+    <div>
+      <strong>Code réservation jamais généré</strong><br>
+      100% des réservations Planetair (1710/1710) ont un code au format <code>RESA-{timestamp}-{random}</code>.
+      Les assistants IA ne génèrent pas ce code &rarr; la réservation est "orpheline" sans référence traçable.
+      <br><br><strong>Solution :</strong> générer automatiquement le code à la création.
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">!</div>
+    <div>
+      <strong>Email de confirmation non envoyé</strong><br>
+      Planetair a <code>hasEmailConfirmation = true</code> avec un message de confirmation et un sender <code>contact@planetair974.com</code>.
+      Mais quand VAPI crée une réservation, aucun email de confirmation n'est envoyé au client.
+      <br><br><strong>Solution :</strong> déclencher l'envoi du mail de confirmation après création (si module actif + email client disponible).
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">!</div>
+    <div>
+      <strong>Options / combinaisons ignorées</strong><br>
+      Planetair a 2 options (Porte Photos 20&euro;, Porte Photos Offerte 0&euro;) et 5 combinaisons.
+      Les assistants ne proposent jamais d'options — le prix final peut être faux.
+      <br><br><strong>Solution :</strong> intégrer les options dans le prompt et le tool-call <code>confirm_reservation</code>.
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">!</div>
+    <div>
+      <strong>Bons cadeaux non gérés</strong><br>
+      Planetair a des bons cadeaux actifs (codes comme <code>8ll0ky1yl945</code>) liés à des circuits spécifiques.
+      Un client peut appeler/écrire avec un code cadeau — aucun des assistants ne gère ce cas.
+      <br><br><strong>Solution :</strong> ajouter un outil <code>check_gift_code</code> qui vérifie la validité du bon et auto-remplit circuit + prix.
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">!</div>
+    <div>
+      <strong>Origine non tracée</strong><br>
+      Planetair a 13 origines (Le Routard, Web, Bouche à oreille, etc.) avec des remises associées.
+      Les réservations IA devraient être auto-taguées avec une origine dédiée ("Assistant IA Vocal" / "Assistant IA Email").
+      <br><br><strong>Solution :</strong> créer une origine auto par canal, ou paramétrer une origine par défaut dans le builder.
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 class="accent">Périmètre complet — Ce que le builder doit connaître</h2>
+  <p class="subtitle">Toutes les données que <code>AssistantContextBuilder</code> doit collecter pour alimenter les prompts et les tool-calls.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Donnée</th>
+        <th>Source</th>
+        <th>Usage prompt</th>
+        <th>Usage tool-call</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Circuits (nom, code, prix, durée, nature)</td><td><code>Circuit</code> du client</td><td>Catalogue dans le prompt</td><td><code>check_availability</code>, <code>list_services</code></td></tr>
+      <tr><td>Qualifications requises par circuit</td><td><code>circuit_qualification</code></td><td>Contexte implicite</td><td><code>findAvailableSlots</code> (filtre pilotes)</td></tr>
+      <tr><td>Options disponibles</td><td><code>Option</code> du client</td><td>Proposer au client</td><td><code>confirm_reservation</code> (prix final)</td></tr>
+      <tr><td>Combinaisons / packs</td><td><code>Combinaison</code> du client</td><td>Proposer au client</td><td>Calcul prix groupé</td></tr>
+      <tr><td>Origines</td><td><code>Origine</code> du client</td><td>Non</td><td>Auto-tag à la création</td></tr>
+      <tr><td>Horaires d'ouverture</td><td><code>Client.minHours / maxHours</code></td><td>Indiquer les plages au client</td><td><code>findAvailableSlots</code> (bornes)</td></tr>
+      <tr><td>Fuseau horaire</td><td><code>Client.timezone</code></td><td>Implicite</td><td><code>findAvailableSlots</code></td></tr>
+      <tr><td>Aéronefs disponibles</td><td><code>Aeronef</code> isAvailable</td><td>Capacité flotte (info)</td><td><code>findAvailableSlots</code></td></tr>
+      <tr><td>Email confirmation</td><td><code>Client.hasEmailConfirmation</code></td><td>Non</td><td>Envoi après création</td></tr>
+      <tr><td>Message confirmation</td><td><code>Client.confirmationMessage</code></td><td>Non</td><td>Corps de l'email</td></tr>
+      <tr><td>Bons cadeaux actifs</td><td><code>Cadeau</code> used=false</td><td>Mentionner possibilité</td><td><code>check_gift_code</code> (nouveau)</td></tr>
+      <tr><td>Infos club</td><td><code>Client</code> (nom, tél, email, adresse)</td><td>Signature, contexte</td><td>Non</td></tr>
+      <tr><td>Consignes personnalisées</td><td><code>Client.assistantCustomInstructions</code></td><td>Section dédiée du prompt</td><td>Non</td></tr>
+      <tr><td>Statuts valides</td><td>Convention métier</td><td>Non</td><td>Statut initial de la résa (<code>WAITING</code> ou <code>VALIDATED</code>)</td></tr>
+      <tr><td>Format code résa</td><td>Convention <code>RESA-{ts}-{rand}</code></td><td>Non</td><td>Généré automatiquement</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Architecture cible</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="green">AssistantContextBuilder — Service central</h2>
+  <p class="subtitle">Un service unique qui construit dynamiquement le contexte métier complet pour chaque client, utilisable par les deux canaux (VAPI vocal + Email Kimi).</p>
+
+  <div class="arch-box">
+┌─────────────────────────────────────────────────────────────┐
+│                  AssistantContextBuilder                     │
+│                                                             │
+│   buildContext(Client) &rarr; array                              │
+│   ├── Circuits du client (nom, code, prix, durée, nature)   │
+│   ├── Horaires d'ouverture (minH / maxH + timezone)         │
+│   ├── Qualifications &amp; contraintes (encadrant, landing)     │
+│   ├── Options / combinaisons (porte-photos, etc.)           │
+│   ├── Infos club (nom, tél, email, adresse, aérodrome)      │
+│   └── Consignes personnalisées (champ libre admin)          │
+│                                                             │
+│   buildPrompt(array $context, string $channel) &rarr; string    │
+│   → Prompt structuré adapté au canal (vocal / email)        │
+└────────────────────┬────────────────────┬───────────────────┘
+                     │                    │
+          ┌──────────▼──────────┐  ┌──────▼──────────────┐
+          │   VapiService       │  │  ReservationAi      │
+          │                     │  │  Service             │
+          │  createAssistant()  │  │                     │
+          │  updateAssistant()  │  │  buildSystemPrompt() │
+          │                     │  │                     │
+          │  Prompt = builder   │  │  Prompt = builder   │
+          │  .buildPrompt(ctx,  │  │  .buildPrompt(ctx,  │
+          │    'voice')         │  │    'email')         │
+          └─────────────────────┘  └─────────────────────┘</div>
+
+  <div class="two-col">
+    <div class="col-panel purple">
+      <h3>Ce que le builder injecte</h3>
+      <ul>
+        <li>Catalogue complet des circuits avec prix, durées, codes</li>
+        <li>Table de correspondance code &harr; nom (pour résolution fiable)</li>
+        <li>Horaires d'ouverture du club + fuseau horaire</li>
+        <li>Natures de vol et qualifications requises par circuit</li>
+        <li>Options et combinaisons disponibles (tarifs groupés)</li>
+        <li>Coordonnées du club (nom, tél, email, adresse)</li>
+        <li>Consignes personnalisées de l'admin (champ libre)</li>
+      </ul>
+    </div>
+    <div class="col-panel green">
+      <h3>Ce que ça résout</h3>
+      <ul>
+        <li>Prompt pauvre &rarr; catalogue complet injecté</li>
+        <li>Pas de personnalisation &rarr; contexte dynamique par client</li>
+        <li>Résolution incohérente &rarr; table code/nom dans le prompt</li>
+        <li>Horaires invisibles &rarr; plages horaires dans le prompt</li>
+        <li>Options ignorées &rarr; options décrites</li>
+        <li>Règles métier cachées &rarr; qualifs, encadrant documentés</li>
+        <li>Duplication &rarr; un seul builder, deux canaux</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 class="green">Nouveau champ Client : consignes personnalisées</h2>
+  <p class="subtitle">Permet à chaque admin de club d'ajouter des instructions spécifiques pour ses assistants IA.</p>
+
+  <table>
+    <thead><tr><th>Champ</th><th>Type</th><th>Exemple d'utilisation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>assistantCustomInstructions</code></td>
+        <td>TEXT, nullable</td>
+        <td>"Ne proposer des baptêmes que le week-end. Toujours demander le poids du passager pour le vol photo. Mentionner la promotion -10% en avril."</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Plan d'implémentation (révisé 09/04/2026)</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="orange">Phases de développement</h2>
+  <p class="subtitle">Plan révisé après analyse des lacunes identifiées lors de la rédaction du plan de test. 13 phases dont 3 terminées, 7 lacunes comblées.</p>
+
+  <div class="step step-done">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>Backend VAPI déployé</h4>
+      <p>VapiService, VapiAdminController, VapiWebhookController, AvailabilityService — 5 routes, 0 erreurs</p>
+      <div class="detail">Clients actifs : Survol Réunion (id=7), Planetair974 (id=5)</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>Backend IA Email déployé</h4>
+      <p>ReservationAiService, EmailChannelService, ConversationManager — 4 routes + commande poll</p>
+      <div class="detail">0 conversations, CRON non configuré, aucun email IA configuré</div>
+    </div>
+  </div>
+
+  <div class="step step-done">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Analyse flux métier Planetair</h4>
+      <p>14 circuits, 7 qualifs, 5 combinaisons, 6 natures, config horaires, statuts réservation, modèle de données complet. Plan de test rédigé (72 tests).</p>
+      <div class="detail">Diagnostic complet : 18 problèmes/lacunes identifiés, architecture cible définie</div>
+    </div>
+  </div>
+
+  <div class="step step-active">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>AssistantContextBuilder — Service central</h4>
+      <p>Collecte dynamique des données métier (circuits, options, horaires, origines, bons cadeaux, consignes) + construction du prompt structuré par client et par canal (voice / email)</p>
+      <div class="detail">api/src/Service/AssistantContextBuilder.php — 15 tests (T4.1 → T4.15)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">4b</div>
+    <div class="step-content">
+      <h4>Historique des messages <span class="tag tag-info">NOUVEAU</span></h4>
+      <p>Ajouter un champ <code>messages</code> (JSON array) à <code>ConversationThread</code> pour stocker chaque échange (client/assistant) avec timestamp, rôle, contenu. Helper <code>appendMessage()</code> dans ConversationManager.</p>
+      <div class="detail">ConversationThread.php, ConversationManager.php, schema:update</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">5</div>
+    <div class="step-content">
+      <h4>ReservationFactory — Création complète</h4>
+      <p>Factory partagée : code RESA auto-généré, statut <code>WAITING</code>, couleur aléatoire, origine auto-taguée (cherche ou crée "Assistant IA Vocal" / "Assistant IA Email"), gestion options, bon cadeau, email confirmation si module actif.</p>
+      <div class="detail">api/src/Service/ReservationFactory.php — 14 tests (T5.1 → T5.14)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">6</div>
+    <div class="step-content">
+      <h4>Intégration VAPI — prompt dynamique + outils</h4>
+      <p>Remplacer <code>buildAssistantPrompt()</code> par le builder. Ajouter outil <code>check_gift_code</code>. Utiliser ReservationFactory dans <code>confirm_reservation</code>. Unifier résolution circuit code+nom. Appeler <code>appendMessage()</code> à chaque tool-call.</p>
+      <div class="detail">VapiService.php, VapiWebhookController.php — 17 tests (T5.15 → T5.25, T6.1 → T6.6)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">7</div>
+    <div class="step-content">
+      <h4>Intégration Email IA — prompt dynamique + création résa</h4>
+      <p>Remplacer <code>buildSystemPrompt()</code> par le builder. Créer résa via ReservationFactory quand confirmation. Vérifier <code>isSlotAvailable</code> (anti double-booking). Stocker chaque message via <code>appendMessage()</code>.</p>
+      <div class="detail">ReservationAiService.php, EmailChannelService.php, AiReservationController.php — 8 tests (T7.1 → T7.8)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">8</div>
+    <div class="step-content">
+      <h4>Champ Client + Frontend admin</h4>
+      <p>Ajouter <code>assistantCustomInstructions</code> (TEXT). Textarea dans l'onglet Options. Endpoint <code>GET /admin/clients/{id}/assistant-prompt-preview</code> pour visualiser le prompt généré. Bouton "Mettre à jour l'assistant VAPI" pour déclencher <code>updateAssistant</code> avec le nouveau prompt.</p>
+      <div class="detail">Client.php, ClientsEdit.tsx, VapiAdminController.php, schema:update — 6 tests (T8.1 → T8.6)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">8b</div>
+    <div class="step-content">
+      <h4>Sécurité + réponse manuelle admin <span class="tag tag-info">NOUVEAU</span></h4>
+      <p>Sécuriser le webhook VAPI (validation <code>x-vapi-secret</code> header ou clé client). Ajouter endpoint <code>POST /admin/ai-reservation/conversations/{id}/reply</code> pour réponse manuelle de l'admin (envoi email via EmailChannelService).</p>
+      <div class="detail">VapiWebhookController.php, AiReservationController.php — 2 tests (TX.1, T9.11)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">9</div>
+    <div class="step-content">
+      <h4>Dashboard conversations IA pour l'admin</h4>
+      <p>Vue enrichie : timeline des messages (client/IA alternés), décisions IA, données extraites, créneaux proposés, lien réservation, actions (valider, annuler, répondre manuellement).</p>
+      <div class="detail">ConversationThreadList.tsx, ConversationThreadShow.tsx — 11 tests (T9.1 → T9.11)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">10</div>
+    <div class="step-content">
+      <h4>Mise en service Email IA</h4>
+      <p>Configurer IMAP/SMTP Planetair974, activer le CRON <code>app:poll-inbound-emails</code>, tester flux complet email &rarr; IA &rarr; réponse &rarr; réservation.</p>
+      <div class="detail">CRON, credentials IMAP, email IA sur Client — 6 tests (T10.1 → T10.6)</div>
+    </div>
+  </div>
+
+  <div class="step step-pending">
+    <div class="step-num">11</div>
+    <div class="step-content">
+      <h4>Tests end-to-end + transversaux</h4>
+      <p>11 scénarios E2E (VAPI complet, VAPI + cadeau, Email complet, validation admin, multi-tenant, cas limites) + 5 tests transversaux (sécurité, isolation, performances, fallback erreur, schema Doctrine).</p>
+      <div class="detail">Production Planetair974 — 16 tests (T11.1 → T11.11, TX.1 → TX.5)</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="val">3 / 13</div><div class="lbl">Phases terminées</div></div>
+    <div class="stat"><div class="val">18</div><div class="lbl">Problèmes + lacunes</div></div>
+    <div class="stat"><div class="val">72</div><div class="lbl">Tests planifiés</div></div>
+    <div class="stat"><div class="val">14</div><div class="lbl">Données à injecter</div></div>
+    <div class="stat"><div class="val">2</div><div class="lbl">Services à créer</div></div>
+    <div class="stat"><div class="val">2</div><div class="lbl">Endpoints à ajouter</div></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Lacunes identifiées (revue plan de test)</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="red">7 lacunes comblées dans le plan révisé</h2>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">1</div>
+    <div>
+      <strong>Historique des messages absent</strong><br>
+      <code>ConversationThread</code> stocke <code>aiContext</code> (JSON) et <code>summary</code> mais pas les messages individuels.
+      Impossible d'afficher une timeline de conversation dans le dashboard.
+      <br><strong>Résolu :</strong> Phase 4b — champ <code>messages</code> (JSON array) + helper <code>appendMessage()</code>
+    </div>
+  </div>
+
+  <div class="alert alert-red">
+    <div class="alert-icon">2</div>
+    <div>
+      <strong>Endpoint preview du prompt manquant</strong><br>
+      Phase 8 mentionne un bouton "Voir le prompt" mais aucun endpoint API pour retourner le prompt généré.
+      <br><strong>Résolu :</strong> Phase 8 — <code>GET /admin/clients/{id}/assistant-prompt-preview</code>
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">3</div>
+    <div>
+      <strong>Réponse manuelle admin impossible</strong><br>
+      L'admin ne peut pas envoyer un email de réponse manuellement depuis le dashboard des conversations.
+      <br><strong>Résolu :</strong> Phase 8b — <code>POST /admin/ai-reservation/conversations/{id}/reply</code>
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">4</div>
+    <div>
+      <strong>Mise à jour assistant VAPI non déclenchée</strong><br>
+      Quand l'admin modifie circuits, options ou consignes, le prompt VAPI reste obsolète.
+      <br><strong>Résolu :</strong> Phase 8 — bouton "Mettre à jour l'assistant" dans ClientsEdit
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">5</div>
+    <div>
+      <strong>Origines IA non auto-créées</strong><br>
+      Les origines "Assistant IA Vocal" et "Assistant IA Email" n'existent pas par défaut pour les clients.
+      <br><strong>Résolu :</strong> Phase 5 — <code>ReservationFactory</code> cherche ou crée l'origine dédiée
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">6</div>
+    <div>
+      <strong>Webhook VAPI sans authentification</strong><br>
+      <code>/webhook/vapi/{clientId}</code> est ouvert — n'importe qui peut appeler l'endpoint.
+      <br><strong>Résolu :</strong> Phase 8b — validation <code>x-vapi-secret</code> header
+    </div>
+  </div>
+
+  <div class="alert alert-orange">
+    <div class="alert-icon">7</div>
+    <div>
+      <strong>Messages non stockés dans les deux canaux</strong><br>
+      Le webhook VAPI ne stocke pas les transcriptions, le canal email ne stocke pas les échanges message par message.
+      <br><strong>Résolu :</strong> Phases 6 + 7 — appel <code>appendMessage()</code> à chaque interaction
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Fichiers impactés (révisé)</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="accent">Cartographie des modifications — 12 fichiers</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Fichier</th>
+        <th>Action</th>
+        <th>Phase</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>api/src/Service/AssistantContextBuilder.php</code></td>
+        <td><span class="tag tag-info">CRÉER</span> Service central — collecte données métier + construction prompt dynamique par client et canal</td>
+        <td>4</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Entity/ConversationThread.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Ajouter champ <code>messages</code> (JSON array) pour historique des échanges</td>
+        <td>4b</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Service/ConversationManager.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Ajouter <code>appendMessage(thread, role, content)</code> — stocke chaque message avec timestamp</td>
+        <td>4b</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Service/ReservationFactory.php</code></td>
+        <td><span class="tag tag-info">CRÉER</span> Factory partagée — code auto, statut, couleur, origine auto-créée, option, cadeau, email confirmation</td>
+        <td>5</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Controller/VapiWebhookController.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Utiliser ReservationFactory, unifier résolution circuit, tél from call, <code>check_gift_code</code>, <code>appendMessage</code>, validation secret</td>
+        <td>6, 8b</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Service/VapiService.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> <code>buildAssistantPrompt()</code> &rarr; utiliser le builder, ajouter tool <code>check_gift_code</code></td>
+        <td>6</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Service/ReservationAiService.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Utiliser le builder, créer résa via ReservationFactory, <code>appendMessage</code></td>
+        <td>7</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Controller/AiReservationController.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> isSlotAvailable + ReservationFactory. Ajouter endpoint <code>reply</code> pour réponse manuelle admin</td>
+        <td>7, 8b</td>
+      </tr>
+      <tr>
+        <td><code>api/src/Entity/Client.php</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Ajouter <code>assistantCustomInstructions</code> (TEXT nullable)</td>
+        <td>8</td>
+      </tr>
+      <tr>
+        <td><code>pwa/components/admin/client/ClientsEdit.tsx</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Textarea consignes + bouton "Voir le prompt" + bouton "Mettre à jour assistant VAPI"</td>
+        <td>8</td>
+      </tr>
+      <tr>
+        <td><code>pwa/components/admin/conversationThread/ConversationThreadList.tsx</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Enrichir : canal, statut coloré, résumé, lien réservation</td>
+        <td>9</td>
+      </tr>
+      <tr>
+        <td><code>pwa/components/admin/conversationThread/ConversationThreadShow.tsx</code></td>
+        <td><span class="tag tag-warn">MODIFIER</span> Timeline messages, décisions IA, contexte, actions admin (valider, annuler, répondre)</td>
+        <td>9</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section-title">Plan de test complet — 72 tests</div>
+<!-- ============================================================ -->
+
+<div class="panel">
+  <h2 class="green">Phase 4 — AssistantContextBuilder (15 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T4.1</td><td><code>buildContext()</code> retourne les circuits du client</td><td><span class="tag tag-info">Backend</span></td><td>14 circuits Planetair, 0 pour client vide</td></tr>
+      <tr><td>T4.2</td><td><code>buildContext()</code> retourne options + combinaisons</td><td><span class="tag tag-info">Backend</span></td><td>2 options Planetair (Porte Photos)</td></tr>
+      <tr><td>T4.3</td><td><code>buildContext()</code> retourne horaires + timezone</td><td><span class="tag tag-info">Backend</span></td><td>06:00-18:30, Indian/Reunion</td></tr>
+      <tr><td>T4.4</td><td><code>buildContext()</code> retourne bons cadeaux actifs</td><td><span class="tag tag-info">Backend</span></td><td>Codes used=false, codes utilisés exclus</td></tr>
+      <tr><td>T4.5</td><td><code>buildContext()</code> retourne origines du client</td><td><span class="tag tag-info">Backend</span></td><td>13 origines Planetair</td></tr>
+      <tr><td>T4.6</td><td><code>buildContext()</code> retourne infos club</td><td><span class="tag tag-info">Backend</span></td><td>nom, tel, email, adresse</td></tr>
+      <tr><td>T4.7</td><td><code>buildContext()</code> retourne <code>assistantCustomInstructions</code></td><td><span class="tag tag-info">Backend</span></td><td>null si vide, texte si renseigné</td></tr>
+      <tr><td>T4.8</td><td><code>buildPrompt('voice')</code> adapte le ton vocal</td><td><span class="tag tag-info">Backend</span></td><td>Instructions "tu parles au téléphone"</td></tr>
+      <tr><td>T4.9</td><td><code>buildPrompt('email')</code> adapte le ton email</td><td><span class="tag tag-info">Backend</span></td><td>Instructions "tu réponds par email"</td></tr>
+      <tr><td>T4.10</td><td>Prompt inclut catalogue circuits avec codes/noms/prix/durées</td><td><span class="tag tag-info">Backend</span></td><td>Chaque circuit listé dans le prompt</td></tr>
+      <tr><td>T4.11</td><td>Prompt inclut horaires + timezone</td><td><span class="tag tag-info">Backend</span></td><td>"Ouvert de 06h00 à 18h30"</td></tr>
+      <tr><td>T4.12</td><td>Prompt inclut options si elles existent</td><td><span class="tag tag-info">Backend</span></td><td>"Porte Photos : 20 EUR"</td></tr>
+      <tr><td>T4.13</td><td>Prompt inclut consignes personnalisées</td><td><span class="tag tag-info">Backend</span></td><td>Section "CONSIGNES DU CLUB"</td></tr>
+      <tr><td>T4.14</td><td>Client sans circuits : prompt valide</td><td><span class="tag tag-info">Backend</span></td><td>Pas de crash, message "aucune prestation"</td></tr>
+      <tr><td>T4.15</td><td>Client sans options : section options omise</td><td><span class="tag tag-info">Backend</span></td><td>Pas de section options vide</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 5 — ReservationFactory (14 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T5.1</td><td>Réservation avec tous les champs requis</td><td><span class="tag tag-info">Backend</span></td><td>client, nom, circuit, debut, fin, avion, pilote non-null</td></tr>
+      <tr><td>T5.2</td><td>Code auto-généré <code>RESA-{ts}-{rand}</code></td><td><span class="tag tag-info">Backend</span></td><td>Regex <code>^RESA-\d+-[a-z0-9]+$</code></td></tr>
+      <tr><td>T5.3</td><td>Statut = <code>WAITING</code> par défaut</td><td><span class="tag tag-info">Backend</span></td><td>Pas "confirmé", mais WAITING</td></tr>
+      <tr><td>T5.4</td><td><code>fin</code> calculé depuis <code>debut + circuit.duree</code></td><td><span class="tag tag-info">Backend</span></td><td>Baptême 20min &rarr; fin = debut + 20min</td></tr>
+      <tr><td>T5.5</td><td><code>prix</code> copié depuis <code>circuit.prix</code></td><td><span class="tag tag-info">Backend</span></td><td>Baptême = 60 EUR</td></tr>
+      <tr><td>T5.6</td><td><code>color</code> générée aléatoirement</td><td><span class="tag tag-info">Backend</span></td><td>Format hex <code>#[0-9a-f]{6}</code></td></tr>
+      <tr><td>T5.7</td><td>Origine auto-taguée par canal</td><td><span class="tag tag-info">Backend</span></td><td>"Assistant IA Vocal" ou "Assistant IA Email"</td></tr>
+      <tr><td>T5.8</td><td>Option ajoutée au prix</td><td><span class="tag tag-info">Backend</span></td><td>Porte Photos : 60 + 20 = 80 EUR</td></tr>
+      <tr><td>T5.9</td><td>Bon cadeau : valide code, lie circuit, prix = 0</td><td><span class="tag tag-info">Backend</span></td><td>Code valide &rarr; circuit cadeau, prix ajusté</td></tr>
+      <tr><td>T5.10</td><td>Email récupéré de la source disponible</td><td><span class="tag tag-info">Backend</span></td><td>VAPI: call metadata, Email: thread</td></tr>
+      <tr><td>T5.11</td><td>Téléphone récupéré de la source disponible</td><td><span class="tag tag-info">Backend</span></td><td>VAPI: call.customer.number</td></tr>
+      <tr><td>T5.12</td><td>Email confirmation envoyé si module actif + email</td><td><span class="tag tag-info">Backend</span></td><td>Mail envoyé avec confirmationMessage</td></tr>
+      <tr><td>T5.13</td><td>Email confirmation NON envoyé si module inactif</td><td><span class="tag tag-info">Backend</span></td><td>Aucun mail envoyé</td></tr>
+      <tr><td>T5.14</td><td><code>remarques</code> contient le canal source</td><td><span class="tag tag-info">Backend</span></td><td>"Réservation créée via assistant vocal IA"</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 6 — VAPI Webhook + Service (17 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T5.15</td><td><code>check_availability</code> résout par code exact</td><td><span class="tag tag-info">Backend</span></td><td>BAPT &rarr; Baptême</td></tr>
+      <tr><td>T5.16</td><td><code>check_availability</code> résout par sous-chaîne nom</td><td><span class="tag tag-info">Backend</span></td><td>"baptême" &rarr; Baptême</td></tr>
+      <tr><td>T5.17</td><td><code>confirm_reservation</code> résout par code OU nom (unifié)</td><td><span class="tag tag-info">Backend</span></td><td>Pas de rejet si nom au lieu du code</td></tr>
+      <tr><td>T5.18</td><td><code>confirm_reservation</code> utilise ReservationFactory</td><td><span class="tag tag-info">Backend</span></td><td>Tous les champs auto-complétés</td></tr>
+      <tr><td>T5.19</td><td>Téléphone récupéré de <code>call.customer.number</code></td><td><span class="tag tag-info">Backend</span></td><td>Même si customer_phone absent des params</td></tr>
+      <tr><td>T5.20</td><td>Code RESA généré</td><td><span class="tag tag-info">Backend</span></td><td>reservation.code non null</td></tr>
+      <tr><td>T5.21</td><td>Statut = WAITING</td><td><span class="tag tag-info">Backend</span></td><td>Compatible filtres/calendrier</td></tr>
+      <tr><td>T5.22</td><td><code>check_gift_code</code> : code valide</td><td><span class="tag tag-info">Backend</span></td><td>Retourne circuit + prix du bon cadeau</td></tr>
+      <tr><td>T5.23</td><td><code>check_gift_code</code> : code invalide/utilisé</td><td><span class="tag tag-info">Backend</span></td><td>Message d'erreur clair</td></tr>
+      <tr><td>T5.24</td><td><code>end-of-call-report</code> met à jour résumé thread</td><td><span class="tag tag-info">Backend</span></td><td>thread.summary = summary payload</td></tr>
+      <tr><td>T5.25</td><td>clientId inexistant &rarr; 404</td><td><span class="tag tag-info">Backend</span></td><td>Pas de crash, retour propre</td></tr>
+      <tr><td>T6.1</td><td><code>createAssistant</code> utilise le builder</td><td><span class="tag tag-info">Backend</span></td><td>Prompt contient catalogue dynamique</td></tr>
+      <tr><td>T6.2</td><td><code>updateAssistant</code> utilise le builder</td><td><span class="tag tag-info">Backend</span></td><td>Prompt mis à jour</td></tr>
+      <tr><td>T6.3</td><td><code>buildTools</code> inclut <code>check_gift_code</code></td><td><span class="tag tag-info">Backend</span></td><td>4 outils au total</td></tr>
+      <tr><td>T6.4</td><td>Prompt contient circuits spécifiques du client</td><td><span class="tag tag-info">Backend</span></td><td>Planetair &rarr; 14 circuits</td></tr>
+      <tr><td>T6.5</td><td>Prompt contient horaires spécifiques</td><td><span class="tag tag-info">Backend</span></td><td>06:00-18:30</td></tr>
+      <tr><td>T6.6</td><td>Prompt contient consignes personnalisées</td><td><span class="tag tag-info">Backend</span></td><td>Si renseignées</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 7 — Email IA (8 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T7.1</td><td><code>buildSystemPrompt</code> remplacé par le builder</td><td><span class="tag tag-info">Backend</span></td><td>Prompt dynamique par client</td></tr>
+      <tr><td>T7.2</td><td>Création résa quand <code>action=confirm_slot</code> + slot dispo</td><td><span class="tag tag-info">Backend</span></td><td>Réservation en BDD avec tous les champs</td></tr>
+      <tr><td>T7.3</td><td>Utilise ReservationFactory</td><td><span class="tag tag-info">Backend</span></td><td>Code, statut, couleur, origine auto-remplis</td></tr>
+      <tr><td>T7.4</td><td>Réservation inclut client, circuit, avion, pilote</td><td><span class="tag tag-info">Backend</span></td><td>Pas de champs null sur relations requises</td></tr>
+      <tr><td>T7.5</td><td><code>validateReservation</code> vérifie <code>isSlotAvailable</code></td><td><span class="tag tag-info">Backend</span></td><td>Erreur si créneau pris</td></tr>
+      <tr><td>T7.6</td><td>Double booking empêché</td><td><span class="tag tag-info">Backend</span></td><td>2 validations simultanées &rarr; seule 1ère passe</td></tr>
+      <tr><td>T7.7</td><td>Réponse email envoyée après traitement</td><td><span class="tag tag-info">Backend</span></td><td>Mail SMTP envoyé au client</td></tr>
+      <tr><td>T7.8</td><td>Historique messages stocké dans le thread</td><td><span class="tag tag-info">Backend</span></td><td>Messages consultables après coup</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 8 — Client + Frontend admin (6 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T8.1</td><td>Champ <code>assistantCustomInstructions</code> persiste en BDD</td><td><span class="tag tag-info">Backend</span></td><td>schema:update OK, CRUD fonctionne</td></tr>
+      <tr><td>T8.2</td><td>Textarea éditable dans ClientsEdit onglet Options</td><td><span class="tag tag-warn">Frontend</span></td><td>Saisie + sauvegarde + rechargement OK</td></tr>
+      <tr><td>T8.3</td><td>Bouton "Voir le prompt généré" présent</td><td><span class="tag tag-warn">Frontend</span></td><td>Click affiche prompt en lecture seule</td></tr>
+      <tr><td>T8.4</td><td>Preview affiche le résultat du builder</td><td><span class="tag tag-warn">Frontend</span></td><td>Contient circuits, horaires, consignes</td></tr>
+      <tr><td>T8.5</td><td>Endpoint API retourne le prompt pour un client</td><td><span class="tag tag-info">Backend</span></td><td><code>GET /admin/clients/{id}/assistant-prompt-preview</code></td></tr>
+      <tr><td>T8.6</td><td>Bouton "Mettre à jour assistant VAPI"</td><td><span class="tag tag-warn">Frontend</span></td><td>updateAssistant appelé avec nouveau prompt</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 9 — Dashboard conversations (11 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T9.1</td><td>Liste affiche canal avec icône</td><td><span class="tag tag-warn">Frontend</span></td><td>Icônes distinctes voice / email</td></tr>
+      <tr><td>T9.2</td><td>Statuts affichés avec couleur correcte</td><td><span class="tag tag-warn">Frontend</span></td><td>Chaque statut &rarr; chip coloré</td></tr>
+      <tr><td>T9.3</td><td>Résumé IA affiché dans la liste</td><td><span class="tag tag-warn">Frontend</span></td><td>Texte tronqué si trop long</td></tr>
+      <tr><td>T9.4</td><td>Lien vers la réservation si elle existe</td><td><span class="tag tag-warn">Frontend</span></td><td>Click mène à la fiche réservation</td></tr>
+      <tr><td>T9.5</td><td>Bouton "Valider" crée la réservation</td><td><span class="tag tag-warn">Frontend</span></td><td>Notification succès, statut mis à jour</td></tr>
+      <tr><td>T9.6</td><td>Bouton "Annuler" annule la conversation</td><td><span class="tag tag-warn">Frontend</span></td><td>Statut &rarr; cancelled, notification</td></tr>
+      <tr><td>T9.7</td><td>Détail affiche timeline des messages</td><td><span class="tag tag-warn">Frontend</span></td><td>Messages alternés client / IA chrono</td></tr>
+      <tr><td>T9.8</td><td>Détail affiche décisions IA</td><td><span class="tag tag-warn">Frontend</span></td><td>action, intent, extracted visibles</td></tr>
+      <tr><td>T9.9</td><td>Détail affiche données extraites</td><td><span class="tag tag-warn">Frontend</span></td><td>circuit_code, date, heure, quantité, nom</td></tr>
+      <tr><td>T9.10</td><td>Détail affiche créneaux proposés</td><td><span class="tag tag-warn">Frontend</span></td><td>Table début/fin/machine/prix</td></tr>
+      <tr><td>T9.11</td><td>Admin peut répondre manuellement</td><td><span class="tag tag-warn">Frontend</span></td><td>Textarea + bouton Envoyer &rarr; email envoyé</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 10 — Mise en service Email IA (6 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T10.1</td><td>Connexion IMAP Planetair974 fonctionne</td><td><span class="tag tag-err">Infra</span></td><td>imap_open sans erreur</td></tr>
+      <tr><td>T10.2</td><td>CRON exécute <code>poll-inbound-emails</code> toutes les 2min</td><td><span class="tag tag-err">Infra</span></td><td>Logs réguliers dans docker logs</td></tr>
+      <tr><td>T10.3</td><td>Emails non lus récupérés et traités</td><td><span class="tag tag-ok">E2E</span></td><td>Email envoyé &rarr; thread créé</td></tr>
+      <tr><td>T10.4</td><td>Réponse IA envoyée par SMTP</td><td><span class="tag tag-ok">E2E</span></td><td>Client reçoit la réponse</td></tr>
+      <tr><td>T10.5</td><td>Thread créé/mis à jour correctement</td><td><span class="tag tag-info">Backend</span></td><td>pending &rarr; analyzing &rarr; proposing</td></tr>
+      <tr><td>T10.6</td><td>Emails même expéditeur = même thread</td><td><span class="tag tag-info">Backend</span></td><td>2 mails de toto@mail.com &rarr; 1 thread</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Phase 11 — Tests End-to-End (11 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>T11.1</td><td><strong>VAPI flow complet</strong> : appel &rarr; list_services &rarr; check_availability &rarr; confirm_reservation</td><td><span class="tag tag-ok">E2E</span></td><td>Résa en BDD : code, statut WAITING, avion, pilote, prix, email, tél</td></tr>
+      <tr><td>T11.2</td><td><strong>VAPI + bon cadeau</strong> : appel &rarr; check_gift_code &rarr; confirm_reservation</td><td><span class="tag tag-ok">E2E</span></td><td>Résa avec cadeau lié, prix = 0, circuit du bon</td></tr>
+      <tr><td>T11.3</td><td><strong>Email flow complet</strong> : email &rarr; analyse IA &rarr; dispo &rarr; proposition &rarr; confirmation</td><td><span class="tag tag-ok">E2E</span></td><td>Réservation créée automatiquement</td></tr>
+      <tr><td>T11.4</td><td><strong>Validation admin</strong> : email &rarr; IA &rarr; awaiting_club &rarr; admin valide</td><td><span class="tag tag-ok">E2E</span></td><td>Clic "Valider" &rarr; résa en BDD</td></tr>
+      <tr><td>T11.5</td><td><strong>Multi-tenant</strong> : isolation complète entre clients</td><td><span class="tag tag-ok">E2E</span></td><td>Client A &ne; Client B, aucun croisement</td></tr>
+      <tr><td>T11.6</td><td>Créneau indisponible</td><td><span class="tag tag-ok">E2E</span></td><td>Résa existante &rarr; message erreur</td></tr>
+      <tr><td>T11.7</td><td>Circuit inexistant</td><td><span class="tag tag-ok">E2E</span></td><td>Code fantaisiste &rarr; liste des prestations</td></tr>
+      <tr><td>T11.8</td><td>Date passée</td><td><span class="tag tag-ok">E2E</span></td><td>Message adapté</td></tr>
+      <tr><td>T11.9</td><td>Aucun créneau disponible</td><td><span class="tag tag-ok">E2E</span></td><td>Propose une autre date</td></tr>
+      <tr><td>T11.10</td><td>Email confirmation post-VAPI</td><td><span class="tag tag-ok">E2E</span></td><td>hasEmailConfirmation=true &rarr; mail reçu</td></tr>
+      <tr><td>T11.11</td><td>Réservation visible au calendrier admin</td><td><span class="tag tag-ok">E2E</span></td><td>Statut WAITING, couleur, code RESA</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2 class="green">Tests transversaux (5 tests)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Test</th><th>Type</th><th>Vérification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>TX.1</td><td>Sécurité webhook VAPI : validation payload</td><td><span class="tag tag-info">Backend</span></td><td>Payload invalide &rarr; 400, header secret vérifié</td></tr>
+      <tr><td>TX.2</td><td>Multi-tenant : TenantFilterListener sur conversations</td><td><span class="tag tag-info">Backend</span></td><td>Admin client A ne voit pas conversations client B</td></tr>
+      <tr><td>TX.3</td><td>Performances : builder avec beaucoup de circuits (50+)</td><td><span class="tag tag-info">Backend</span></td><td>Temps &lt; 500ms</td></tr>
+      <tr><td>TX.4</td><td>Fallback si API Kimi/Vapi indisponible</td><td><span class="tag tag-info">Backend</span></td><td>Message gracieux au client, pas de crash</td></tr>
+      <tr><td>TX.5</td><td>Cache Doctrine : schema:update sans perte de données</td><td><span class="tag tag-err">Infra</span></td><td>Après ajout assistantCustomInstructions + messages</td></tr>
+    </tbody>
+  </table>
+
+  <div class="stats">
+    <div class="stat"><div class="val">52</div><div class="lbl">Tests Backend</div></div>
+    <div class="stat"><div class="val">11</div><div class="lbl">Tests Frontend</div></div>
+    <div class="stat"><div class="val">7</div><div class="lbl">Tests Infra</div></div>
+    <div class="stat"><div class="val">2</div><div class="lbl">Tests E2E Infra</div></div>
+    <div class="stat"><div class="val">72</div><div class="lbl">Total</div></div>
+  </div>
+</div>
+
+<script>
+  const PROJECT_ROOT = '/Users/mhoar/Desktop/CREAZOT-ULM';
+  function openInCursor(relativePath) {
+    window.location.href = 'vscode://file' + PROJECT_ROOT + '/' + relativePath;
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,61 @@
+import { TextInput, BooleanInput } from "react-admin";
+import { Box } from "@mui/material";
+import { RichTextInput } from 'ra-input-rich-text';
+import { useWatch } from 'react-hook-form';
+import { Typography, Divider } from '@mui/material';
+
+export const ThanksOptions = () => {
+  const hasPassengerRegistration = useWatch({ name: 'hasPassengerRegistration', defaultValue: false });
+  const hasEmailConfirmation = useWatch({ name: 'hasEmailConfirmation', defaultValue: false });
+  const emailParams = useWatch({ name: 'emailParams', defaultValue: '' });
+  const emailAddressSender = useWatch({ name: 'emailAddressSender', defaultValue: '' });
+  const emailConfigMissing = !emailParams || !emailAddressSender;
+
+  const EmailSubjectInput = () => {
+    return !hasEmailConfirmation ? null : 
+        <TextInput source="confirmationSubject" label="Objet de l'email"/>
+  }
+
+  const EmailContentInput = () => {
+    return !hasEmailConfirmation ? null : 
+        <RichTextInput 
+            source="confirmationMessage" 
+            label="Contenu de l'email de confirmation"
+            helperText={
+                <span className="text-xs italic text-gray-500">
+                    Variables utilisables : <span className="text-red-700">{'{{FIRSTNAME}}, {{NAME}}, {{EMAIL}}, {{PHONE}}, {{DATE}}'}</span>.
+                </span>
+            }
+        />
+  };
+
+  return !hasPassengerRegistration ? null :
+    <>
+      <Divider sx={{ mt: 2, borderBottomWidth: 2, borderColor: '#666' }} />
+      <Typography variant="h6" gutterBottom>
+          Enregistrement des passagers
+      </Typography>
+        <TextInput source="thanksTitle" label="Titre du formulaire"/>
+        <TextInput source="consentText" label="Texte nécessitant consentement" helperText="Laisser vide si non nécessaire" multiline sx={{ '& .MuiInputBase-inputMultiline': {height: '200px!important'} }}/>
+        <RichTextInput
+            source="thanksMessage"
+            label="Contenu de la page de redirection"
+            fullWidth
+            helperText={
+                <span className="text-xs italic text-gray-500">
+                    Écrire <span className="text-red-700">{'{{FIRSTNAME}}'}</span> pour utiliser le prénom du formulaire.
+                </span>
+            }
+        />
+        
+        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+            <Box flex={1}>
+                <BooleanInput source="hasEmailConfirmation" label="Email de confirmation" sx={{marginTop: '1em'}} fullWidth disabled={emailConfigMissing} helperText={emailConfigMissing ? "Configurez le serveur d'email et l'adresse d'envoi dans l'onglet Informations" : ""}/>
+            </Box>
+            <Box flex={1}>
+                <EmailSubjectInput/>
+            </Box>
+        </Box>
+        <EmailContentInput/>
+    </>
+};
