@@ -407,6 +407,7 @@ class Client
 
     /** @var Collection<int, IntegrationPattern> */
     #[ORM\ManyToMany(targetEntity: IntegrationPattern::class, mappedBy: 'clients')]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
     private Collection $integrationPatterns;
 
     #[ORM\ManyToOne(targetEntity: CountryCode::class)]
@@ -1466,4 +1467,21 @@ class Client
 
     /** @return Collection<int, IntegrationPattern> */
     public function getIntegrationPatterns(): Collection { return $this->integrationPatterns; }
+
+    public function addIntegrationPattern(IntegrationPattern $pattern): static
+    {
+        if (!$this->integrationPatterns->contains($pattern)) {
+            $this->integrationPatterns->add($pattern);
+            $pattern->addClient($this);
+        }
+        return $this;
+    }
+
+    public function removeIntegrationPattern(IntegrationPattern $pattern): static
+    {
+        if ($this->integrationPatterns->removeElement($pattern)) {
+            $pattern->removeClient($this);
+        }
+        return $this;
+    }
 }

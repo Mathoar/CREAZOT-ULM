@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Aeronef;
 use App\Entity\Client;
+use App\Entity\IntegrationPattern;
 use App\Service\Integration\IntegrationEngine;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +24,33 @@ class IntegrationController extends AbstractController
         private readonly IntegrationEngine $engine,
         private readonly EntityManagerInterface $em,
     ) {}
+
+    /**
+     * Liste les capabilities disponibles avec leurs patterns, pour le formulaire client.
+     * Retourne : [{ capability: "tracking", patterns: [{ id: 3, name: "Microtrak", code: "M_TRACK" }, ...] }]
+     */
+    #[Route('/capabilities', name: 'integration_capabilities', methods: ['GET'])]
+    #[IsGranted('OIDC_ADMIN')]
+    public function getCapabilities(): JsonResponse
+    {
+        $patterns = $this->em->getRepository(IntegrationPattern::class)->findBy(['active' => true]);
+
+        $grouped = [];
+        foreach ($patterns as $p) {
+            $cap = $p->getCapability();
+            if (!$cap) continue;
+            if (!isset($grouped[$cap])) {
+                $grouped[$cap] = ['capability' => $cap, 'requiredModule' => $p->getRequiredModule(), 'patterns' => []];
+            }
+            $grouped[$cap]['patterns'][] = [
+                'id' => $p->getId(),
+                'name' => $p->getName(),
+                'code' => $p->getCode(),
+            ];
+        }
+
+        return new JsonResponse(array_values($grouped));
+    }
 
     #[Route('/entities', name: 'integration_entities', methods: ['GET'])]
     #[IsGranted('ROLE_SUPER_ADMIN')]

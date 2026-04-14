@@ -14,6 +14,7 @@ export const IntegrationPatternList = () => (
       <TextField source="name" label="Nom" />
       <TextField source="code" label="Code" />
       <TextField source="capability" label="Capability" />
+      <TextField source="requiredModule" label="Module requis" />
       <TextField source="method" label="Méthode" />
       <TextField source="urlTemplate" label="URL Template" />
       <BooleanField source="active" label="Actif" />

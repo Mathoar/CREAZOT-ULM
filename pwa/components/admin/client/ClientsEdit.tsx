@@ -52,6 +52,93 @@ const BillingInfoAlert = () => {
 
 const API_DOMAIN = process.env.NEXT_PUBLIC_ENTRYPOINT || "";
 
+type CapabilityInfo = {
+    capability: string;
+    requiredModule: string | null;
+    patterns: { id: number; name: string; code: string }[];
+};
+
+const IntegrationPatternSelector = () => {
+    const { session } = useSessionContext();
+    const record = useRecordContext();
+    const { setValue, getValues } = useFormContext();
+    const [capabilities, setCapabilities] = useState<CapabilityInfo[]>([]);
+    const [selections, setSelections] = useState<Record<string, number | null>>({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCapabilities = async () => {
+            try {
+                const res = await fetch(`${API_DOMAIN}/admin/integrations/capabilities`, {
+                    headers: { Authorization: `Bearer ${session?.accessToken}` },
+                });
+                if (res.ok) setCapabilities(await res.json());
+            } catch { /* ignore */ }
+            setLoading(false);
+        };
+        if (session?.accessToken) fetchCapabilities();
+    }, [session?.accessToken]);
+
+    useEffect(() => {
+        if (!record || !capabilities.length) return;
+        const currentPatterns: any[] = record.integrationPatterns || [];
+        const initial: Record<string, number | null> = {};
+        for (const cap of capabilities) {
+            const match = currentPatterns.find((p: any) => {
+                const pid = typeof p === 'object' ? p.id || p['@id'] : p;
+                return cap.patterns.some(cp => cp.id === pid || `/integration_patterns/${cp.id}` === pid);
+            });
+            if (match) {
+                const pid = typeof match === 'object' ? match.id || match['@id'] : match;
+                const numId = typeof pid === 'string' ? parseInt(pid.replace(/.*\//, '')) : pid;
+                initial[cap.capability] = numId;
+            } else {
+                initial[cap.capability] = null;
+            }
+        }
+        setSelections(initial);
+    }, [record, capabilities]);
+
+    const handleChange = (capability: string, patternId: number | null) => {
+        setSelections(prev => ({ ...prev, [capability]: patternId }));
+        const allSelected = Object.entries({ ...selections, [capability]: patternId })
+            .filter(([, v]) => v !== null)
+            .map(([, v]) => `/integration_patterns/${v}`);
+        setValue('integrationPatterns', allSelected, { shouldDirty: true });
+    };
+
+    if (loading) return null;
+    if (!capabilities.length) return null;
+
+    return (
+        <Box sx={{ mt: 3, width: '100%' }}>
+            <Divider sx={{ mb: 2, borderBottomWidth: 2, borderColor: '#666' }} />
+            <Typography variant="h6" gutterBottom>Intégrations API</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Sélectionnez le fournisseur API pour chaque fonctionnalité disponible.
+            </Typography>
+            {capabilities.map(cap => (
+                <Box key={cap.capability} display="flex" gap={2} alignItems="center" sx={{ mb: 1 }}>
+                    <Typography variant="body2" sx={{ minWidth: 150, fontWeight: 600, textTransform: 'capitalize' }}>
+                        {cap.capability}
+                    </Typography>
+                    <SelectInput
+                        source={`_cap_${cap.capability}`}
+                        label=""
+                        choices={cap.patterns.map(p => ({ id: p.id, name: p.name }))}
+                        value={selections[cap.capability] || ''}
+                        onChange={(e: any) => handleChange(cap.capability, e.target.value ? Number(e.target.value) : null)}
+                        emptyText="Aucun"
+                        emptyValue={null}
+                        helperText={cap.requiredModule ? `Module : ${cap.requiredModule}` : false}
+                        sx={{ minWidth: 250 }}
+                    />
+                </Box>
+            ))}
+        </Box>
+    );
+};
+
 type VapiStatus = {
     configured: boolean;
     assistant_id?: string;
@@ -584,6 +671,7 @@ export const ClientsEdit = () => {
                         </Box>
                         <NumberInput source="zoom" label="Zoom" min={ 1 } max={ 15 }/>
                         <PasswordInput source="trackingApiKey" label="Clé API Tracking (Microtrak)" fullWidth helperText="Clé d'authentification pour l'API de suivi des balises" />
+                        <IntegrationPatternSelector />
                         <Typography variant="h6" gutterBottom>
                             Seuils d'alerte
                         </Typography>

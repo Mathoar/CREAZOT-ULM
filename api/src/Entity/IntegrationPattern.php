@@ -60,6 +60,11 @@ class IntegrationPattern
     #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
     private ?string $capability = null;
 
+    /** Module client requis pour cette capability (ex: hasMicrotrakTag, hasAI). Auto-assign à l'activation. */
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
+    private ?string $requiredModule = null;
+
     #[ORM\Column(length: 10)]
     #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
     private string $method = 'GET';
@@ -145,6 +150,9 @@ class IntegrationPattern
 
     public function getCapability(): ?string { return $this->capability; }
     public function setCapability(?string $capability): static { $this->capability = $capability; return $this; }
+
+    public function getRequiredModule(): ?string { return $this->requiredModule; }
+    public function setRequiredModule(?string $requiredModule): static { $this->requiredModule = $requiredModule; return $this; }
 
     public function getMethod(): string { return $this->method; }
     public function setMethod(string $method): static { $this->method = strtoupper($method); return $this; }

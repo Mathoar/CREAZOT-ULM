@@ -104,6 +104,16 @@ export const IntegrationPatternForm = ({ defaultValues }: IntegrationPatternForm
           helperText="Identifiant unique du pattern (ex: microtrak_tracking, spider_tracking)" />
         <TextInput source="capability" label="Capability (fonctionnalité)" fullWidth
           helperText="Nom fonctionnel partagé entre patterns (ex: tracking). Le frontend appelle la capability, le moteur résout le bon pattern pour le client." />
+        <SelectInput source="requiredModule" label="Module client requis" emptyText="Aucun (optionnel)" choices={[
+          { id: "hasMicrotrakTag", name: "Balise(s) Microtrak" },
+          { id: "hasAI", name: "Fonctions IA" },
+          { id: "hasVoiceAssistant", name: "Assistant Vocal" },
+          { id: "hasAiReservationAssistant", name: "Assistant IA réservation" },
+          { id: "hasCams", name: "Caméras" },
+          { id: "hasNotam", name: "NOTAMs" },
+          { id: "hasReservation", name: "Réservations" },
+          { id: "hasWebshop", name: "Webshop" },
+        ]} fullWidth helperText="Si défini, le client sera automatiquement associé à ce pattern quand il active le module." />
         <SelectInput source="method" label="Méthode HTTP" choices={methodChoices} validate={required()} />
         <TextInput source="urlTemplate" label="URL Template" validate={required()} fullWidth
           helperText="Utilisez {{variable}} pour les parties dynamiques" />
