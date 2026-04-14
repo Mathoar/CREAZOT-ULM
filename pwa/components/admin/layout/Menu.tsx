@@ -386,6 +386,12 @@ const CustomMenu = () => {
                       leftIcon={<SettingsApplicationsIcon />}
                       sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
                     />
+                    <Menu.Item
+                      to="/integration_patterns"
+                      primaryText="Intégrations API"
+                      leftIcon={<ExtensionIcon />}
+                      sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
+                    />
                 </Collapse>
               </>
             }

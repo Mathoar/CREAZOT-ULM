@@ -583,6 +583,7 @@ export const ClientsEdit = () => {
                             </Box>
                         </Box>
                         <NumberInput source="zoom" label="Zoom" min={ 1 } max={ 15 }/>
+                        <PasswordInput source="trackingApiKey" label="Clé API Tracking (Microtrak)" fullWidth helperText="Clé d'authentification pour l'API de suivi des balises" />
                         <Typography variant="h6" gutterBottom>
                             Seuils d'alerte
                         </Typography>

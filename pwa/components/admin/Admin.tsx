@@ -58,6 +58,7 @@ import countryCodeResourceProps from "./countryCode";
 import taxRateResourceProps from "./taxRate";
 import flightRuleResourceProps from "./flightRule";
 import conversationThreadResourceProps from "./conversationThread";
+import integrationPatternResourceProps from "./integrationPattern";
 
 const getClientHeaders = () => {
   try {
@@ -193,6 +194,7 @@ const AdminWithOIDC = () => {
         <ResourceGuesser name="flight_rules" {...flightRuleResourceProps} />
         <ResourceGuesser name="conversation_threads" {...conversationThreadResourceProps}/>
         <ResourceGuesser name="client_access_requests" {...clientAccessRequestResourceProps}/>
+        <ResourceGuesser name="integration_patterns" {...integrationPatternResourceProps}/>
         <CustomRoutes>
           <Route path="/landings" element={<LandingsList />} />
           <Route path="/convert" element={<ReservationCreate />} />

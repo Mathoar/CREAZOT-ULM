@@ -401,6 +401,13 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $assistantCustomInstructions = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?string $trackingApiKey = null;
+
+    /** @var Collection<int, IntegrationPattern> */
+    #[ORM\ManyToMany(targetEntity: IntegrationPattern::class, mappedBy: 'clients')]
+    private Collection $integrationPatterns;
 
     #[ORM\ManyToOne(targetEntity: CountryCode::class)]
     #[ORM\JoinColumn(nullable: true)]
@@ -419,6 +426,7 @@ class Client
         $this->cameras = new ArrayCollection();
         $this->users = new ArrayCollection();
         $this->modulePacks = new ArrayCollection();
+        $this->integrationPatterns = new ArrayCollection();
     }
 
     #[Groups(groups: ['Client:read'])]
@@ -1453,4 +1461,9 @@ class Client
         return $this;
     }
 
+    public function getTrackingApiKey(): ?string { return $this->trackingApiKey; }
+    public function setTrackingApiKey(?string $trackingApiKey): static { $this->trackingApiKey = $trackingApiKey; return $this; }
+
+    /** @return Collection<int, IntegrationPattern> */
+    public function getIntegrationPatterns(): Collection { return $this->integrationPatterns; }
 }
