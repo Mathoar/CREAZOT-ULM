@@ -61,10 +61,13 @@ type CapabilityInfo = {
 const IntegrationPatternSelector = () => {
     const { session } = useSessionContext();
     const record = useRecordContext();
-    const { setValue, getValues } = useFormContext();
     const [capabilities, setCapabilities] = useState<CapabilityInfo[]>([]);
     const [selections, setSelections] = useState<Record<string, number | null>>({});
     const [loading, setLoading] = useState(true);
+    const [initialized, setInitialized] = useState(false);
+
+    let formContext: any = null;
+    try { formContext = useFormContext(); } catch { /* pas encore dans le form */ }
 
     useEffect(() => {
         const fetchCapabilities = async () => {
@@ -80,7 +83,7 @@ const IntegrationPatternSelector = () => {
     }, [session?.accessToken]);
 
     useEffect(() => {
-        if (!record || !capabilities.length) return;
+        if (!record || !capabilities.length || initialized) return;
         const currentPatterns: any[] = record.integrationPatterns || [];
         const initial: Record<string, number | null> = {};
         for (const cap of capabilities) {
@@ -97,18 +100,21 @@ const IntegrationPatternSelector = () => {
             }
         }
         setSelections(initial);
-    }, [record, capabilities]);
+        setInitialized(true);
+    }, [record, capabilities, initialized]);
 
     const handleChange = (capability: string, patternId: number | null) => {
-        setSelections(prev => ({ ...prev, [capability]: patternId }));
-        const allSelected = Object.entries({ ...selections, [capability]: patternId })
-            .filter(([, v]) => v !== null)
-            .map(([, v]) => `/integration_patterns/${v}`);
-        setValue('integrationPatterns', allSelected, { shouldDirty: true });
+        const updated = { ...selections, [capability]: patternId };
+        setSelections(updated);
+        if (formContext) {
+            const allSelected = Object.entries(updated)
+                .filter(([, v]) => v !== null)
+                .map(([, v]) => `/integration_patterns/${v}`);
+            formContext.setValue('integrationPatterns', allSelected, { shouldDirty: true });
+        }
     };
 
-    if (loading) return null;
-    if (!capabilities.length) return null;
+    if (loading || !capabilities.length) return null;
 
     return (
         <Box sx={{ mt: 3, width: '100%' }}>
@@ -118,21 +124,29 @@ const IntegrationPatternSelector = () => {
                 Sélectionnez le fournisseur API pour chaque fonctionnalité disponible.
             </Typography>
             {capabilities.map(cap => (
-                <Box key={cap.capability} display="flex" gap={2} alignItems="center" sx={{ mb: 1 }}>
+                <Box key={cap.capability} display="flex" gap={2} alignItems="center" sx={{ mb: 1.5 }}>
                     <Typography variant="body2" sx={{ minWidth: 150, fontWeight: 600, textTransform: 'capitalize' }}>
                         {cap.capability}
                     </Typography>
-                    <SelectInput
-                        source={`_cap_${cap.capability}`}
-                        label=""
-                        choices={cap.patterns.map(p => ({ id: p.id, name: p.name }))}
-                        value={selections[cap.capability] || ''}
+                    <Box component="select"
+                        value={selections[cap.capability] ?? ''}
                         onChange={(e: any) => handleChange(cap.capability, e.target.value ? Number(e.target.value) : null)}
-                        emptyText="Aucun"
-                        emptyValue={null}
-                        helperText={cap.requiredModule ? `Module : ${cap.requiredModule}` : false}
-                        sx={{ minWidth: 250 }}
-                    />
+                        sx={{
+                            minWidth: 250, p: 1, borderRadius: 1,
+                            border: '1px solid', borderColor: 'grey.400',
+                            fontSize: '0.875rem', bgcolor: 'background.paper',
+                        }}
+                    >
+                        <option value="">— Aucun —</option>
+                        {cap.patterns.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </Box>
+                    {cap.requiredModule && (
+                        <Typography variant="caption" color="text.secondary">
+                            Module : {cap.requiredModule}
+                        </Typography>
+                    )}
                 </Box>
             ))}
         </Box>

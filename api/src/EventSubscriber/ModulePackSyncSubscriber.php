@@ -13,27 +13,7 @@ use ApiPlatform\Symfony\EventListener\EventPriorities;
 
 class ModulePackSyncSubscriber implements EventSubscriberInterface
 {
-    private const KNOWN_MODULES = [
-        'hasReservation',
-        'hasOptions',
-        'hasEmailConfirmation',
-        'hasGifts',
-        'hasWebshop',
-        'hasPartners',
-        'hasPassengerRegistration',
-        'hasOriginContact',
-        'hasPaymentManagement',
-        'hasExpensesManagement',
-        'hasMicrotrakTag',
-        'hasLandingManagement',
-        'hasIndividualFlightLogs',
-        'hasGroupUpdate',
-        'hasNotam',
-        'hasAI',
-        'hasAiReservationAssistant',
-        'hasVoiceAssistant',
-        'hasCams',
-    ];
+    private ?array $knownModules = null;
 
     public function __construct(
         private EntityManagerInterface $em,
@@ -66,12 +46,37 @@ class ModulePackSyncSubscriber implements EventSubscriberInterface
         }
         $activeModules = array_unique($activeModules);
 
-        foreach (self::KNOWN_MODULES as $module) {
+        foreach ($this->getKnownModules() as $module) {
             $setter = 'set' . ucfirst($module);
-            $entity->{$setter}(in_array($module, $activeModules, true));
+            if (method_exists($entity, $setter)) {
+                $entity->{$setter}(in_array($module, $activeModules, true));
+            }
         }
 
         $this->em->persist($entity);
         $this->em->flush();
+    }
+
+    /**
+     * Introspection dynamique : récupère tous les champs boolean has* de Client.
+     * @return string[]
+     */
+    private function getKnownModules(): array
+    {
+        if ($this->knownModules !== null) {
+            return $this->knownModules;
+        }
+
+        $meta = $this->em->getClassMetadata(Client::class);
+        $this->knownModules = [];
+
+        foreach ($meta->fieldMappings as $field => $mapping) {
+            $type = $mapping['type'] ?? '';
+            if ($type === 'boolean' && str_starts_with($field, 'has')) {
+                $this->knownModules[] = $field;
+            }
+        }
+
+        return $this->knownModules;
     }
 }

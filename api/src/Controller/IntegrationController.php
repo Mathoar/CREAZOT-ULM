@@ -26,6 +26,30 @@ class IntegrationController extends AbstractController
     ) {}
 
     /**
+     * Liste dynamique des modules boolean (has*) de l'entité Client.
+     * Utilisé par IntegrationPatternForm, ModulePacksCreate, ModulePacksEdit.
+     */
+    #[Route('/modules', name: 'integration_modules', methods: ['GET'])]
+    #[IsGranted('OIDC_ADMIN')]
+    public function getModules(): JsonResponse
+    {
+        $meta = $this->em->getClassMetadata(Client::class);
+        $modules = [];
+
+        foreach ($meta->fieldMappings as $field => $mapping) {
+            $type = $mapping['type'] ?? '';
+            if ($type === 'boolean' && str_starts_with($field, 'has')) {
+                $label = preg_replace('/([a-z])([A-Z])/', '$1 $2', lcfirst(substr($field, 3)));
+                $modules[] = ['id' => $field, 'name' => ucfirst($label)];
+            }
+        }
+
+        usort($modules, fn($a, $b) => strcmp($a['name'], $b['name']));
+
+        return new JsonResponse($modules);
+    }
+
+    /**
      * Liste les capabilities disponibles avec leurs patterns, pour le formulaire client.
      * Retourne : [{ capability: "tracking", patterns: [{ id: 3, name: "Microtrak", code: "M_TRACK" }, ...] }]
      */
