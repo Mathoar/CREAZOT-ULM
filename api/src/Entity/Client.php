@@ -15,6 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Controller\CreateClientController;
@@ -54,6 +55,11 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
         new Put(
             uriTemplate: '/clients/{id}{._format}',
             security: 'is_granted("OIDC_ADMIN")'
+        ),
+        new Patch(
+            uriTemplate: '/clients/{id}{._format}',
+            security: 'is_granted("OIDC_ADMIN")',
+            inputFormats: ['json' => ['application/merge-patch+json']],
         ),
         new Delete(
             uriTemplate: '/clients/{id}{._format}',
@@ -415,6 +421,12 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?CountryCode $countryCode = null;
 
+    /** @var Collection<int, Contact> */
+    #[ORM\ManyToMany(targetEntity: Contact::class)]
+    #[ORM\JoinTable(name: 'client_contact')]
+    #[Groups(groups: ['Client:read', 'Client:write'])]
+    private Collection $contacts;
+
     /**
      * @var Collection<int, User>
      */
@@ -428,6 +440,7 @@ class Client
         $this->users = new ArrayCollection();
         $this->modulePacks = new ArrayCollection();
         $this->integrationPatterns = new ArrayCollection();
+        $this->contacts = new ArrayCollection();
     }
 
     #[Groups(groups: ['Client:read'])]
@@ -1484,4 +1497,33 @@ class Client
         }
         return $this;
     }
+
+    /** @return Collection<int, Contact> */
+    public function getContacts(): Collection { return $this->contacts; }
+
+    public function addContact(Contact $contact): static
+    {
+        if (!$this->contacts->contains($contact)) {
+            $this->contacts->add($contact);
+        }
+        return $this;
+    }
+
+    public function removeContact(Contact $contact): static
+    {
+        $this->contacts->removeElement($contact);
+        return $this;
+    }
+
+    private function computeBoundingBoxRadius(): float
+    {
+        $zoom = $this->zoom ?? 10;
+        $radius = 360 / pow(2, $zoom);
+        return max($radius, 0.3);
+    }
+
+    public function getLatMin(): float { return ($this->lat ?? 0) - $this->computeBoundingBoxRadius(); }
+    public function getLatMax(): float { return ($this->lat ?? 0) + $this->computeBoundingBoxRadius(); }
+    public function getLngMin(): float { return ($this->lng ?? 0) - $this->computeBoundingBoxRadius(); }
+    public function getLngMax(): float { return ($this->lng ?? 0) + $this->computeBoundingBoxRadius(); }
 }

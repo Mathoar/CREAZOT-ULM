@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import "../../../../css/satoshi.css";
 import "../../../../css/style.css";
 import { MetarView } from "./MetarView";
-import { EncodedMetarView } from "./EncodedMetarView";
 import { Cameras } from "./Cameras";
 import { CalendarWidget } from "./CalendarWidget";
 import dynamic from 'next/dynamic';
@@ -12,8 +11,6 @@ import GlobalLoader from "../../../admin/layout/GlobalLoader";
 import { isDefined } from "../../../../app/lib/utils";
 import { AppBar, Dialog, IconButton, Toolbar, Typography } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
-import { clientWithMicrotrakTags } from "../../../../app/lib/client";
-
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
 const Dashboard = () => {
@@ -51,10 +48,7 @@ const Dashboard = () => {
       <div className="overflow-x-hidden w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full" >
           <MetarView showGraphic={ showGraphic } setShowGraphic={ setShowGraphic } switchToMap={() => setShowMetarMobile(false)} hidden={ isSmall && !showMetarMobile } client={ client } isSmall={ isSmall }/>
-          { clientWithMicrotrakTags(client) ? 
-            <MapView isSmall={ isSmall } switchToMetar={() => setShowMetarMobile(true)} hidden={ isSmall && showMetarMobile } client={ client } setShowFullMap={ setShowFullMap } selectedBalise={ selectedBalise } setSelectedBalise={ setSelectedBalise } fullScreen={ false } /> :
-            <EncodedMetarView client={ client } switchToMetar={() => setShowMetarMobile(true)} hidden={ isSmall && showMetarMobile } isSmall={ isSmall }/>
-          }
+          <MapView isSmall={ isSmall } switchToMetar={() => setShowMetarMobile(true)} hidden={ isSmall && showMetarMobile } client={ client } setShowFullMap={ setShowFullMap } selectedBalise={ selectedBalise } setSelectedBalise={ setSelectedBalise } fullScreen={ false } />
         </div>
         <div className="col-span-12 mt-6">
           <div className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark">

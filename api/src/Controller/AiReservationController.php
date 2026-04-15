@@ -210,7 +210,7 @@ class AiReservationController extends AbstractController
         \DateTimeInterface $debut,
     ): void {
         $client = $thread->getClient();
-        $clubName = $client->getNom() ?? $client->getName() ?? 'Notre club';
+        $clubName = $client->getName() ?? 'Notre club';
         $customerName = $thread->getCustomerName() ?? 'Client';
         $phone = $client->getPhone() ?? '';
 
@@ -251,7 +251,7 @@ class AiReservationController extends AbstractController
     private function notifyCustomerCancellation(ConversationThread $thread, ?string $reason): void
     {
         $client = $thread->getClient();
-        $clubName = $client->getNom() ?? $client->getName() ?? 'Notre club';
+        $clubName = $client->getName() ?? 'Notre club';
         $customerName = $thread->getCustomerName() ?? 'Client';
         $phone = $client->getPhone() ?? '';
 

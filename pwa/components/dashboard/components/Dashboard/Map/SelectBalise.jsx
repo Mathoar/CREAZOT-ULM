@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
 import { isDefined } from '../../../../../app/lib/utils';
 import { useDataProvider } from 'react-admin';
-import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { FormControl, InputLabel, MenuItem, Select, ListSubheader, Divider } from '@mui/material';
+import { clientWithMicrotrakTags } from '../../../../../app/lib/client';
 
-export const SelectBalise = ({ value, onChange, setAeronefs }) => {
+export const SelectBalise = ({ value, onChange, setAeronefs, client }) => {
 
     const dataProvider = useDataProvider();
-    const all = { id: 'all', name: 'Toutes' };
-    const none = { id: 'none', name: 'Aucune' };
-    const defaultChoices = [none, all];
+    const hasTracking = clientWithMicrotrakTags(client);
 
-    const [choices, setChoices] = useState([]);
+    const [baliseChoices, setBaliseChoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!hasTracking) {
+            setLoading(false);
+            return;
+        }
         const fetchBalises = async () => {
             try {
                 const { data } = await dataProvider.getList('aeronefs', {
@@ -27,7 +30,7 @@ export const SelectBalise = ({ value, onChange, setAeronefs }) => {
                     name: item.immatriculation
                 }));
                 setAeronefs(data);
-                setChoices([...defaultChoices, ...balises]);
+                setBaliseChoices(balises);
             } catch (err) {
                 setError(err.message || 'Erreur de chargement');
             } finally {
@@ -35,63 +38,74 @@ export const SelectBalise = ({ value, onChange, setAeronefs }) => {
             }
         };
         fetchBalises();
-    }, []);
+    }, [hasTracking, client?.id]);
 
+    if (isDefined(error)) return <div>Erreur : {error}</div>;
+    if (loading) return <div>Chargement...</div>;
 
-    return isDefined(error) ? 
-        <div>Erreur : {error}</div> : 
-        loading ? 
-        <div>Chargement...</div> :
-        <FormControl 
-            fullWidth 
-            size="small" 
+    return (
+        <FormControl
+            fullWidth
+            size="small"
             sx={{
                 backgroundColor: 'white',
                 borderRadius: 1,
-                minWidth: 120,
+                minWidth: 160,
                 padding: 0,
                 margin: 0,
                 boxShadow: 'none',
                 outline: 'none',
                 border: '1px solid #ccc',
-                '& .MuiOutlinedInput-notchedOutline': {
-                    border: 'none',
-                },
-                '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'white',
-                    padding: 0,
-                    margin: 0,
-                },
-                '& .MuiInputLabel-root': {
-                    margin: 0,
-                    padding: 0,
-                },
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiOutlinedInput-root': { backgroundColor: 'white', padding: 0, margin: 0 },
+                '& .MuiInputLabel-root': { margin: 0, padding: 0 },
             }}
         >
-            <InputLabel
-                id="balise-label"
-                shrink
-                sx={{ marginBottom: '6px', paddingBottom: '12px' }}
-            >
-                Balises suivies
+            <InputLabel id="balise-label" shrink sx={{ marginBottom: '6px', paddingBottom: '12px' }}>
+                Vue carte
             </InputLabel>
             <Select
                 labelId="balise-label"
                 value={value}
-                label="Balises"
+                label="Vue carte"
                 onChange={(e) => onChange(e.target.value)}
-                sx={{
-                    fontSize: '0.85rem',
-                    height: '42px', 
-                    paddingBottom: '0',
-                    paddingTop: '8px'
-                }}
+                sx={{ fontSize: '0.85rem', height: '42px', paddingBottom: '0', paddingTop: '8px' }}
             >
-                {choices.map((choice, i) => (
+                <MenuItem value="none">Aucune</MenuItem>
+                <MenuItem value="traffic">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        ✈ Trafic aérien
+                    </span>
+                </MenuItem>
+
+                {hasTracking && baliseChoices.length > 0 && <Divider />}
+
+                {hasTracking && baliseChoices.length > 0 && (
+                    <ListSubheader sx={{ fontSize: '0.75rem', lineHeight: '28px' }}>
+                        Mes balises
+                    </ListSubheader>
+                )}
+
+                {hasTracking && (
+                    <MenuItem value="all">Toutes les balises</MenuItem>
+                )}
+
+                {hasTracking && baliseChoices.map((choice, i) => (
                     <MenuItem key={i} value={choice.id}>
                         {choice.name}
                     </MenuItem>
                 ))}
+
+                {hasTracking && baliseChoices.length > 0 && <Divider />}
+
+                {hasTracking && (
+                    <MenuItem value="all_traffic">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            🔀 Balises + Trafic
+                        </span>
+                    </MenuItem>
+                )}
             </Select>
         </FormControl>
+    );
 };

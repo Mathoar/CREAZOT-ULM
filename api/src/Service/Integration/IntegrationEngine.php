@@ -9,6 +9,8 @@ use App\Entity\Client;
 use App\Entity\IntegrationPattern;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class IntegrationEngine
@@ -20,10 +22,10 @@ class IntegrationEngine
         private readonly ResponseMapper $responseMapper,
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
+        private readonly CacheInterface $cache,
     ) {}
 
     /**
-     * Exécute par code technique (usage interne / super_admin).
      * @return array{normalized: array, raw: array, meta: array}
      */
     public function execute(string $patternCode, Client $client, ?Aeronef $aeronef = null): array
@@ -48,7 +50,6 @@ class IntegrationEngine
     }
 
     /**
-     * Exécute par capability — résout automatiquement le bon pattern pour ce client.
      * @return array{normalized: array, raw: array, meta: array}
      */
     public function executeByCapability(string $capability, Client $client, ?Aeronef $aeronef = null): array
@@ -85,8 +86,28 @@ class IntegrationEngine
      */
     private function executePattern(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef): array
     {
-        $variables = $this->variableResolver->resolve($pattern, $client, $aeronef);
+        $cacheTtl = $pattern->getCacheTtl();
 
+        if ($cacheTtl && $cacheTtl > 0) {
+            $cacheKey = sprintf(
+                'integration_%s_%d_%s',
+                $pattern->getCode(),
+                $client->getId(),
+                $aeronef ? $aeronef->getId() : 'no_ctx'
+            );
+
+            return $this->cache->get($cacheKey, function (ItemInterface $item) use ($pattern, $client, $aeronef, $cacheTtl) {
+                $item->expiresAfter($cacheTtl);
+                return $this->doExecute($pattern, $client, $aeronef);
+            });
+        }
+
+        return $this->doExecute($pattern, $client, $aeronef);
+    }
+
+    private function doExecute(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef): array
+    {
+        $variables = $this->variableResolver->resolve($pattern, $client, $aeronef);
         $request = $this->requestBuilder->build($pattern, $variables);
 
         $this->logger->info('IntegrationEngine: calling {method} {url}', [
@@ -97,19 +118,49 @@ class IntegrationEngine
             'clientId' => $client->getId(),
         ]);
 
-        $response = $this->httpClient->request($request['method'], $request['url'], $request['options']);
-        $statusCode = $response->getStatusCode();
+        $rawData = null;
+        $usedUrl = $request['url'];
+        $statusCode = 0;
 
-        if ($statusCode < 200 || $statusCode >= 300) {
-            $this->logger->error('IntegrationEngine: API returned {status}', [
-                'status' => $statusCode,
-                'body' => $response->getContent(false),
-                'pattern' => $pattern->getCode(),
+        try {
+            $response = $this->httpClient->request($request['method'], $request['url'], $request['options']);
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode >= 200 && $statusCode < 300) {
+                $rawData = $response->toArray(false);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning('IntegrationEngine: primary URL failed: {error}', [
+                'error' => $e->getMessage(),
+                'url' => $request['url'],
             ]);
-            throw new \RuntimeException(sprintf('External API returned HTTP %d', $statusCode));
         }
 
-        $rawData = $response->toArray(false);
+        if ($rawData === null && $pattern->getFallbackUrlTemplate()) {
+            $fallbackUrl = $this->interpolateUrl($pattern->getFallbackUrlTemplate(), $variables);
+            $usedUrl = $fallbackUrl;
+
+            $this->logger->info('IntegrationEngine: trying fallback {url}', ['url' => $fallbackUrl]);
+
+            try {
+                $fallbackOptions = $request['options'];
+                $response = $this->httpClient->request($request['method'], $fallbackUrl, $fallbackOptions);
+                $statusCode = $response->getStatusCode();
+
+                if ($statusCode >= 200 && $statusCode < 300) {
+                    $rawData = $response->toArray(false);
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error('IntegrationEngine: fallback also failed: {error}', [
+                    'error' => $e->getMessage(),
+                    'url' => $fallbackUrl,
+                ]);
+            }
+        }
+
+        if ($rawData === null) {
+            throw new \RuntimeException(sprintf('External API returned HTTP %d (both primary and fallback failed)', $statusCode));
+        }
 
         $normalized = $pattern->getResponseMappings()->count() > 0
             ? $this->responseMapper->map($pattern, $rawData)
@@ -122,10 +173,18 @@ class IntegrationEngine
                 'pattern' => $pattern->getCode(),
                 'capability' => $pattern->getCapability(),
                 'method' => $request['method'],
-                'url' => $request['url'],
+                'url' => $usedUrl,
                 'statusCode' => $statusCode,
+                'cached' => false,
                 'timestamp' => (new \DateTimeImmutable())->format('c'),
             ],
         ];
+    }
+
+    private function interpolateUrl(string $template, array $variables): string
+    {
+        return preg_replace_callback('/\{\{(\w+)\}\}/', function (array $matches) use ($variables) {
+            return $variables[$matches[1]] ?? $matches[0];
+        }, $template);
     }
 }

@@ -59,6 +59,7 @@ import taxRateResourceProps from "./taxRate";
 import flightRuleResourceProps from "./flightRule";
 import conversationThreadResourceProps from "./conversationThread";
 import integrationPatternResourceProps from "./integrationPattern";
+import { ClientChannels } from "./channel/ClientChannels";
 
 const getClientHeaders = () => {
   try {
@@ -202,6 +203,7 @@ const AdminWithOIDC = () => {
           <Route path="/subscriptions" element={<SubscriptionDashboard />} />
           <Route path="/request-access" element={<ClientAttachmentRequest />} />
           <Route path="/members" element={<MembersList />} />
+          <Route path="/client-channels" element={<ClientChannels />} />
         </CustomRoutes>
       </AdminAdapter>
     </UserGuard>

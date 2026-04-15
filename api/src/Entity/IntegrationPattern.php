@@ -97,6 +97,16 @@ class IntegrationPattern
     #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
     private bool $active = true;
 
+    /** Durée de cache en secondes (0 ou null = pas de cache) */
+    #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
+    private ?int $cacheTtl = null;
+
+    /** URL de fallback si l'URL principale échoue */
+    #[ORM\Column(length: 500, nullable: true)]
+    #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
+    private ?string $fallbackUrlTemplate = null;
+
     /** @var Collection<int, IntegrationVariable> */
     #[ORM\OneToMany(targetEntity: IntegrationVariable::class, mappedBy: 'pattern', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
@@ -231,4 +241,10 @@ class IntegrationPattern
 
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function getUpdatedAt(): ?\DateTimeImmutable { return $this->updatedAt; }
+
+    public function getCacheTtl(): ?int { return $this->cacheTtl; }
+    public function setCacheTtl(?int $cacheTtl): static { $this->cacheTtl = $cacheTtl; return $this; }
+
+    public function getFallbackUrlTemplate(): ?string { return $this->fallbackUrlTemplate; }
+    public function setFallbackUrlTemplate(?string $fallbackUrlTemplate): static { $this->fallbackUrlTemplate = $fallbackUrlTemplate; return $this; }
 }

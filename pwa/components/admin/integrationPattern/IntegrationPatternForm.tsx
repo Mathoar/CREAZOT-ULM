@@ -12,6 +12,7 @@ import {
   required,
 } from "react-admin";
 import { CircularProgress, Typography, Box, Alert } from "@mui/material";
+import { useSessionContext } from "../SessionContextProvider";
 
 const ENTRYPOINT = process.env.NEXT_PUBLIC_ENTRYPOINT || "";
 
@@ -56,11 +57,12 @@ export const IntegrationPatternForm = ({ defaultValues }: IntegrationPatternForm
   const [error, setError] = useState<string | null>(null);
   const [moduleChoices, setModuleChoices] = useState<{ id: string; name: string }[]>([]);
   const [modulesLoading, setModulesLoading] = useState(true);
+  const { session } = useSessionContext();
 
   const fetchEntities = useCallback(async () => {
     try {
       const res = await fetch(`${ENTRYPOINT}/admin/integrations/entities`, {
-        credentials: "include",
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -75,17 +77,21 @@ export const IntegrationPatternForm = ({ defaultValues }: IntegrationPatternForm
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session?.accessToken]);
 
   const fetchModules = useCallback(async () => {
     try {
-      const res = await fetch(`${ENTRYPOINT}/admin/integrations/modules`, { credentials: "include" });
+      const res = await fetch(`${ENTRYPOINT}/admin/integrations/modules`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
       if (res.ok) setModuleChoices(await res.json());
     } catch { /* fallback silencieux */ }
     setModulesLoading(false);
-  }, []);
+  }, [session?.accessToken]);
 
-  useEffect(() => { fetchEntities(); fetchModules(); }, [fetchEntities, fetchModules]);
+  useEffect(() => {
+    if (session?.accessToken) { fetchEntities(); fetchModules(); }
+  }, [session?.accessToken, fetchEntities, fetchModules]);
 
   const sourceChoices = [
     ...entities.map((e) => ({ id: e.id, name: e.label })),
@@ -120,7 +126,11 @@ export const IntegrationPatternForm = ({ defaultValues }: IntegrationPatternForm
         <SelectInput source="method" label="Méthode HTTP" choices={methodChoices} validate={required()} />
         <TextInput source="urlTemplate" label="URL Template" validate={required()} fullWidth
           helperText="Utilisez {{variable}} pour les parties dynamiques" />
+        <TextInput source="fallbackUrlTemplate" label="URL de fallback" fullWidth
+          helperText="URL alternative si l'URL principale échoue (même format {{variable}})" />
         <TextInput source="contentType" label="Content-Type" fullWidth />
+        <TextInput source="cacheTtl" label="Cache (secondes)" fullWidth
+          helperText="Durée de cache côté serveur en secondes. 0 ou vide = pas de cache." />
         <TextInput source="description" label="Description" multiline rows={3} fullWidth />
         <BooleanInput source="active" label="Actif" />
       </TabbedForm.Tab>

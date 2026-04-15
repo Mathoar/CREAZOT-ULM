@@ -47,9 +47,9 @@ export const MetarView = ({ showGraphic, setShowGraphic, switchToMap, hidden, cl
 
     const buildTabs = () => {
         const tabs = [];
-        tabs.push({ key: 'graphic', label: 'METAR graphique', icon: <ExploreIcon sx={{ fontSize: 18 }} /> });
+        tabs.push({ key: 'graphic', label: 'Météo', icon: <ExploreIcon sx={{ fontSize: 18 }} /> });
         if (hasMicrotrak) {
-            tabs.push({ key: 'encoded', label: 'METAR & TAF bruts', icon: <AssignmentIcon sx={{ fontSize: 18 }} /> });
+            tabs.push({ key: 'encoded', label: 'METAR & TAF', icon: <AssignmentIcon sx={{ fontSize: 18 }} /> });
         }
         if (hasNotam) {
             tabs.push({ key: 'notam', label: 'NOTAM', icon: <AnnouncementIcon sx={{ fontSize: 18 }} /> });
@@ -99,7 +99,13 @@ export const MetarView = ({ showGraphic, setShowGraphic, switchToMap, hidden, cl
                             }}
                         >
                             {tabs.map((tab) => (
-                                <Tab key={tab.key} icon={tab.icon} iconPosition="start" label={tab.label} />
+                                <Tab
+                                    key={tab.key}
+                                    icon={tab.icon}
+                                    iconPosition="start"
+                                    label={isSmall ? undefined : tab.label}
+                                    title={tab.label}
+                                />
                             ))}
                         </Tabs>
 
