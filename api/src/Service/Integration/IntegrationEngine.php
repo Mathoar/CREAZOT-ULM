@@ -26,9 +26,10 @@ class IntegrationEngine
     ) {}
 
     /**
+     * @param array<string, string> $context Variables dynamiques (ex: icao, deviceId)
      * @return array{normalized: array, raw: array, meta: array}
      */
-    public function execute(string $patternCode, Client $client, ?Aeronef $aeronef = null): array
+    public function execute(string $patternCode, Client $client, ?Aeronef $aeronef = null, array $context = []): array
     {
         $pattern = $this->em->getRepository(IntegrationPattern::class)
             ->findOneBy(['code' => $patternCode, 'active' => true]);
@@ -46,13 +47,14 @@ class IntegrationEngine
             ));
         }
 
-        return $this->executePattern($pattern, $client, $aeronef);
+        return $this->executePattern($pattern, $client, $aeronef, $context);
     }
 
     /**
+     * @param array<string, string> $context Variables dynamiques (ex: icao, deviceId)
      * @return array{normalized: array, raw: array, meta: array}
      */
-    public function executeByCapability(string $capability, Client $client, ?Aeronef $aeronef = null): array
+    public function executeByCapability(string $capability, Client $client, ?Aeronef $aeronef = null, array $context = []): array
     {
         $patterns = $this->em->getRepository(IntegrationPattern::class)
             ->findBy(['capability' => $capability, 'active' => true]);
@@ -78,36 +80,38 @@ class IntegrationEngine
             ));
         }
 
-        return $this->executePattern($matched, $client, $aeronef);
+        return $this->executePattern($matched, $client, $aeronef, $context);
     }
 
     /**
      * @return array{normalized: array, raw: array, meta: array}
      */
-    private function executePattern(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef): array
+    private function executePattern(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef, array $context = []): array
     {
         $cacheTtl = $pattern->getCacheTtl();
 
         if ($cacheTtl && $cacheTtl > 0) {
+            $contextHash = !empty($context) ? md5(json_encode($context)) : 'no_extra';
             $cacheKey = sprintf(
-                'integration_%s_%d_%s',
+                'integration_%s_%d_%s_%s',
                 $pattern->getCode(),
                 $client->getId(),
-                $aeronef ? $aeronef->getId() : 'no_ctx'
+                $aeronef ? $aeronef->getId() : 'no_ctx',
+                $contextHash
             );
 
-            return $this->cache->get($cacheKey, function (ItemInterface $item) use ($pattern, $client, $aeronef, $cacheTtl) {
+            return $this->cache->get($cacheKey, function (ItemInterface $item) use ($pattern, $client, $aeronef, $cacheTtl, $context) {
                 $item->expiresAfter($cacheTtl);
-                return $this->doExecute($pattern, $client, $aeronef);
+                return $this->doExecute($pattern, $client, $aeronef, $context);
             });
         }
 
-        return $this->doExecute($pattern, $client, $aeronef);
+        return $this->doExecute($pattern, $client, $aeronef, $context);
     }
 
-    private function doExecute(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef): array
+    private function doExecute(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef, array $context = []): array
     {
-        $variables = $this->variableResolver->resolve($pattern, $client, $aeronef);
+        $variables = $this->variableResolver->resolve($pattern, $client, $aeronef, $context);
         $request = $this->requestBuilder->build($pattern, $variables);
 
         $this->logger->info('IntegrationEngine: calling {method} {url}', [

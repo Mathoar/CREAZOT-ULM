@@ -172,8 +172,11 @@ class IntegrationController extends AbstractController
                 ?? $this->em->getRepository(Aeronef::class)->find((int) $contextId);
         }
 
+        $context = $request->query->all();
+        unset($context['_format']);
+
         try {
-            $result = $this->engine->executeByCapability($capability, $client, $aeronef);
+            $result = $this->engine->executeByCapability($capability, $client, $aeronef, $context);
             return $this->json($result['normalized']);
         } catch (\RuntimeException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);

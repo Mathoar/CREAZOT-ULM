@@ -20,15 +20,16 @@ class VariableResolver
     ) {}
 
     /**
+     * @param array<string, string> $context Variables dynamiques passées par le controller
      * @return array<string, string> Resolved variables keyed by variableName
      * @throws \RuntimeException if a required variable cannot be resolved
      */
-    public function resolve(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef = null): array
+    public function resolve(IntegrationPattern $pattern, Client $client, ?Aeronef $aeronef = null, array $context = []): array
     {
         $resolved = [];
 
         foreach ($pattern->getVariables() as $variable) {
-            $value = $this->resolveVariable($variable, $client, $aeronef);
+            $value = $this->resolveVariable($variable, $client, $aeronef, $context);
 
             if ($value === null && $variable->isRequired()) {
                 throw new \RuntimeException(sprintf(
@@ -45,8 +46,13 @@ class VariableResolver
         return $resolved;
     }
 
-    private function resolveVariable(IntegrationVariable $variable, Client $client, ?Aeronef $aeronef): ?string
+    private function resolveVariable(IntegrationVariable $variable, Client $client, ?Aeronef $aeronef, array $context): ?string
     {
+        if ($variable->getSource() === 'context') {
+            $value = $context[$variable->getSourceField()] ?? $context[$variable->getVariableName()] ?? null;
+            return $value !== null ? (string) $value : $variable->getDefaultValue();
+        }
+
         $entity = $this->getSourceEntity($variable->getSource(), $client, $aeronef);
 
         if ($entity === null) {

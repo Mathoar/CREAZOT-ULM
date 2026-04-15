@@ -9,7 +9,7 @@ use App\Entity\FlightRule;
 use App\Entity\PreFlightAnalysis;
 use App\Entity\User;
 use App\Repository\NotamCacheRepository;
-use App\Repository\SiteSettingsRepository;
+use App\Service\Integration\IntegrationEngine;
 use App\Service\KimiAiService;
 use App\Service\ScoreOpsService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,7 +19,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[IsGranted('ROLE_USER')]
 class ScoreOpsController extends AbstractController
@@ -28,9 +27,8 @@ class ScoreOpsController extends AbstractController
         private EntityManagerInterface $em,
         private ScoreOpsService $scoreOps,
         private KimiAiService $kimiAi,
-        private HttpClientInterface $httpClient,
+        private IntegrationEngine $engine,
         private NotamCacheRepository $notamCacheRepo,
-        private SiteSettingsRepository $siteSettingsRepo,
         private LoggerInterface $logger,
     ) {}
 
@@ -57,10 +55,10 @@ class ScoreOpsController extends AbstractController
             ]);
         }
 
-        $metar = $this->fetchMetar($icao);
-        $allNotams = $this->fetchNotams($icao);
+        $metar = $this->fetchMetar($icao, $client);
+        $allNotams = $this->fetchNotams($icao, $client);
         $notams = $this->filterActiveNotams($allNotams);
-        $tafData = $this->fetchTafFull($icao);
+        $tafData = $this->fetchTaf($icao, $client);
 
         if (empty($metar)) {
             return new JsonResponse([
@@ -116,9 +114,6 @@ class ScoreOpsController extends AbstractController
         ]);
     }
 
-    /**
-     * Filter NOTAMs to keep only those active right now.
-     */
     private function filterActiveNotams(array $notams): array
     {
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
@@ -178,12 +173,12 @@ class ScoreOpsController extends AbstractController
         return new JsonResponse(['success' => true, 'id' => $analysis->getId()]);
     }
 
-    private function fetchMetar(string $icao): array
+    private function fetchMetar(string $icao, Client $client): array
     {
         try {
-            $url = 'https://aviationweather.gov/api/data/metar?ids=' . $icao . '&format=json';
-            $response = $this->httpClient->request('GET', $url, ['timeout' => 10]);
-            $data = $response->toArray(false);
+            $result = $this->engine->executeByCapability('metar', $client, null, ['icao' => $icao]);
+            $data = $result['raw'];
+
             if (!empty($data) && is_array($data) && isset($data[0])) {
                 return [
                     'raw_text' => $data[0]['rawOb'] ?? '',
@@ -211,12 +206,12 @@ class ScoreOpsController extends AbstractController
         return [];
     }
 
-    private function fetchTafFull(string $icao): array
+    private function fetchTaf(string $icao, Client $client): array
     {
         try {
-            $url = 'https://aviationweather.gov/api/data/taf?ids=' . $icao . '&format=json';
-            $response = $this->httpClient->request('GET', $url, ['timeout' => 10]);
-            $data = $response->toArray(false);
+            $result = $this->engine->executeByCapability('taf', $client, null, ['icao' => $icao]);
+            $data = $result['raw'];
+
             if (!empty($data) && is_array($data) && isset($data[0])) {
                 return [
                     'raw_text' => $data[0]['rawTAF'] ?? '',
@@ -229,7 +224,7 @@ class ScoreOpsController extends AbstractController
         return [];
     }
 
-    private function fetchNotams(string $icao): array
+    private function fetchNotams(string $icao, Client $client): array
     {
         $cached = $this->notamCacheRepo->findFresh($icao);
         if ($cached) {
@@ -237,38 +232,9 @@ class ScoreOpsController extends AbstractController
             return $cached->getData();
         }
 
-        $settings = $this->siteSettingsRepo->findInstance();
-        $apiKey = $settings?->getNotamifyApiKey();
-
-        if (!$apiKey) {
-            $stale = $this->notamCacheRepo->find(strtoupper(trim($icao)));
-            if ($stale) {
-                return $stale->getData();
-            }
-            return [];
-        }
-
         try {
-            $response = $this->httpClient->request('GET', 'https://api.notamify.com/api/v2/notams', [
-                'timeout' => 15,
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $apiKey,
-                    'Accept' => 'application/json',
-                ],
-                'query' => [
-                    'location' => $icao,
-                    'per_page' => 30,
-                ],
-            ]);
-
-            $statusCode = $response->getStatusCode();
-            if ($statusCode >= 400) {
-                $stale = $this->notamCacheRepo->find(strtoupper(trim($icao)));
-                return $stale ? $stale->getData() : [];
-            }
-
-            $content = $response->getContent(false);
-            $data = json_decode($content, true);
+            $result = $this->engine->executeByCapability('notam', $client, null, ['icao' => $icao]);
+            $data = $result['raw'];
             $notams = $data['notams'] ?? [];
 
             $normalized = array_map(function (array $item) use ($icao) {

@@ -95,6 +95,7 @@ export const IntegrationPatternForm = ({ defaultValues }: IntegrationPatternForm
 
   const sourceChoices = [
     ...entities.map((e) => ({ id: e.id, name: e.label })),
+    { id: "context", name: "Contexte (paramètre dynamique)" },
     { id: "static", name: "Valeur statique" },
   ];
 
