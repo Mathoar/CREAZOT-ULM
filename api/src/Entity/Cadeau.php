@@ -129,6 +129,14 @@ class Cadeau implements TenantAwareInterface
     #[ORM\OneToMany(mappedBy: 'cadeau', targetEntity: Reservation::class)]
     private Collection $reservations;
 
+    /**
+     * @var Collection<int, Option>
+     */
+    #[ORM\ManyToMany(targetEntity: Option::class)]
+    #[ORM\JoinTable(name: 'cadeau_selected_options')]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
+    private Collection $selectedOptions;
+
     #[ORM\Column(nullable: true)]
     #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?int $quantite = null;
@@ -157,6 +165,7 @@ class Cadeau implements TenantAwareInterface
     {
         $this->origine = new ArrayCollection();
         $this->reservations = new ArrayCollection();
+        $this->selectedOptions = new ArrayCollection();
     }
 
     #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read'])]
@@ -444,6 +453,30 @@ class Cadeau implements TenantAwareInterface
     public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Option>
+     */
+    public function getSelectedOptions(): Collection
+    {
+        return $this->selectedOptions;
+    }
+
+    public function addSelectedOption(Option $option): static
+    {
+        if (!$this->selectedOptions->contains($option)) {
+            $this->selectedOptions->add($option);
+        }
+
+        return $this;
+    }
+
+    public function removeSelectedOption(Option $option): static
+    {
+        $this->selectedOptions->removeElement($option);
 
         return $this;
     }

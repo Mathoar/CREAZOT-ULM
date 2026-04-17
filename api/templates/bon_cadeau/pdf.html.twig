@@ -11,22 +11,22 @@
             padding: 40px;
         }
 
-        .with-bg {
-            background-image: url('{{ encoded_image }}');
-            background-repeat: no-repeat;
-            background-position: top center;
-            background-size: auto;
-            background-attachment: fixed;
-        }
-
         .overlay {
-            background-color: rgba(255, 255, 255, {{ client.opacity is not null ? (1 - client.opacity) : 0.88 }});
-            padding: 40px;
-            padding-top: 10px;
+            background-image: {% if encoded_image is not null %}url('{{ encoded_image }}'){% else %}none{% endif %};
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: contain;
             margin: 60px auto;
             width: 80%;
             border-radius: 12px;
             box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .overlay-content {
+            background-color: rgba(255, 255, 255, {{ client.opacity is not null ? (1 - client.opacity) : 0.88 }});
+            padding: 40px;
+            padding-top: 10px;
+            border-radius: 12px;
         }
 
         h1, h2 {
@@ -63,10 +63,21 @@
         }
     </style>
 </head>
-<body class="{% if encoded_image is not null %}with-bg{% endif %}">
+<body>
     <div class="overlay">
+    <div class="overlay-content">
         <h1>{{ client.name }}</h1>
-        <h2>Bon Cadeau pour {{ cadeau.quantite is not null ? cadeau.quantite : 'un' }} Circuit {{ cadeau.circuit.nom }} {{ cadeau.options is not null ? 'avec ' ~ cadeau.options.nom : '' }} {{ cadeau.option is not null ? 'avec ' ~ cadeau.option.nom : '' }}</h2>
+        {% set option_names = [] %}
+        {% if cadeau.selectedOptions is defined and cadeau.selectedOptions|length > 0 %}
+            {% for o in cadeau.selectedOptions %}
+                {% set option_names = option_names|merge([o.nom]) %}
+            {% endfor %}
+        {% elseif cadeau.options is not null %}
+            {% set option_names = option_names|merge([cadeau.options.nom]) %}
+        {% elseif cadeau.option is not null %}
+            {% set option_names = option_names|merge([cadeau.option.nom]) %}
+        {% endif %}
+        <h2>Bon Cadeau pour {{ cadeau.quantite is not null ? cadeau.quantite : 'un' }} Circuit {{ cadeau.circuit.nom }}{{ option_names|length > 0 ? ' avec ' ~ option_names|join(', ') : '' }}</h2>
 
         <p>
             Offert à : <strong>{{ cadeau.beneficiaire }}</strong><br/>
@@ -88,6 +99,7 @@
             <a href="mailto:{{ client.email }}">{{ client.email }}</a><br/>
             <a href="{{ client.website }}">{{ client.website|replace({'https://': '', 'http://': ''}) }}</a>
         </div>
+    </div>
     </div>
 </body>
 </html>
