@@ -1,0 +1,305 @@
+export const isDefined = variable => variable !== undefined && variable !== null;
+
+export const isDefinedAndNotVoid = variable => Array.isArray(variable) ? isDefined(variable) && variable.length > 0 : isDefined(variable);
+
+export const getCircuitDuration = (aircraft, circuit, quantite) => {
+    if (aircraft.decimal) {
+        const decimalHours = new Date(circuit.duree).getHours();
+        const decimalMinutes = new Date(circuit.duree).getMinutes() / 60;
+        return decimalHours + decimalMinutes;
+    } else {
+        const conventionalHours = new Date(circuit.duree).getHours();
+        const conventionalMinutes = new Date(circuit.duree).getMinutes();
+        const hoursInTotalMinutes = Math.floor(quantite * conventionalMinutes / 60);
+        const restInTotalMinutes = (quantite * conventionalMinutes % 60) / 100
+
+        return (quantite * conventionalHours) + hoursInTotalMinutes + restInTotalMinutes;
+    }
+};
+
+export const getRealDuration = (selectedFlightTime, aircraft) => {
+
+    const flightTime = typeof selectedFlightTime === 'string'? parseFloat(selectedFlightTime.replace(/[, :]/g, '.')) : selectedFlightTime;
+    if (aircraft.decimal) 
+      return Number((flightTime - aircraft.horametre).toFixed(2));
+    else {
+      const flightTimeInDecimal = Math.floor(flightTime) + (flightTime - Math.floor(flightTime)) / 60 * 100;
+      const aircraftInDecimal =  Math.floor(aircraft.horametre) + (aircraft.horametre - Math.floor(aircraft.horametre)) / 60 * 100;
+      const difference = flightTimeInDecimal - aircraftInDecimal;
+      return Number((Math.floor(difference) + (difference - Math.floor(difference)) * 60 / 100).toFixed(2));
+    }
+};
+
+export const isValidDuration = (selectedFlightTime, aircraft) => {
+  if (!isDefined(aircraft)) return false;
+  const duration = getRealDuration(selectedFlightTime, aircraft);
+  return duration > 0;
+};
+
+export const getTotalPrice = (flightTime, aircraft, circuits) => {
+  const notFixedPrice = circuits.find(c => !c.circuit.prixFixe);
+  if (notFixedPrice !== undefined) {
+    // const optionPrice = notFixedPrice.circuit.avecOptions && isDefined(notFixedPrice.option) && isDefined(notFixedPrice.option.price) ? notFixedPrice.option.price : 0;
+    const duration = getRealDuration(flightTime, aircraft);
+    return (aircraft.decimal ? duration : convertMinutesToDecimal(duration)) * notFixedPrice.circuit.prix // + optionPrice;
+  } else {
+    return circuits.reduce((sum, { circuit, quantite, option }) => {
+      const duration = getCircuitDuration(aircraft, circuit, quantite);
+      return sum += quantite * (circuit.prix + (isDefined(option) ? option.prix : 0));
+    }, 0);
+  }
+};
+
+export const getCircuitPrice = (circuit, option, flightTime, aircraft) => {
+    const optionPrice = circuit.avecOptions && isDefined(option) && isDefined(option.prix) ? option.prix : 0;
+    if (circuit.prixFixe) {
+      return circuit.prix + optionPrice;
+    } else {
+      const duration = getRealDuration(flightTime, aircraft)
+      return (aircraft.decimal ? duration : convertMinutesToDecimal(duration)) * circuit.prix + optionPrice;
+    }
+};
+
+export const convertMinutesToDecimal = (duration) => Number((Math.floor(duration) + (duration - Math.floor(duration)) / 60 * 100).toFixed(2));
+
+export const getRandomColor = () => "#" + Math.floor(Math.random()*16777215).toString(16);
+
+export const getDaysArray = (start, end) => {
+  const daysArray=[];
+  for ( const day = new Date(start); day <= new Date(end); day.setDate(day.getDate() + 1) ) {
+    daysArray.push( new Date(day) );
+  }
+  return daysArray;
+};
+
+export const formatDate = date => {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().split('T')[0];
+};
+
+const generateDateRange = (start, end) => {
+  const dates = [];
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+};
+
+export const groupRappelsByDate = (rappels, startDate, endDate) => {
+  const range = generateDateRange(new Date(startDate), new Date(endDate));
+  const grouped = {};
+
+  range.forEach(date => {
+    const formattedDate = formatDate(date);
+    const dayOfWeek = date.getDay();
+
+    const rappelsDuJour = rappels.filter(rappel => {
+      if (rappel.recurrent) {
+        return rappel.jour === dayOfWeek;
+      } else {
+        const rappelDateFormatted = formatDate(new Date(rappel.date));
+        return rappelDateFormatted === formattedDate;
+      }
+    });
+
+    if (rappelsDuJour.length > 0) {
+      grouped[formattedDate] = rappelsDuJour;
+    }
+  });
+
+  return grouped;
+};
+
+export const getSlotFromDate = date => {
+  const formattedDate = new Date(date);
+  return {
+      start: new Date((formattedDate).setHours(6, 0, 0)),
+      end: new Date((formattedDate).setHours(12, 30, 0))
+  };
+};
+
+export const getDefaultDatesFromDate = date => {
+  const formattedDate = new Date(date);
+  return {
+      start: new Date((formattedDate).setHours(0, 0, 0)),
+      end: new Date((formattedDate).setHours(23, 59, 59))
+  };
+};
+
+export const getDatesFromSlot = ({ start, end }) => {
+  const formattedStart = new Date(start);
+  const formattedEnd = new Date(end);
+  return {
+    start: new Date((formattedStart).setHours(0, 0, 0)),
+    end: new Date((formattedEnd).setHours(23, 59, 59))
+  }
+};
+
+export const isSameDates = (date1, date2) => {
+  if (isDefined(date1) && isDefined(date2)) {
+    return +date1.start === +date2.start && +date1.end === +date2.end;
+  }
+  return false;
+};
+
+export const getFormattedValueForBackEnd = (value, additionalCondition = true) => {
+  if (additionalCondition && isDefined(value)) {
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      if ('@id' in value && isDefined(value['@id']))
+        return value['@id'];
+    }
+    if (typeof value === 'string' && value !== '') {
+      return value;
+    }
+  }
+  return null;
+};
+
+export const toLocalDateString = (date) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const generateSafeCode = (prefix = 'PAY') => {
+  const timestamp = Date.now();
+  const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `${prefix}-${timestamp}-${randomPart}`;
+};
+
+export const isNotBlank = variable => isDefined(variable) && variable !== '';
+
+export const matchesStartOfWord = (value, search) => {
+  const regex = new RegExp(`\\b${search}`, 'i');
+  return regex.test(value);
+};
+
+export const getShipStyle = ({ color }, validity = null) => ({
+  backgroundColor: color + '33',
+  color: color,
+  border: '1px solid',
+  borderColor: color,
+  marginRight: '4px',
+  marginBottom: '2px',
+  marginTop: '2px',
+  textDecoration: isValid(validity) ? 'none' : 'line-through',
+});
+
+export const isValid = (validUntil, dateObtention = null, referenceDate = new Date()) => {
+  let ref = new Date(referenceDate);
+  const valid = validUntil ? new Date(validUntil) : null;
+  const obt = dateObtention ? new Date(dateObtention) : null;
+
+  if (isNaN(ref.getTime()))
+    ref = new Date();
+
+  if ((valid && isNaN(valid.getTime())) || isNaN(ref.getTime()) || (obt && isNaN(obt.getTime())))
+    return false;
+
+  ref.setHours(0,0,0,0);
+  if (valid) valid.setHours(0,0,0,0);
+  if (obt) obt.setHours(0,0,0,0);
+
+  const validCheck = !valid || valid.getTime() >= ref.getTime();
+  const obtCheck = !obt || (ref.getTime() >= obt.getTime() && (!valid || valid.getTime() >= obt.getTime()));
+
+  return validCheck && obtCheck;
+};
+
+export const formatDisplayDate = (date) => date.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+  
+export const getHour = (isoString) => new Date(isoString).getHours();
+  
+export const isSameDay = (date1, date2) => {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
+
+  
+
+export const getValidityDurationMonths = (birthDate, referenceDate = new Date()) => {
+  const birth = new Date(birthDate);
+  const ref = new Date(referenceDate);
+
+  let age = ref.getFullYear() - birth.getFullYear();
+  const monthDiff = ref.getMonth() - birth.getMonth();
+  const dayDiff = ref.getDate() - birth.getDate();
+
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age--;
+  }
+
+  if (age < 40) return 60; 
+  if (age < 50) return 24;
+  return 12;
+};
+
+export const calculateValidUntil = (dateObtention, validityMonths) => {
+  const obtained = new Date(dateObtention);
+  const validUntil = new Date(obtained);
+
+  validUntil.setMonth(validUntil.getMonth() + validityMonths);
+
+  if (validUntil.getDate() !== obtained.getDate()) {
+    validUntil.setDate(0);
+  }
+
+  return validUntil;
+};
+
+export const isValidNumber = (value) => {
+  const num = Number(value);
+  return !isNaN(num) && num > 0;
+};
+
+export const decimalToTime = (decimalHour) => {
+  if (decimalHour == null || isNaN(decimalHour)) return "";
+  const hours = Math.floor(decimalHour);
+  const minutes = Math.round((decimalHour - hours) * 60);
+
+  const finalHours = (minutes === 60) ? hours + 1 : hours;
+  const finalMinutes = (minutes === 60) ? 0 : minutes;
+  return `${finalHours}:${finalMinutes}`;
+};
+
+export const decimalToTimeFormatted = (decimalHour) => {
+  if (decimalHour == null || isNaN(decimalHour)) return "";
+  const hours = Math.floor(decimalHour);
+  const minutes = Math.round((decimalHour - hours) * 60);
+
+  const finalHours = (minutes === 60) ? hours + 1 : hours;
+  const finalMinutes = (minutes === 60) ? 0 : minutes;
+  return `${finalHours}:${String(finalMinutes).padStart(2, "0")}`;
+};
+
+export const timeToDecimal = (timeStr) => {
+  if (!timeStr) return null;
+  const parts = timeStr.split(":");
+
+  const [hours, minutes] = parts.map(Number);
+  if (isNaN(hours) || isNaN(minutes)) return null;
+  return hours + (minutes / 60);
+};
+
+export const getFirstCharToUpperCase = text => isDefined(text) ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+
+export const getFormattedStartDate = (start) => {
+  const datetime = new Date(start);
+  datetime.setHours(0, 0, 0, 0);
+
+  return datetime.toISOString()
+};
+
+export const getFormattedEndDate = (end) => {
+  const datetime = new Date(end);
+  datetime.setHours(23, 59, 59, 999);
+
+  return datetime.toISOString()
+};

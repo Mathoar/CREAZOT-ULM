@@ -50,9 +50,7 @@ import SmsIcon from "@mui/icons-material/Sms";
 import MessageIcon from "@mui/icons-material/Message";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import { Badge } from '@mui/material';
-import { useEffect } from 'react';
-import axios from 'axios';
-import { ENTRYPOINT } from '../../../config/entrypoint';
+import { useAiReservationStats } from '../../../app/lib/mercure';
 
 const CustomMenu = () => {
 
@@ -64,22 +62,12 @@ const CustomMenu = () => {
   const [tarificationOpen, setTarificationOpen] = useState(false);
   const [parametresOpen, setParametresOpen] = useState(false);
   const [openSidebar] = useSidebarState();
-  const [awaitingCount, setAwaitingCount] = useState(0);
 
-  useEffect(() => {
-    if (!client?.id || !session?.accessToken || !(client.hasAiReservationAssistant || client.hasVoiceAssistant)) return;
-    const fetchCount = () => {
-      axios
-        .get(`${ENTRYPOINT}/admin/ai-reservation/stats?clientId=${client.id}`, {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        })
-        .then((res) => setAwaitingCount(res.data?.awaiting_club ?? 0))
-        .catch(() => {});
-    };
-    fetchCount();
-    const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
-  }, [client?.id, session?.accessToken]);
+  // Live badge powered by Mercure: replaces the previous 30s polling loop.
+  // The hook performs an initial REST fetch then subscribes to per-client updates.
+  const aiAssistantEnabled = !!(client && (client.hasAiReservationAssistant || client.hasVoiceAssistant));
+  const stats = useAiReservationStats(client?.id, session?.accessToken, aiAssistantEnabled);
+  const awaitingCount = stats.awaiting_club ?? 0;
 
   const handleSuperAdminClick = e => {
     e.preventDefault();

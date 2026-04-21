@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAiReservationStats } from "../../../app/lib/mercure";
 import {
   Datagrid,
   DateField,
@@ -204,18 +205,8 @@ export const ConversationThreadList = () => {
   const { client } = useClient();
   const notify = useNotify();
   const refresh = useRefresh();
-  const [stats, setStats] = useState<Record<string, number>>({});
+  const stats = useAiReservationStats(client?.id, session?.accessToken);
   const [cancelDialogRecord, setCancelDialogRecord] = useState<any>(null);
-
-  useEffect(() => {
-    if (!client?.id || !session?.accessToken) return;
-    axios
-      .get(`${ENTRYPOINT}/admin/ai-reservation/stats?clientId=${client.id}`, {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      })
-      .then((res) => setStats(res.data))
-      .catch(() => {});
-  }, [client?.id, session?.accessToken]);
 
   const handleValidate = async (record: any) => {
     try {
@@ -226,11 +217,7 @@ export const ConversationThreadList = () => {
       );
       notify("Réservation confirmée — le client sera notifié", { type: "success" });
       refresh();
-      setStats((s) => ({
-        ...s,
-        awaiting_club: Math.max(0, (s.awaiting_club ?? 0) - 1),
-        confirmed: (s.confirmed ?? 0) + 1,
-      }));
+      // Stats are pushed back via Mercure right after the backend persist.
     } catch (err: any) {
       notify(err?.response?.data?.error || "Erreur lors de la validation", { type: "error" });
     }
@@ -246,11 +233,6 @@ export const ConversationThreadList = () => {
       notify("Demande annulée — le client sera notifié", { type: "info" });
       refresh();
       setCancelDialogRecord(null);
-      setStats((s) => ({
-        ...s,
-        [record.status]: Math.max(0, (s[record.status] ?? 0) - 1),
-        cancelled: (s.cancelled ?? 0) + 1,
-      }));
     } catch (err: any) {
       notify(err?.response?.data?.error || "Erreur lors de l'annulation", { type: "error" });
     }
