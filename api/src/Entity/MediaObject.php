@@ -59,7 +59,7 @@ class MediaObject implements TenantAwareInterface
     private ?int $id = null;
 
     #[ApiProperty(types: ['https://schema.org/contentUrl'], writable: false)]
-    #[Groups(['media_object:read', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read'])]
+    #[Groups(['media_object:read', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read', 'Circuit:read', 'Briefing:read'])]
     public ?string $contentUrl = null;
 
     #[Vich\UploadableField(mapping: 'media_object', fileNameProperty: 'filePath')]
@@ -80,11 +80,11 @@ class MediaObject implements TenantAwareInterface
     public ?string $filePath = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['media_object:read', 'media_object:write', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read'])]
+    #[Groups(['media_object:read', 'media_object:write', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read', 'Circuit:read', 'Briefing:read'])]
     public ?string $description = null;
 
     #[ORM\Column]
-    #[Groups(['media_object:read', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read'])]
+    #[Groups(['media_object:read', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read', 'Circuit:read', 'Briefing:read'])]
     public ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'documents')]
@@ -111,7 +111,7 @@ class MediaObject implements TenantAwareInterface
         $this->createdAt = new \DateTimeImmutable();
     }
 
-     #[Groups(['media_object:read', 'media_object:write', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read'])]
+     #[Groups(['media_object:read', 'media_object:write', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read', 'Circuit:read', 'Briefing:read'])]
     public function getOriginalDescription(): ?string
     {
         return $this->description;
@@ -192,7 +192,7 @@ class MediaObject implements TenantAwareInterface
         return $this;
     }
 
-    #[Groups(['media_object:read', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read'])]
+    #[Groups(['media_object:read', 'CertificatMedical:read', 'PilotQualification:read', 'Profil_pilote:read', 'Aeronef:read', 'Airport:read', 'Entretien:read', 'Expense:read', 'Circuit:read', 'Briefing:read'])]
     public function getOdooContentUrl(): ?string
     {
         if ($this->odooDocumentId !== null) {
