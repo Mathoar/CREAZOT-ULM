@@ -93,6 +93,7 @@
   .card.billing::before { background: var(--orange); }
   .card.deploy::before  { background: var(--red); }
   .card.maint::before   { background: var(--text-muted); }
+  .card.briefing::before { background: var(--accent); }
 
   .card-top {
     display: flex;
@@ -535,6 +536,27 @@
     </div>
   </div>
 
+  <div class="card briefing" onclick="openInCursor('.cursor/rules/context-briefing.mdc')">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--accent-dim)">📄</div>
+      <span class="badge badge-ok" id="status-briefing">✓ À jour</span>
+    </div>
+    <h3>Briefing public passager</h3>
+    <div class="filename">.cursor/rules/context-briefing.mdc</div>
+    <p class="desc">Entité Briefing (1 par client), briefingHtml/Image sur Circuit, route publique <code>/r/{shortcode}</code>, page Next.js mobile-first, ImageResizer auto.</p>
+    <div class="card-tags">
+      <span class="tag">/r/[shortcode]</span>
+      <span class="tag">PublicReservationController</span>
+      <span class="tag">ImageResizer</span>
+      <span class="tag">hasPlanification</span>
+      <span class="tag">{{lien_briefing}}</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers Briefing/Circuit/r</span>
+      <span>~150 lignes</span>
+    </div>
+  </div>
+
   <div class="card maint" onclick="openInCursor('.cursor/rules/context-maintenance.mdc')">
     <div class="card-top">
       <div class="card-icon">🔧</div>
@@ -738,15 +760,16 @@
   }
 
   const dates = {
-    master:  '2026-04-09',
+    master:  '2026-04-21',
     vapi:    '2026-04-09',
     ai:      '2026-04-09',
     billing: '2026-03-26',
-    deploy:  '2026-03-26',
+    deploy:  '2026-04-21',
     prefs:   '2026-03-26',
-    codemap: '2026-04-09',
+    codemap: '2026-04-21',
     git:     '2026-03-26',
     maint:   '2026-03-26',
+    briefing: '2026-04-21',
   };
 
   function checkStaleness() {

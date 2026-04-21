@@ -101,6 +101,11 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.request, priority: 5 }
 
+
+    App\EventSubscriber\MediaObjectImageResizeSubscriber:
+        arguments:
+            $uploadDir: '%kernel.project_dir%/public/media'
+
 when@test:
     services:
         App\Tests\Api\Security\:

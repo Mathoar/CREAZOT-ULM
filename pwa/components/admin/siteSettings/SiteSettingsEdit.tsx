@@ -3,6 +3,7 @@ import { Typography, Divider, Box, Accordion, AccordionSummary, AccordionDetails
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CloudIcon from "@mui/icons-material/Cloud";
 import PhoneIcon from "@mui/icons-material/Phone";
+import SmsIcon from "@mui/icons-material/Sms";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useSiteSettings } from "../SiteSettingsProvider";
@@ -313,7 +314,7 @@ export const SiteSettingsEdit = () => {
                     <Typography variant="h6" gutterBottom>
                         Email plateforme
                     </Typography>
-                    <TextInput source="emailParams" label="Serveur d'email (paramètres)" fullWidth />
+                    <ApiKeyInput source="emailParams" label="Serveur d'email (DSN: smtp://user:pass@host:port)" fullWidth />
                     <TextInput source="emailAddressSender" label="Adresse email d'envoi" fullWidth />
 
                     <Accordion sx={{ mt: 3, width: "100%" }} defaultExpanded={false}>
@@ -399,6 +400,43 @@ export const SiteSettingsEdit = () => {
                             </Typography>
                             <ApiKeyInput source="vapiApiKey" label="Clé API privée Vapi" fullWidth />
                             <VapiTestButton />
+                        </AccordionDetails>
+                    </Accordion>
+
+                    <Accordion sx={{ mt: 3, width: "100%" }} defaultExpanded={false}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <SmsIcon sx={{ mr: 1 }} />
+                            <Typography>Notifications SMS — Twilio</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Credentials Twilio pour l'envoi de SMS groupés aux passagers.
+                                Le nom de l'expéditeur est déduit du nom du client (11 caractères max).{" "}
+                                <Link href="https://console.twilio.com" target="_blank" rel="noopener">
+                                    Console Twilio
+                                </Link>
+                            </Typography>
+                            <ApiKeyInput source="twilioAccountSid" label="Account SID Twilio" fullWidth />
+                            <ApiKeyInput source="twilioAuthToken" label="Auth Token Twilio" fullWidth />
+                            <TextInput source="twilioFromNumber" label="Numéro expéditeur (ex: +33612345678)" fullWidth />
+                            <TextInput source="smsCostPerUnit" label="Coût unitaire SMS refacturé (€ HT)" fullWidth helperText="Ex: 0.08 — utilisé pour calculer le montant à refacturer par client" />
+                        </AccordionDetails>
+                    </Accordion>
+
+                    <Accordion sx={{ mt: 3, width: "100%" }} defaultExpanded={false}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <SmsIcon sx={{ mr: 1 }} />
+                            <Typography>Notifications SMS — MessageBird / Bird</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Credentials MessageBird (Bird) — provider alternatif moins cher pour les SMS DOM.{" "}
+                                <Link href="https://dashboard.bird.com" target="_blank" rel="noopener">
+                                    Dashboard Bird
+                                </Link>
+                            </Typography>
+                            <ApiKeyInput source="messageBirdAccessKey" label="Access Key MessageBird" fullWidth />
+                            <TextInput source="messageBirdOriginator" label="Originator par défaut (numéro ou alphanumérique 11 chars)" fullWidth helperText="Fallback si le client n'a pas de smsSenderId" />
                         </AccordionDetails>
                     </Accordion>
                 </SimpleForm>

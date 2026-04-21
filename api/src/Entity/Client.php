@@ -103,6 +103,10 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $phone = null;
 
+    #[ORM\OneToOne(mappedBy: 'ownerClient', targetEntity: Briefing::class, cascade: ['persist', 'remove'])]
+    #[Groups(groups: ['Client:read'])]
+    private ?Briefing $briefing = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $logo = null;
@@ -383,6 +387,25 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?bool $hasCams = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasSMS = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasPlanification = null;
+
+    #[ORM\Column(length: 11, nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    #[Assert\Length(max: 11, maxMessage: 'Le Sender ID SMS ne peut pas dépasser 11 caractères')]
+    private ?string $smsSenderId = null;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $smsCount = 0;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $smsCountLastBilled = 0;
+
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $vapiAssistantId = null;
@@ -410,6 +433,10 @@ class Client
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $trackingApiKey = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?string $wixHmacSecret = null;
 
     /** @var Collection<int, IntegrationPattern> */
     #[ORM\ManyToMany(targetEntity: IntegrationPattern::class, mappedBy: 'clients')]
@@ -1464,6 +1491,73 @@ class Client
         return $this;
     }
 
+    public function getHasSMS(): ?bool
+    {
+        return $this->hasSMS;
+    }
+
+    public function setHasSMS(?bool $v): static
+    {
+        $this->hasSMS = $v;
+        return $this;
+    }
+
+    public function getHasPlanification(): ?bool
+    {
+        return $this->hasPlanification;
+    }
+
+    public function setHasPlanification(?bool $v): static
+    {
+        $this->hasPlanification = $v;
+        return $this;
+    }
+
+    public function getSmsSenderId(): ?string
+    {
+        return $this->smsSenderId;
+    }
+
+    public function setSmsSenderId(?string $smsSenderId): static
+    {
+        $this->smsSenderId = $smsSenderId;
+        return $this;
+    }
+
+    public function getSmsCount(): int
+    {
+        return $this->smsCount;
+    }
+
+    public function setSmsCount(int $smsCount): static
+    {
+        $this->smsCount = $smsCount;
+        return $this;
+    }
+
+    public function incrementSmsCount(): static
+    {
+        $this->smsCount++;
+        return $this;
+    }
+
+    public function getSmsCountLastBilled(): int
+    {
+        return $this->smsCountLastBilled;
+    }
+
+    public function setSmsCountLastBilled(int $smsCountLastBilled): static
+    {
+        $this->smsCountLastBilled = $smsCountLastBilled;
+        return $this;
+    }
+
+    #[Groups(groups: ['Client:read'])]
+    public function getSmsBillable(): int
+    {
+        return $this->smsCount - $this->smsCountLastBilled;
+    }
+
     public function getVapiAssistantId(): ?string
     {
         return $this->vapiAssistantId;
@@ -1477,6 +1571,9 @@ class Client
 
     public function getTrackingApiKey(): ?string { return $this->trackingApiKey; }
     public function setTrackingApiKey(?string $trackingApiKey): static { $this->trackingApiKey = $trackingApiKey; return $this; }
+
+    public function getWixHmacSecret(): ?string { return $this->wixHmacSecret; }
+    public function setWixHmacSecret(?string $wixHmacSecret): static { $this->wixHmacSecret = $wixHmacSecret; return $this; }
 
     /** @return Collection<int, IntegrationPattern> */
     public function getIntegrationPatterns(): Collection { return $this->integrationPatterns; }
@@ -1526,4 +1623,18 @@ class Client
     public function getLatMax(): float { return ($this->lat ?? 0) + $this->computeBoundingBoxRadius(); }
     public function getLngMin(): float { return ($this->lng ?? 0) - $this->computeBoundingBoxRadius(); }
     public function getLngMax(): float { return ($this->lng ?? 0) + $this->computeBoundingBoxRadius(); }
+
+    public function getBriefing(): ?Briefing
+    {
+        return $this->briefing;
+    }
+
+    public function setBriefing(?Briefing $briefing): static
+    {
+        if ($briefing !== null && $briefing->getOwnerClient() !== $this) {
+            $briefing->setOwnerClient($this);
+        }
+        $this->briefing = $briefing;
+        return $this;
+    }
 }

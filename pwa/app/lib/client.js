@@ -125,13 +125,22 @@ export const objectToFormData = (data, form = new FormData(), namespace = '') =>
 export const createMediaObject = async (file, description = '', session) => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('description', description);
+    formData.append('description', description || (file?.name ?? ''));
+
+    const headers = { Authorization: `Bearer ${session?.accessToken}` };
+    try {
+        const raw = sessionStorage.getItem('client');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.id) headers['X-Client-Id'] = String(parsed.id);
+        }
+    } catch (e) {}
 
     try {
         const response = await fetch('/media_objects', {
             method: 'POST',
             body: formData,
-            headers: { Authorization: `Bearer ${session?.accessToken}` },
+            headers,
         });
         if (!response.ok) {
             const errorText = await response.text();
@@ -389,6 +398,14 @@ export const clientWithExpensesManagement = client => {
 
 export const clientWithGroupUpdate = client => {
     return isDefined(client) && isDefined(client.hasGroupUpdate) && client.hasGroupUpdate;
+};
+
+export const clientWithSMS = client => {
+    return isDefined(client) && isDefined(client.hasSMS) && client.hasSMS;
+};
+
+export const clientWithPlanification = client => {
+    return isDefined(client) && isDefined(client.hasPlanification) && client.hasPlanification;
 };
 
 export const getDefaultLanding = client => {

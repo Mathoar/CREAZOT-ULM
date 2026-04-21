@@ -11,7 +11,7 @@
 
 | # | Fichier | Domaine | Dernière MAJ | État |
 |---|---------|---------|--------------|------|
-| 1 | [context.mdc](.cursor/rules/context.mdc) | **Vue d'ensemble** (stack, infra, modules, entités, multi-tenant, migration) | 2026-04-09 | A jour |
+| 1 | [context.mdc](.cursor/rules/context.mdc) | **Vue d'ensemble** (stack, infra, modules, entités, multi-tenant, migration) | 2026-04-21 | A jour |
 | 2 | [context-preferences.mdc](.cursor/rules/context-preferences.mdc) | Préférences développeur, conventions, style de travail | 2026-03-26 | A jour |
 | 3 | [context-git.mdc](.cursor/rules/context-git.mdc) | Workflow Git, branches, conventions de commit, périmètre repo | 2026-03-26 | A jour |
 | 4 | [context-maintenance.mdc](.cursor/rules/context-maintenance.mdc) | Règle auto : proposer la MAJ des contextes | 2026-03-26 | A jour |
@@ -20,11 +20,12 @@
 
 | # | Fichier | Domaine | Activé quand | Dernière MAJ |
 |---|---------|---------|--------------|--------------|
-| 5 | [context-code-map.mdc](.cursor/rules/context-code-map.mdc) | Cartographie du code | `api/src/**`, `pwa/components/**`, `pwa/app/**` | 2026-03-26 |
+| 5 | [context-code-map.mdc](.cursor/rules/context-code-map.mdc) | Cartographie du code | `api/src/**`, `pwa/components/**`, `pwa/app/**` | 2026-04-21 |
 | 6 | [context-vapi.mdc](.cursor/rules/context-vapi.mdc) | Assistant Vocal Vapi.ai | `VapiService`, `VapiController`, `ClientsEdit` | 2026-03-26 |
 | 7 | [context-ai.mdc](.cursor/rules/context-ai.mdc) | IA Kimi, Score OPS, Météo | `KimiAiService`, `ScoreOps`, `dashboard/**` | 2026-03-26 |
 | 8 | [context-billing.mdc](.cursor/rules/context-billing.mdc) | Facturation Odoo | `Odoo*`, `InvoiceCalc`, `ModulePack`, `PricingTier` | 2026-03-26 |
-| 9 | [context-deploy.mdc](.cursor/rules/context-deploy.mdc) | Déploiement Docker | `compose.yaml`, `Dockerfile` | 2026-03-26 |
+| 9 | [context-deploy.mdc](.cursor/rules/context-deploy.mdc) | Déploiement Docker | `compose.yaml`, `Dockerfile` | 2026-04-21 |
+| 10 | [context-briefing.mdc](.cursor/rules/context-briefing.mdc) | Briefing public passager (`/r/{shortcode}`) | `Briefing.php`, `PublicReservationController`, `ImageResizer`, `pwa/app/r/**`, `admin/briefing/**`, `admin/circuit/**` | 2026-04-21 |
 
 ---
 

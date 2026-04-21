@@ -1,0 +1,89 @@
+"use client";
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import BadgeIcon from '@mui/icons-material/Badge';
+import { useDataProvider } from "react-admin";
+import { isDefined, isDefinedAndNotVoid, isValid } from "../../../../app/lib/utils";
+import { useClient } from "../../ClientProvider";
+import { clientUsingAvailabilityFilter } from "../../../../app/lib/client";
+
+// @ts-ignore
+export const ProfilPiloteForm: React.FC = ({ selectedPilot, setSelectedPilot, setPilots, eligiblePilots, reservation, autoSelect = true, date = new Date() }) => {
+
+  const { client } = useClient();
+  const dataProvider = useDataProvider();
+  const changeTextColor = () => setIsPilotSelected(true);
+
+  const [isPilotSelected, setIsPilotSelected] = useState<boolean>(false);
+  const [unfilteredPilots, setUnfilteredPilots] = useState([]);
+
+  const filterParams = useMemo(() => {
+    if (!isDefined(reservation)) return {};
+    const { debut, fin, originId } = reservation;
+    return {
+      debut: new Date(debut).toISOString(),
+      fin: new Date(fin).toISOString(),
+      id: originId,
+    };
+  }, [reservation]);
+
+  const getProfiles = useCallback(() => {
+    if (!isDefined(reservation)) return;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const { debut, fin, originId } = reservation;
+    const endpoint = clientUsingAvailabilityFilter(client) ? "profil_pilotes/disponibles" : "profil_pilotes";
+    const filters = clientUsingAvailabilityFilter(client) ? 
+        { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), timezone, reservationId: originId, "exists[certificatMedical]": true }  : 
+        { "exists[certificatMedical]": true };
+    dataProvider
+      .getList(endpoint, { filter: filters })
+      .then(({ data }) => {
+          const pilots = data.map(({pilote, ...profil}) => ({...pilote, profil}));
+          setUnfilteredPilots(pilots);
+      })
+  }, [dataProvider, reservation, setUnfilteredPilots]);
+
+  useEffect(() => getProfiles(), [getProfiles, filterParams]);
+
+  useEffect(() => {
+      if (isDefinedAndNotVoid(unfilteredPilots)) {
+        const enabledPilots = unfilteredPilots.filter(({ profil }) => isValid(profil.certificatMedical?.validUntil, profil.certificatMedical?.dateObtention, date));
+        setPilots(enabledPilots);
+  
+        if (autoSelect && (!isDefined(selectedPilot) || !enabledPilots.map(p => p['@id']).includes(selectedPilot?.['@id'])))
+            setSelectedPilot(enabledPilots[0]);
+      } else {
+          setPilots([]);
+      }
+  }, [date, unfilteredPilots]);
+
+  return (
+        <div className="my-2">
+          <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+            Pilote
+          </label>
+
+          <div className="relative z-20 bg-white dark:bg-form-input">
+            <BadgeIcon className="absolute left-4 top-1/2 z-30 -translate-y-1/2 opacity-80"/>
+
+            <select
+              value={ isDefined(selectedPilot) && isDefined(selectedPilot['@id']) ? selectedPilot['@id'] : "" }
+              onChange={(e) => {
+                const newPilot = e.target.value !== "" ? eligiblePilots.find(p => p['@id'] === e.target.value) : "";
+                setSelectedPilot(newPilot);
+                changeTextColor();
+              }}
+              className={`relative z-20 w-full appearance-none rounded-lg border border-stroke bg-transparent px-12 py-2 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input ${
+                isPilotSelected ? "text-black dark:text-white" : ""
+              } h-[41px]`}
+            >
+              <option value="" className="text-body dark:text-bodydark">
+                Choisissez un pilote
+              </option>
+              { eligiblePilots.map(pilot => <option key={ pilot.id } value={ pilot['@id'] } className="text-body dark:text-bodydark">{ pilot.firstName.charAt(0).toUpperCase() + pilot.firstName.slice(1) }</option>)}
+            </select>
+          </div>
+        </div>
+  );
+}
+

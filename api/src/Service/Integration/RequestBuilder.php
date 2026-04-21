@@ -43,16 +43,11 @@ class RequestBuilder
         }
 
         if (in_array($pattern->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $pattern->getBodyTemplate()) {
-            $body = $this->interpolate($pattern->getBodyTemplate(), $variables);
             $contentType = $pattern->getContentType() ?? 'application/json';
+            $body = $this->interpolateBody($pattern->getBodyTemplate(), $variables, $contentType);
 
             $options['headers']['Content-Type'] = $contentType;
-
-            if (str_contains($contentType, 'json')) {
-                $options['body'] = $body;
-            } else {
-                $options['body'] = $body;
-            }
+            $options['body'] = $body;
         }
 
         return [
@@ -62,10 +57,40 @@ class RequestBuilder
         ];
     }
 
+    /**
+     * Interpolation simple sans encodage (pour URL et headers).
+     */
     private function interpolate(string $template, array $variables): string
     {
         return preg_replace_callback('/\{\{(\w+)\}\}/', function (array $matches) use ($variables) {
             return $variables[$matches[1]] ?? $matches[0];
+        }, $template);
+    }
+
+    /**
+     * Interpolation du body avec auto-encoding selon le contentType.
+     * - application/json : json_encode des valeurs (échappe guillemets, retours ligne, unicode)
+     * - application/x-www-form-urlencoded : urlencode des valeurs
+     * - autres : interpolation brute (rétrocompatibilité)
+     */
+    private function interpolateBody(string $template, array $variables, string $contentType): string
+    {
+        $isJson = str_contains($contentType, 'json');
+        $isFormUrlEncoded = str_contains($contentType, 'x-www-form-urlencoded');
+
+        return preg_replace_callback('/\{\{(\w+)\}\}/', function (array $matches) use ($variables, $isJson, $isFormUrlEncoded) {
+            $value = $variables[$matches[1]] ?? $matches[0];
+
+            if ($isJson) {
+                $encoded = json_encode($value, JSON_UNESCAPED_UNICODE);
+                return is_string($encoded) ? trim($encoded, '"') : (string) $value;
+            }
+
+            if ($isFormUrlEncoded) {
+                return urlencode((string) $value);
+            }
+
+            return (string) $value;
         }, $template);
     }
 }

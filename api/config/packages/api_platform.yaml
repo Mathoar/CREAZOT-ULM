@@ -1,0 +1,441 @@
+api_platform:
+    title: Planetair974 - Gestion
+    version: 4.0.5
+    use_symfony_listeners: true
+    description: |
+        This is a demo application of the [API Platform](https://api-platform.com) framework.
+        [Its source code](https://github.com/api-platform/demo) includes various examples, check it out!
+        You may also be interested by [the GraphQL entrypoint](/graphql).
+        [A PWA](/) and [an admin](/admin) are consuming this API.
+    # Mercure integration, remove if unwanted
+    mercure:
+        include_type: true
+    graphql:
+        graphql_playground: false
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
+        multipart: ['multipart/form-data']
+    docs_formats:
+        jsonld: ['application/ld+json']
+        jsonopenapi: ['application/vnd.openapi+json']
+        html: ['text/html']
+    http_cache:
+        public: true
+    # Good defaults for REST APIs
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+        extra_properties:
+            standard_put: true
+            rfc_7807_compliant_errors: true
+    serializer:
+        hydra_prefix: true
+    oauth:
+        enabled: true
+        clientId: '%env(OIDC_SWAGGER_CLIENT_ID)%'
+        pkce: true
+        type: oauth2
+        flow: authorizationCode
+        tokenUrl: '%env(OIDC_SERVER_URL)%/protocol/openid-connect/token'
+        authorizationUrl: '%env(OIDC_SERVER_URL)%/protocol/openid-connect/auth'
+        scopes:
+            openid: (required) Indicates that the application intends to use OIDC to verify the user's identity
+    collection:
+        pagination:
+            enabled_parameter_name: pagination
+
+services:
+    _defaults:
+        autowire: false
+        autoconfigure: false
+        public: false
+
+    app.filter.prestation.pilote:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { pilote.firstName: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.prestation.aeronef:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { aeronef.immatriculation: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.prestation.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.passager.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.carnet.pilote:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { profil.pilote.firstName: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.carnet.aeronef:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { aeronef: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.carnet.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.vol.pilote:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { prestation.pilote.firstName: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.vol.aeronef:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { prestation.aeronef.immatriculation: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.vol.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { prestation.date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.vol.circuit:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { circuit.code: 'iexact' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.reservation.pilote:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { pilote.firstName: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.reservation.aeronef:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { avion.immatriculation: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.reservation.circuit:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { circuit.code: 'iexact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.reservation.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { debut: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.disponibilite.debut:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { debut: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.disponibilite.fin:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { fin: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.reservation.client:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { nom: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.reservation.validated:
+        class: 'App\Doctrine\Orm\Filter\ValidReservationFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { cancel: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.aeronef.selectable:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {isAvailable: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.aeronef.available:
+        class: 'App\Doctrine\Orm\Filter\AvailableAeronefFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { start: null, end: null, reservationId: null }
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.pilote.available:
+        class: 'App\Doctrine\Orm\Filter\AvailablePiloteFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { start: null, end: null, reservationId: null }
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.reservation.paid:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {paid: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.reservation.reference:
+        parent: 'api_platform.doctrine.orm.exists_filter'
+        arguments: [{ paymentReference: ~ }]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.review.admin.user:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { user: 'exact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.review.admin.book:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { book: 'exact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.review.admin.rating:
+        parent: 'api_platform.doctrine.orm.numeric_filter'
+        arguments:
+            $properties: { rating: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    # "name" is not a property, it's only a method "getName"
+    # Can't apply ApiFilter PHP attribute on method, so declare filter manually
+    app.filter.user.admin.name:
+        class: 'App\Doctrine\Orm\Filter\NameFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { name: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.user.email:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { email: 'exact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.user.profil:
+        parent: 'api_platform.doctrine.orm.exists_filter'
+        arguments: [{ profilPilote: ~ }]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.profile.certificat_medical:
+        parent: 'api_platform.doctrine.orm.exists_filter'
+        arguments: [{ certificatMedical: ~ }]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.vol.pilote.email:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { prestation.pilote.email: 'exact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.entretien.aeronef:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { aeronef.immatriculation: 'ipartial' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.entretien.moteur:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {changementMoteur: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.cadeau.fin:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { fin: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.cadeau.used:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {used: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.cadeau.beneficiaire:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { beneficiaire: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.cadeau.offreur:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { offreur: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.cadeau.valid:
+        class: 'App\Doctrine\Orm\Filter\ValidCadeauFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { valid: 'iexact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.rappel.titre:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { titre: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.rappel.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.rappel.periode:
+        class: 'App\Doctrine\Orm\Filter\RappelPeriodeFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { periode: 'iexact' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.combinaison.min_passager:
+        parent: 'api_platform.doctrine.orm.range_filter'
+        arguments:
+            $properties: { minPassager: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.profile.pilote:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { pilote.firstName: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.profile.email:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { pilote.email: 'exact' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.profile.eleve:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {isEleve: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.profile.professionnel:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {isPro: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.profile.instructeur:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {isInstructeur: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.name:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { name: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.expense.date:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments:
+            $properties: { date: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.reservation:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { reservationCode: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+    
+    app.filter.payment.reference:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { reference: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.mode:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { details.mode: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.origine:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { origine.name: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.expense.mode:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { details.mode: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.label:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments:
+            $properties: { label: 'iword_start' } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.payment.intitule:
+        class: 'App\Doctrine\Orm\Filter\NameOrLabelFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { intitule:  ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.expense.intitule:
+        class: 'App\Doctrine\Orm\Filter\BeneficiaireOrLibelleFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { intitule:  ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.expense.maintenance:
+        parent: 'api_platform.doctrine.orm.boolean_filter'
+        arguments:
+            $properties:  {relatedToMaintenance: ~ } # ]
+        tags: [ 'api_platform.filter' ]
+
+    app.filter.expense.entretien:
+        parent: 'api_platform.doctrine.orm.exists_filter'
+        arguments: [{ entretien: ~ }]
+        tags: [ 'api_platform.filter' ]

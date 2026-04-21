@@ -124,7 +124,7 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
     const newReservationEvents = getEventsFromReservations(reservations);
     const newRappelEvents = getEventsFromRappels(rappels);
     setEvents([...newReservationEvents, ...newRappelEvents]);
-  }, [reservations, rappels]);
+  }, [reservations, rappels, profile]);
 
   const getUserProfile = user => {
     if (isDefined(user)) {
@@ -179,7 +179,17 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
     return [];
   };
 
-  const getTitle = ({ circuit, nom, pilote, avion, telephone, option, statut, report, prix, position, remarques, paid }) => {
+  const getOptionsLabel = (event) => {
+    if (isDefinedAndNotVoid(event.selectedOptions)) {
+      return " + " + event.selectedOptions.map(o => o.nom).join(', ');
+    }
+    if (isDefined(event.option)) {
+      return " + " + event.option.nom;
+    }
+    return "";
+  };
+
+  const getTitle = ({ circuit, nom, pilote, avion, telephone, option, selectedOptions, statut, report, prix, position, remarques, paid, notificationSent }) => {
     if (view == Views.DAY)
       return (
         <>
@@ -190,7 +200,7 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
               </span>
             }
             {`${ circuit?.code ?? '—' }`}{ report && <span className="text-xs italic font-normal">{"  (REPORT)"}</span> }
-          </b><i className="text-xs">{`${ isDefined(option) ? " + " + option.nom  : "" }` }</i>
+          </b><i className="text-xs">{ getOptionsLabel({ option, selectedOptions }) }</i>
           <br/>
           <b className="text-xs">{`${ nom }` }</b> <span className="text-xs"><i>{`${ telephone }` }</i></span>
      
@@ -213,13 +223,14 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
           </span>
           <br/>
           { isAuthorized(profile) && 
-            <span className="text-xs"><b>{ prix }€ </b>{`${(isDefined(paid) && paid) ?  "- PAYÉ" : ""}`}</span>
+            <span className="text-xs"><b>{ prix }€ </b>{`${(isDefined(paid) && paid) ?  "- PAYÉ" : ""}`}{ notificationSent && <span title="Notification envoyée" style={{ fontSize: '0.6rem', marginLeft: 4 }}>✉️</span> }</span>
           }
         </>
       );
     else 
       return getVerticalName(circuit?.code ?? '—', statut);
   };
+
 
   const getVerticalName = (name, statut) => {
     const arrayName = name.split('');
@@ -247,6 +258,7 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
   }, []);
     
   const moveEvent = useCallback(({ event, start, end, isAllDay: droppedOnAllDaySlot = false }) => {
+      if (!isClientAdmin) return;
       const { allDay } = event;
       if (!allDay) {
         if (!allDay && droppedOnAllDaySlot)
@@ -270,12 +282,13 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
   [setEvents, reservations, setReservations]);
 
   const getFormattedUpdate = (event, start, end) => {
-    const { circuit, option, pilote, avion, contact, origine, cadeau } = event;
+    const { circuit, option, selectedOptions, pilote, avion, contact, origine, cadeau } = event;
     return {
         ...event,
         statut: "WHEATER_REPORT",
         circuit: isDefined(circuit) ? circuit['@id'] : null,
         option: isDefined(option) ? option['@id'] : null,
+        selectedOptions: isDefinedAndNotVoid(selectedOptions) ? selectedOptions.map(o => o['@id']) : [],
         pilote: isDefined(pilote) ? pilote['@id'] : null,
         avion: isDefined(avion) ? avion['@id'] : null,
         cadeau: isDefined(cadeau) ? cadeau['@id'] : null,

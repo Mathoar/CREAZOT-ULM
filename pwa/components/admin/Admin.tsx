@@ -59,6 +59,9 @@ import taxRateResourceProps from "./taxRate";
 import flightRuleResourceProps from "./flightRule";
 import conversationThreadResourceProps from "./conversationThread";
 import integrationPatternResourceProps from "./integrationPattern";
+import messageTemplateResourceProps from "./messageTemplate";
+import briefingResourceProps from "./briefing";
+import { PlanningPage } from "./planning/PlanningPage";
 import { ClientChannels } from "./channel/ClientChannels";
 
 const getClientHeaders = () => {
@@ -196,6 +199,8 @@ const AdminWithOIDC = () => {
         <ResourceGuesser name="conversation_threads" {...conversationThreadResourceProps}/>
         <ResourceGuesser name="client_access_requests" {...clientAccessRequestResourceProps}/>
         <ResourceGuesser name="integration_patterns" {...integrationPatternResourceProps}/>
+        <ResourceGuesser name="message_templates" {...messageTemplateResourceProps}/>
+        <ResourceGuesser name="briefings" {...briefingResourceProps}/>
         <CustomRoutes>
           <Route path="/landings" element={<LandingsList />} />
           <Route path="/convert" element={<ReservationCreate />} />
@@ -204,6 +209,7 @@ const AdminWithOIDC = () => {
           <Route path="/request-access" element={<ClientAttachmentRequest />} />
           <Route path="/members" element={<MembersList />} />
           <Route path="/client-channels" element={<ClientChannels />} />
+          <Route path="/planning" element={<PlanningPage />} />
         </CustomRoutes>
       </AdminAdapter>
     </UserGuard>

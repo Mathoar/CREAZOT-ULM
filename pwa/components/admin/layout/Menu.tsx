@@ -46,6 +46,9 @@ import PercentIcon from "@mui/icons-material/Percent";
 import GavelIcon from "@mui/icons-material/Gavel";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import SettingsIcon from "@mui/icons-material/Settings";
+import SmsIcon from "@mui/icons-material/Sms";
+import MessageIcon from "@mui/icons-material/Message";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 import { Badge } from '@mui/material';
 import { useEffect } from 'react';
 import axios from 'axios';
@@ -107,6 +110,14 @@ const CustomMenu = () => {
           to="/reservations"
           primaryText="Réservations"
           leftIcon={<EditCalendarIcon />}
+        />
+      }
+      {/* @ts-ignore */}
+      { (isDefined(client) && isDefined(client.hasReservation) && client.hasReservation && isDefined(client.hasPlanification) && client.hasPlanification) && isAdmin &&
+        <Menu.Item
+          to="/planning"
+          primaryText="Planification"
+          leftIcon={<SmsIcon />}
         />
       }
       {/* @ts-ignore */}
@@ -231,31 +242,12 @@ const CustomMenu = () => {
             }  
             {/* @ts-ignore */}
             { isAdmin && isDefined(client) && isDefined(client.hasOptions) && client.hasOptions && 
-              <>
-                <MenuItemLink
-                      to="#"
-                      onClick={ handleOptionsClick }
-                      primaryText="Options"
-                      leftIcon={<CollectionsIcon className="h-[24px] w-[24px]"/>}
-                      dense={ !openSidebar }
-                      sx={{ cursor: 'pointer',  pl: 3, backgroundColor: optionsOpen ? '#E4E7EB' : '#EFF2F5' }}
-                  >
-                  </MenuItemLink>
-                  <Collapse in={ optionsOpen } timeout="auto" unmountOnExit>
-                      <Menu.Item
-                            to="/options"
-                            primaryText="Eléments"
-                            leftIcon={<CropOriginalIcon />}
-                            sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
-                          />
-                      <Menu.Item
-                            to="/combinaisons"
-                            primaryText="Packs commerciaux"
-                            leftIcon={<FilterIcon />}
-                            sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
-                          />
-                </Collapse>
-              </>
+              <Menu.Item
+                to="/options"
+                primaryText="Options"
+                leftIcon={<CollectionsIcon />}
+                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+              />
             }
             { isAdmin &&
               <Menu.Item
@@ -289,6 +281,14 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
+            { isAdmin && isDefined(client) && client.hasPlanification &&
+              <Menu.Item
+                to="/message_templates"
+                primaryText="Modèles messages"
+                leftIcon={<MessageIcon />}
+                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+              />
+            }
             {/* @ts-ignore */}
             { (isDefined(client) && isDefined(client.hasPartners) && client.hasPartners) && isAdmin &&
               <Menu.Item
@@ -303,6 +303,14 @@ const CustomMenu = () => {
                 to={`/clients/${encodeURIComponent(client['@id'] || '/clients/' + client.id)}`}
                 primaryText="Mon établissement"
                 leftIcon={<BusinessIcon />}
+                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+              />
+            }
+            { isAdmin && isDefined(client) && client.hasPlanification && client.briefing &&
+              <Menu.Item
+                to={`/briefings/${encodeURIComponent(client.briefing['@id'] || '/briefings/' + client.briefing.id)}`}
+                primaryText="Briefing"
+                leftIcon={<MenuBookIcon />}
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }

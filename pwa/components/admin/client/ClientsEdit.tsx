@@ -467,13 +467,91 @@ const AiCustomInstructions = () => {
     );
 };
 
+const SmsSenderIdInput = () => {
+    const hasSMS = useWatch({ name: 'hasSMS' });
+    if (!hasSMS) return null;
+    return (
+        <TextInput
+            source="smsSenderId"
+            label="Expéditeur SMS (nom ou numéro)"
+            fullWidth
+            helperText="Max 11 caractères alphanumériques (ex: Survol Run, Planetair) ou numéro au format +33..."
+        />
+    );
+};
+
+const SmsBillingInfo = () => {
+    const record = useRecordContext();
+    const { isSuperAdmin: isSuperAdminRole } = useClient();
+    const { session } = useSessionContext();
+    const notify = useNotify();
+    const [loading, setLoading] = useState(false);
+    const [billable, setBillable] = useState<number | null>(null);
+
+    const hasSMS = record?.hasSMS;
+    const smsBillableFromRecord = record?.smsBillable ?? 0;
+
+    useEffect(() => {
+        setBillable(smsBillableFromRecord);
+    }, [smsBillableFromRecord]);
+
+    if (!hasSMS || (billable ?? smsBillableFromRecord) === 0) return null;
+
+    const displayBillable = billable ?? smsBillableFromRecord;
+
+    const handleMarkBilled = async () => {
+        if (!confirm(`Marquer ${displayBillable} SMS comme facturés ?`)) return;
+        setLoading(true);
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_ENTRYPOINT}/admin/notifications/mark-billed/${record.id}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${session?.accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+            const data = await res.json();
+            if (data.success) {
+                notify(`${data.billed} SMS marqués comme facturés`, { type: 'success' });
+                setBillable(0);
+            } else {
+                notify(data.error || 'Erreur', { type: 'error' });
+            }
+        } catch (e: any) {
+            notify('Erreur : ' + e.message, { type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Box sx={{ width: '100%', mt: 1, mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1, border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="subtitle2">
+                📊 SMS à facturer : <strong>{displayBillable}</strong>
+            </Typography>
+            {isSuperAdminRole && displayBillable > 0 && (
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleMarkBilled}
+                    disabled={loading}
+                >
+                    {loading ? 'En cours...' : 'Marquer comme facturé'}
+                </Button>
+            )}
+        </Box>
+    );
+};
+
 export const ClientsEdit = () => {
 
     const notify = useNotify();
     const redirect = useRedirect();
-    const { updateClient } = useClient();
+    const { client, updateClient, isSuperAdmin: isSuperAdminRole } = useClient();
     const { session } = useSessionContext();
-    const { isSuperAdmin: isSuperAdminRole } = useClient();
 
     const transform = async data => {
         const cachedClient = sessionStorage.getItem("client");
@@ -483,6 +561,16 @@ export const ClientsEdit = () => {
 
         if (sanitizedData.countryCode && typeof sanitizedData.countryCode === 'object') {
             sanitizedData.countryCode = sanitizedData.countryCode['@id'] || null;
+        }
+
+        // Convertir les relations nested en IRIs pour éviter les 422
+        const relationFields = ['contacts', 'origines', 'integrationPatterns'];
+        for (const field of relationFields) {
+            if (Array.isArray(sanitizedData[field])) {
+                sanitizedData[field] = sanitizedData[field].map((item: any) =>
+                    typeof item === 'object' && item?.['@id'] ? item['@id'] : item
+                );
+            }
         }
 
         const images = await uploadImages(sanitizedData, session, data.id);
@@ -510,7 +598,9 @@ export const ClientsEdit = () => {
 
             const updatedClient = await response.json();
 
-            updateClient(updatedClient);
+            if (client?.id === updatedClient?.id) {
+                updateClient(updatedClient);
+            }
             notify('Le client a bien été mis à jour.', { type: 'success' });
             if (isSuperAdminRole) {
                 redirect('list', 'clients');
@@ -549,6 +639,8 @@ export const ClientsEdit = () => {
                         hasAiReservationAssistant: false,
                         hasVoiceAssistant: false,
                         hasCams: false,
+                        hasSMS: false,
+                        hasPlanification: false,
                         minHours: "00:00",
                         maxHours: "23:59",
                         ...record,
@@ -568,7 +660,7 @@ export const ClientsEdit = () => {
                         <TextInput source="email" label="Adresse email"/>
                         <TextInput source="phone" label="N° de téléphone"/>
                         <TextInput source="website" label="Site web"/>
-                        <PasswordInput source="emailParams" label="Serveur d'email"/>
+                        <TextInput source="emailParams" label="Serveur d'email" type="password" />
                         <TextInput source="emailAddressSender" label="Adresse email d'envoi"/>
                         <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
@@ -666,8 +758,18 @@ export const ClientsEdit = () => {
                             <Box flex={1}>
                                 <BooleanInput source="hasVoiceAssistant" label="Assistant Vocal (téléphone)" fullWidth/>
                             </Box>
+                            <Box flex={1}>
+                                <BooleanInput source="hasSMS" label="Notifications SMS" fullWidth/>
+                            </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                            <Box flex={1}>
+                                <BooleanInput source="hasPlanification" label="Planification" fullWidth/>
+                            </Box>
                             <Box flex={1}/>
                         </Box>
+                        <SmsSenderIdInput />
+                        <SmsBillingInfo />
                         <AiCustomInstructions />
                         <VapiClientSetup />
                         <Divider sx={{ mt: 2, borderBottomWidth: 2, borderColor: '#666' }} />
@@ -685,6 +787,7 @@ export const ClientsEdit = () => {
                         </Box>
                         <NumberInput source="zoom" label="Zoom" min={ 1 } max={ 15 }/>
                         <PasswordInput source="trackingApiKey" label="Clé API Tracking (Microtrak)" fullWidth helperText="Clé d'authentification pour l'API de suivi des balises" />
+                        <PasswordInput source="wixHmacSecret" label="Clé HMAC Wix (Webshop)" fullWidth helperText="Secret partagé avec Wix pour authentifier les webhooks d'achat" />
                         <IntegrationPatternSelector />
                         <Typography variant="h6" gutterBottom>
                             Seuils d'alerte

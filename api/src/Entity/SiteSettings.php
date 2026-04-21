@@ -100,7 +100,7 @@ class SiteSettings
     private ?string $city = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    #[Groups(groups: ['SiteSettings:write'])]
     private ?string $emailParams = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -137,6 +137,29 @@ class SiteSettings
     #[Groups(groups: ["SiteSettings:write"])]
     private ?string $vapiApiKey = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['SiteSettings:write'])]
+    private ?string $twilioAccountSid = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['SiteSettings:write'])]
+    private ?string $twilioAuthToken = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    private ?string $twilioFromNumber = null;
+
+    #[ORM\Column(length: 500, nullable: true)]
+    #[Groups(groups: ['SiteSettings:write'])]
+    private ?string $messageBirdAccessKey = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    private ?string $messageBirdOriginator = null;
+
+    #[ORM\Column(type: 'decimal', precision: 6, scale: 4, nullable: true)]
+    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    private ?string $smsCostPerUnit = null;
 
     #[ORM\Column(nullable: true)]
     #[Groups(groups: ['SiteSettings:read'])]
@@ -319,9 +342,20 @@ class SiteSettings
 
     public function setEmailParams(?string $emailParams): static
     {
+        if ($emailParams === self::API_KEY_MASK) {
+            return $this;
+        }
         $this->emailParams = $emailParams;
 
         return $this;
+    }
+
+    #[Groups(groups: ['SiteSettings:read'])]
+    public function getEmailParamsMask(): ?string
+    {
+        return ($this->emailParams !== null && $this->emailParams !== '')
+            ? self::API_KEY_MASK
+            : null;
     }
 
     public function getEmailAddressSender(): ?string
@@ -460,4 +494,117 @@ class SiteSettings
             : null;
     }
 
+    public function getTwilioAccountSid(): ?string
+    {
+        return $this->twilioAccountSid;
+    }
+
+    public function setTwilioAccountSid(?string $twilioAccountSid): static
+    {
+        if ($twilioAccountSid === self::API_KEY_MASK) {
+            return $this;
+        }
+        $this->twilioAccountSid = $twilioAccountSid;
+        return $this;
+    }
+
+    #[Groups(groups: ['SiteSettings:read'])]
+    public function getTwilioAccountSidMask(): ?string
+    {
+        return ($this->twilioAccountSid !== null && $this->twilioAccountSid !== '')
+            ? self::API_KEY_MASK
+            : null;
+    }
+
+    public function getTwilioAuthToken(): ?string
+    {
+        return $this->twilioAuthToken;
+    }
+
+    public function setTwilioAuthToken(?string $twilioAuthToken): static
+    {
+        if ($twilioAuthToken === self::API_KEY_MASK) {
+            return $this;
+        }
+        $this->twilioAuthToken = $twilioAuthToken;
+        return $this;
+    }
+
+    #[Groups(groups: ['SiteSettings:read'])]
+    public function getTwilioAuthTokenMask(): ?string
+    {
+        return ($this->twilioAuthToken !== null && $this->twilioAuthToken !== '')
+            ? self::API_KEY_MASK
+            : null;
+    }
+
+    public function getTwilioFromNumber(): ?string
+    {
+        return $this->twilioFromNumber;
+    }
+
+    public function setTwilioFromNumber(?string $twilioFromNumber): static
+    {
+        $this->twilioFromNumber = $twilioFromNumber;
+        return $this;
+    }
+
+    /**
+     * Calculé à la volée pour utilisation dans les patterns d'intégration.
+     * Format attendu par Twilio : header "Authorization: Basic base64(sid:token)".
+     */
+    public function getTwilioBasicAuth(): ?string
+    {
+        if (!$this->twilioAccountSid || !$this->twilioAuthToken) {
+            return null;
+        }
+        return base64_encode($this->twilioAccountSid . ':' . $this->twilioAuthToken);
+    }
+
+    public function getMessageBirdAccessKey(): ?string
+    {
+        return $this->messageBirdAccessKey;
+    }
+
+    public function setMessageBirdAccessKey(?string $messageBirdAccessKey): static
+    {
+        if ($messageBirdAccessKey === self::API_KEY_MASK) {
+            return $this;
+        }
+        $this->messageBirdAccessKey = $messageBirdAccessKey;
+        return $this;
+    }
+
+    #[Groups(groups: ['SiteSettings:read'])]
+    public function getMessageBirdAccessKeyMask(): ?string
+    {
+        return ($this->messageBirdAccessKey !== null && $this->messageBirdAccessKey !== '')
+            ? self::API_KEY_MASK
+            : null;
+    }
+
+    public function getMessageBirdOriginator(): ?string
+    {
+        return $this->messageBirdOriginator;
+    }
+
+    public function setMessageBirdOriginator(?string $messageBirdOriginator): static
+    {
+        $this->messageBirdOriginator = $messageBirdOriginator;
+        return $this;
+    }
+
+    public function getSmsCostPerUnit(): ?string
+    {
+        return $this->smsCostPerUnit;
+    }
+
+    public function setSmsCostPerUnit(?string $smsCostPerUnit): static
+    {
+        if ($smsCostPerUnit !== null) {
+            $smsCostPerUnit = str_replace(',', '.', $smsCostPerUnit);
+        }
+        $this->smsCostPerUnit = $smsCostPerUnit;
+        return $this;
+    }
 }

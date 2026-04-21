@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use App\Repository\OptionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\Delete;
@@ -17,6 +19,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 
 #[ORM\Entity(repositoryClass: OptionRepository::class)]
+#[ApiFilter(BooleanFilter::class, properties: ['isAvailable'])]
 #[ApiResource(
     uriTemplate: '/options{._format}',
     operations: [
@@ -68,6 +71,10 @@ class Option implements TenantAwareInterface
     #[Groups(groups: ['Option:write', 'Option:read', 'Vol:read', 'Cadeau:read', 'Prestation:read', 'Reservation:read', 'Combinaison:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?float $prix = null;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    #[Groups(groups: ['Option:write', 'Option:read'])]
+    private bool $isAvailable = true;
+
     #[Groups(groups: ['Option:write', 'Option:read', 'Vol:read', 'Cadeau:read', 'Prestation:read', 'Reservation:read', 'Combinaison:read', 'PaymentDetail:read', 'Payment:read'])]
     public function getName(): ?string
     {
@@ -99,6 +106,18 @@ class Option implements TenantAwareInterface
     public function setPrix(?float $prix): static
     {
         $this->prix = $prix;
+
+        return $this;
+    }
+
+    public function isIsAvailable(): bool
+    {
+        return $this->isAvailable;
+    }
+
+    public function setIsAvailable(bool $isAvailable): static
+    {
+        $this->isAvailable = $isAvailable;
 
         return $this;
     }
