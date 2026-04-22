@@ -7,7 +7,7 @@ import { useClient } from '../../admin/ClientProvider';
 import { useLocation } from 'react-router-dom';
 import { Toolbar, SaveButton, DeleteButton } from 'react-admin';
 import { Checkbox, FormControlLabel, useMediaQuery } from '@mui/material';
-import { clientWithOptions, clientWithGifts, clientWithOriginContact, clientWithPartners, clientUsingAvailabilityFilter, clientWithGroupUpdate } from "../../../app/lib/client";
+import { clientWithOptions, clientWithGifts, clientWithOriginContact, clientWithPartners, clientUsingAvailabilityFilter, clientWithGroupUpdate, clientWithPatrolFlight } from "../../../app/lib/client";
 
 const ReservationEditToolbar = ({ applyToGroup, setApplyToGroup, isSmall, client, ...props }) => {
 
@@ -303,14 +303,13 @@ export const ReservationsEdit = () => {
           <OptionInput client={ client }/>
           <FilteredPiloteInput circuits={ circuits } client={ client }/>
           <FilteredAeronefInput client={ client }/>
-          <SelectInput source="position" choices={ positions } defaultValue="-"/>
+          { clientWithPatrolFlight(client) && <SelectInput source="position" choices={ positions } defaultValue="-"/> }
           <SelectInput source="statut" choices={ status } />
           <TextInput source="color" label="Code couleur"/>
           <OriginContactInput client={ client }/>
           <PartnersInput client={ client }/>
           <TextInput source="remarques" label="Remarques" multiline sx={{ '& .MuiInputBase-inputMultiline': {height: '200px!important'} }}/>
           <BooleanInput source="paid" label="Prépayé"/>
-          <BooleanInput source="upsell" label="Upsell"/>
           <BooleanInput source="report" label="Report"/>
           <TextInput source="originId" sx={{ display: 'none' }}/>
       </SimpleForm>

@@ -8,7 +8,7 @@ import { PlusForm } from "../../../admin/prestation/Form/PlusForm";
 import Flatpickr from 'react-flatpickr';
 import { French } from "flatpickr/dist/l10n/fr.js";
 import { OptionForm } from '../../../admin/prestation/Form/OptionForm';
-import { clientWithGifts, clientWithOptions, clientWithOriginContact, clientWithPartners } from '../../../../app/lib/client';
+import { clientWithGifts, clientWithOptions, clientWithOriginContact, clientWithPartners, clientWithPatrolFlight } from '../../../../app/lib/client';
 import { ProfilPiloteForm } from '../../../admin/prestation/Form/ProfilPiloteForm';
 import { AircraftForm } from "../../../admin/prestation/Form/AircraftForm";
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
@@ -54,7 +54,7 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
     const [selectedOriginContact, setSelectedOriginContact] = useState([]);
     const [creationMode, setCreationMode] = useState('declaration');
     const [selectedPrepayment, setSelectedPrepayment] = useState(defaultPrepayment);
-    const [consumer, setConsumer] = useState({nom:"", telephone: "", email: "", quantite: 1, statut: "VALIDATED", remarques: "", report: false, paid: false, upsell: false, debut: new Date(slot.start), color: getRandomColor(), position: "-"});
+    const [consumer, setConsumer] = useState({nom:"", telephone: "", email: "", quantite: 1, statut: "VALIDATED", remarques: "", report: false, paid: false, debut: new Date(slot.start), color: getRandomColor(), position: "-"});
 
     useEffect(() => {
         if (isNotBlank(selectedCircuit)) {
@@ -170,7 +170,6 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
                     nom: beneficiaire,
                     color,
                     paid: true,
-                    upsell: false,
                     report: false,
                     contact: [],
                     remarques: '',
@@ -233,7 +232,7 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
     };
 
     const reinitializeData = () => {
-        setConsumer({nom:"", telephone: "", email: "", quantite: 1, statut: "VALIDATED", remarques: "", report: false, paid: false, upsell: false, debut: new Date((new Date()).setHours(8, 0, 0)), color: getRandomColor(), position: "-"});
+        setConsumer({nom:"", telephone: "", email: "", quantite: 1, statut: "VALIDATED", remarques: "", report: false, paid: false, debut: new Date((new Date()).setHours(8, 0, 0)), color: getRandomColor(), position: "-"});
         setSelectedPilot("");
         setSelectedAircraft("");
         setSelectedOptions([]);
@@ -574,7 +573,7 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
                                                 resource = "reservations"
                                             />
                                         </div>
-                                        <div className="my-4">
+                                        { clientWithPatrolFlight(client) && <div className="my-4">
                                             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                                                 Position
                                             </label>
@@ -604,7 +603,7 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
                                                     </option>
                                                 </select>
                                             </div>
-                                        </div>
+                                        </div> }
                                     </div>
                                 }
                             </div>

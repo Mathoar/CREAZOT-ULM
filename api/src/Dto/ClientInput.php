@@ -157,4 +157,7 @@ final class ClientInput
 
     #[Groups(groups: ['Client:write'])]
     public ?bool $hasGroupUpdate = null;
+
+    #[Groups(groups: ['Client:write'])]
+    public ?bool $hasPatrolFlight = null;
 }

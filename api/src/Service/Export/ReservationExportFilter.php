@@ -64,7 +64,7 @@ class ReservationExportFilter implements ExportFilterInterface
     {
        $headers = ['Id', 'Code', 'Reference du paiement', 'Debut', 'Fin', 'Nom', 'Telephone',
             'Email', 'Quantite', 'Circuit', 'Option', 'Statut', 'Prix', 'Pilote', 'Aeronef', 
-            'Report', 'Paye', 'Upsell', 'Origine', 'Contact', 'Code cadeau', 
+            'Report', 'Paye', 'Origine', 'Contact', 'Code cadeau', 
             'Beneficiaire cadeau', 'Offreur cadeau', 'N° de paiement du cadeau'];
 
         $rows = array_map(fn(Reservation $r) => [
@@ -85,7 +85,6 @@ class ReservationExportFilter implements ExportFilterInterface
             $r->getAvion()?->getImmatriculation(),
             $r->isReport() ? 'Oui' : 'Non',
             $r->isPaid() ? 'Oui' : 'Non',
-            $r->isUpsell() ? 'Oui' : 'Non',
             implode(', ', $r->getOrigine()->map(fn($o) => $o->getName())->toArray()),
             implode(', ', $r->getContact()->map(fn($c) => $c->getName())->toArray()),
             $r->getCadeau()?->getCode(),

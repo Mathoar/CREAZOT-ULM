@@ -34,7 +34,7 @@ const ReservationField = ({ choices = [], isLoading = false, setSelection, defau
     }, [selectedChoice]);
 
     const helperText = selectedReservation && selectedChoice?.prix
-        ? <><b>{ `${selectedChoice.prix.toFixed(2)} €` }</b>{`  - Attention aux upsells et options.`}</>
+        ? <><b>{ `${selectedChoice.prix.toFixed(2)} €` }</b>{`  - Attention aux options.`}</>
         : undefined;
 
     return (

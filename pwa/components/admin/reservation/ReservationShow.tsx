@@ -1,5 +1,5 @@
 import { Show, SimpleShowLayout, TextField, DateField, NumberField, BooleanField, FunctionField, ArrayField, Datagrid } from 'react-admin';
-import { clientWithOptions, clientWithGifts, clientWithOriginContact, clientWithPartners } from "../../../app/lib/client";
+import { clientWithOptions, clientWithGifts, clientWithOriginContact, clientWithPartners, clientWithPatrolFlight } from "../../../app/lib/client";
 import { isDefined } from '../../../app/lib/utils';
 import { status } from "../../../app/lib/reservation";
 import { useClient } from '../../admin/ClientProvider';
@@ -58,7 +58,7 @@ export const ReservationShow = () => {
                     }
                 />
                 <TextField source="avion.immatriculation" label="Aéronef" sortable={ true }/>
-                <TextField source="position" label="Position"/>
+                { clientWithPatrolFlight(client) && <TextField source="position" label="Position"/> }
                 <OriginContactField/>
                 <PartnersField/>
                 <TextField source="remarques" label="Remarque(s)" />
@@ -71,7 +71,6 @@ export const ReservationShow = () => {
                 />
                 <TextField source="color" label="Code couleur"/>
                 <BooleanField source="paid" label="Prépayé"/>
-                <BooleanField source="upsell" label="Upsell"/>
                 <BooleanField source="report" label="Report"/>
             </SimpleShowLayout>
         </Show>

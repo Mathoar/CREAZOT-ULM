@@ -369,6 +369,10 @@ class Client
 
     #[ORM\Column(nullable: true)]
     #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasPatrolFlight = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?bool $hasNotam = null;
 
     #[ORM\Column(nullable: true)]
@@ -1168,6 +1172,18 @@ class Client
     public function setHasGroupUpdate(?bool $hasGroupUpdate): static
     {
         $this->hasGroupUpdate = $hasGroupUpdate;
+
+        return $this;
+    }
+
+    public function getHasPatrolFlight(): ?bool
+    {
+        return $this->hasPatrolFlight;
+    }
+
+    public function setHasPatrolFlight(?bool $hasPatrolFlight): static
+    {
+        $this->hasPatrolFlight = $hasPatrolFlight;
 
         return $this;
     }

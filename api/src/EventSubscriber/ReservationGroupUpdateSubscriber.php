@@ -62,7 +62,6 @@ class ReservationGroupUpdateSubscriber implements EventSubscriberInterface
                 ->setReport($reservation->isReport())
                 ->setEmail($reservation->getEmail())
                 ->setPaid($reservation->isPaid())
-                ->setUpsell($reservation->isUpsell())
                 ->setContact($reservation->getContact())
                 ->setOrigine($reservation->getOrigine());
 

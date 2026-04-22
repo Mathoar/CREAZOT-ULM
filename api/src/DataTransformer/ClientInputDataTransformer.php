@@ -76,6 +76,7 @@ class ClientInputDataTransformer implements ProcessorInterface
             $client->setHasExpensesManagement($data->hasExpensesManagement);
             $client->setUseAvailabilityFilter($data->useAvailabilityFilter);
             $client->setHasGroupUpdate($data->hasGroupUpdate);
+            $client->setHasPatrolFlight($data->hasPatrolFlight);
             $client->setConsentText($data->consentText);
             $client->setMinHours($data->minHours);
             $client->setMaxHours($data->maxHours);

@@ -6,7 +6,7 @@ import { generateSafeCode, getFormattedValueForBackEnd, getRandomColor, isDefine
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { positions, status } from "../../../app/lib/reservation";
 import { useClient } from '../../admin/ClientProvider';
-import { clientUsingAvailabilityFilter, clientWithGifts, clientWithOptions, clientWithOriginContact, clientWithPartners } from "../../../app/lib/client";
+import { clientUsingAvailabilityFilter, clientWithGifts, clientWithOptions, clientWithOriginContact, clientWithPartners, clientWithPatrolFlight } from "../../../app/lib/client";
 import { Link } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { Box, useMediaQuery } from "@mui/material";
@@ -185,7 +185,8 @@ const FilteredAeronefInput = ({ client, selectedQuantite, defaultStart = new Dat
   );
 };
 
-const PositionInput = ({ selectedQuantite }) => {
+const PositionInput = ({ selectedQuantite, client }) => {
+    if (!clientWithPatrolFlight(client)) return null;
     return (
         <SelectInput 
             source="position"
@@ -350,13 +351,12 @@ export const ReservationsCreate = () => {
         <OptionInput client={ client }/>
         <FilteredPiloteInput circuits={ circuits } client={ client } selectedQuantite={ selectedQuantite }  defaultStart={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) }/>
         <FilteredAeronefInput client={ client } selectedQuantite={ selectedQuantite } defaultStart={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) }/>
-        <PositionInput selectedQuantite={ selectedQuantite }/>
+        <PositionInput selectedQuantite={ selectedQuantite } client={ client }/>
         <SelectInput source="statut" choices={ status } defaultValue={ status[0].id } validate={required()}/>
         <OriginContactInput client={ client }/>
         <PartnersInput client={ client }/>
         <TextInput source="remarques" label="Remarques" multiline sx={{ '& .MuiInputBase-inputMultiline': {height: '200px!important'} }}/>
         <BooleanInput source="paid" label="Prépayé"/>
-        <BooleanInput source="upsell" label="Upsell"/>
         <BooleanInput source="report" label="Report"/>
         <CircuitWatcher circuits={ circuits }/>
         <QuantiteWatcher setSelectedQuantite={ setSelectedQuantite } />

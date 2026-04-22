@@ -10,7 +10,7 @@ import { generateSafeCode, getFormattedValueForBackEnd, getRandomColor, isDefine
 import { PlusForm } from "../../../admin/prestation/Form/PlusForm";
 import Flatpickr from 'react-flatpickr';
 import { French } from "flatpickr/dist/l10n/fr.js";
-import { clientWithGifts, clientWithGroupUpdate, clientWithOptions, clientWithOriginContact, clientWithPartners } from '../../../../app/lib/client';
+import { clientWithGifts, clientWithGroupUpdate, clientWithOptions, clientWithOriginContact, clientWithPartners, clientWithPatrolFlight } from '../../../../app/lib/client';
 import CreditCardOffIcon from '@mui/icons-material/CreditCardOff';
 import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
@@ -36,7 +36,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
     const [selectedInitialContact, setSelectedInitialContact] = useState([]);
     const [selectedOriginContact, setSelectedOriginContact] = useState([]);
     const [applyToGroup, setApplyToGroup] = useState(false);
-    const [consumer, setConsumer] = useState({nom:"", telephone: "", email: "", quantite: 1, statut: "VALIDATED", remarques: "", report: false, paid: false, upsell: false, debut: new Date((new Date()).setHours(8, 0, 0)), color: getRandomColor(), position: "-", cadeau: defaultCadeau['@id']});
+    const [consumer, setConsumer] = useState({nom:"", telephone: "", email: "", quantite: 1, statut: "VALIDATED", remarques: "", report: false, paid: false, debut: new Date((new Date()).setHours(8, 0, 0)), color: getRandomColor(), position: "-", cadeau: defaultCadeau['@id']});
 
     useEffect(() => {
         if (!isDefinedAndNotVoid(validCadeaux))
@@ -56,7 +56,6 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
                 remarques: isDefined(toUpdate.remarques) ? toUpdate.remarques : "",
                 report: isDefined(toUpdate.report) ? toUpdate.report : false,
                 paid: isDefined(toUpdate.paid) ? toUpdate.paid : false,
-                upsell: isDefined(toUpdate.upsell) ? toUpdate.upsell : false,
                 position: isDefined(toUpdate.position) ? toUpdate.position : "-",
                 debut: isDefined(toUpdate.debut) ? new Date(toUpdate.debut) : new Date((new Date()).setHours(8, 0, 0)),
                 cadeau: isDefined(toUpdate.cadeau) ? toUpdate.cadeau : defaultCadeau,
@@ -162,11 +161,11 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
         if (currentReservation['@id'] === payload?.data?.['@id']) {
             return payload?.data;
         } else {
-            const { code, nom, telephone, circuit, debut, fin, color, statut, remarques, report, email, paid, upsell, contact, origine, option } = payload.data;
+            const { code, nom, telephone, circuit, debut, fin, color, statut, remarques, report, email, paid, contact, origine, option } = payload.data;
             if (!isGroupUpdate || currentReservation.code !== code) {
                 return currentReservation;
             } else {
-                const newGroupedReservation = { ...currentReservation, nom, telephone, circuit, debut, fin, color, statut, remarques, report, email, paid, upsell, contact, origine};
+                const newGroupedReservation = { ...currentReservation, nom, telephone, circuit, debut, fin, color, statut, remarques, report, email, paid, contact, origine};
                 const newPrice = getFinalPrice(circuit, currentReservation.option, origine);
                 return {...newGroupedReservation, prix: newPrice};
             }
@@ -197,7 +196,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
         setSelectedOptions([]);
         setSelectedAircraft("");
         setSelectedCircuit("");
-        setConsumer({nom:"", telephone: "", email: "", quantite:1, statut: "VALIDATED", remarques: "", report: false, paid: false, upsell: false, debut: new Date((new Date()).setHours(8, 0, 0)), color: getRandomColor(), position: "-"});
+        setConsumer({nom:"", telephone: "", email: "", quantite:1, statut: "VALIDATED", remarques: "", report: false, paid: false, debut: new Date((new Date()).setHours(8, 0, 0)), color: getRandomColor(), position: "-"});
         setSection("contact");
         setSelectedInitialContact([]);
         setSelectedOriginContact([]);
@@ -442,7 +441,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
                                                 resource = "reservations"
                                             />
                                         </div>
-                                        <div className="my-4">
+                                        { clientWithPatrolFlight(client) && <div className="my-4">
                                             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                                                 Position
                                             </label>
@@ -472,7 +471,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
                                                     </option>
                                                 </select>
                                             </div>
-                                        </div>
+                                        </div> }
                                     </div>
                                 }
                             </div>

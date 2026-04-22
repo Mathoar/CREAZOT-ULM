@@ -400,6 +400,10 @@ export const clientWithGroupUpdate = client => {
     return isDefined(client) && isDefined(client.hasGroupUpdate) && client.hasGroupUpdate;
 };
 
+export const clientWithPatrolFlight = client => {
+    return isDefined(client) && isDefined(client.hasPatrolFlight) && client.hasPatrolFlight;
+};
+
 export const clientWithSMS = client => {
     return isDefined(client) && isDefined(client.hasSMS) && client.hasSMS;
 };

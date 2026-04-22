@@ -6,7 +6,7 @@ import { useClient } from '../../admin/ClientProvider';
 import { positions, status } from "../../../app/lib/reservation";
 import { useFormContext, useWatch } from 'react-hook-form';
 import NoteAltIcon from '@mui/icons-material/NoteAlt';
-import { clientUsingAvailabilityFilter, clientWithGifts, clientWithOptions, clientWithPartners } from "../../../app/lib/client";
+import { clientUsingAvailabilityFilter, clientWithGifts, clientWithOptions, clientWithPartners, clientWithPatrolFlight } from "../../../app/lib/client";
 import { Box, Button, Typography, useMediaQuery } from "@mui/material";
 
 const getEnd = (debut, circuit) => {
@@ -154,8 +154,10 @@ const FilteredAeronefInput = ({ client, prepayments, defaultStart = new Date((ne
   );
 };
 
-const PositionInput = ({ prepayments }) => {
+const PositionInput = ({ prepayments, client }) => {
     const selection = useWatch({ name: "prepayment"});
+
+    if (!clientWithPatrolFlight(client)) return null;
 
     const prepayment = useMemo(() => {
       return isNotBlank(selection) ? prepayments.find(p => p['@id'] === selection) : null;
@@ -287,7 +289,6 @@ export const ReservationCreate = () => {
         nom: beneficiaire,
         color: getRandomColor(),
         paid: true,
-        upsell: false,
         report: false,
         contact: [],
         remarques: '',
@@ -379,7 +380,7 @@ export const ReservationCreate = () => {
         <SelectInput source="statut" choices={ status } defaultValue={ status[0].id } validate={required()}/>
         <FilteredPiloteInput client={ client } prepayments={ prepayments } circuits={ circuits } defaultStart={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) }/>
         <FilteredAeronefInput client={ client } prepayments={ prepayments } defaultStart={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) }/>
-        <PositionInput prepayments={ prepayments }/>
+        <PositionInput prepayments={ prepayments } client={ client }/>
         <QuantiteWatcher prepayments={ prepayments }/>
       </SimpleForm>
     </Create>

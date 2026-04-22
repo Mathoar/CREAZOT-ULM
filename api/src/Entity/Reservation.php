@@ -161,10 +161,6 @@ class Reservation implements TenantAwareInterface
     #[Groups(groups: ['Reservation:write', 'Reservation:read'])]
     private ?bool $paid = null;
 
-    #[ORM\Column(nullable: true)]
-    #[Groups(groups: ['Reservation:write', 'Reservation:read'])]
-    private ?bool $upsell = null;
-
     /**
      * @var Collection<int, Contact>
      */
@@ -420,17 +416,6 @@ class Reservation implements TenantAwareInterface
         return $this;
     }
 
-    public function isUpsell(): ?bool
-    {
-        return $this->upsell;
-    }
-
-    public function setUpsell(?bool $upsell): static
-    {
-        $this->upsell = $upsell;
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Contact>

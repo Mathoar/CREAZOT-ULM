@@ -62,6 +62,7 @@ export const ClientsCreate = () => {
                     useAvailabilityFilter: false,
                     hasExpensesManagement: false,
                     hasGroupUpdate: false,
+                    hasPatrolFlight: false,
                     hasNotam: false,
                     minHours: (new Date()).setHours(0, 0, 0),
                     maxHours: (new Date()).setHours(23, 59, 59)
@@ -190,6 +191,11 @@ export const ClientsCreate = () => {
                             <NumberInput source="seuilQualifications" label="Alerte sur les qualifications" min={ 0 } helperText="Nb de jour(s) avant la fin de validité"/>
                         </Box>
                     </Box>
+                    <Divider sx={{ mt: 2, borderBottomWidth: 2, borderColor: '#666' }} />
+                    <Typography variant="h6" gutterBottom>
+                        Options de vol
+                    </Typography>
+                    <BooleanInput source="hasPatrolFlight" label="Vol en patrouille (affiche la position Leader/2/3/4)" fullWidth/>
                     <ThanksOptions/>
                 </TabbedForm.Tab>
                 <TabbedForm.Tab label="Images">

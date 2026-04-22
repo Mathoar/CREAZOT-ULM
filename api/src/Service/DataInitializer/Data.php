@@ -39,7 +39,8 @@ class Data
         'hasIndividualFlightLogs' => true,
         'useAvailabilityFilter' => false,
         'hasExpensesManagement' => false,
-        'hasGroupUpdate'  => false
+        'hasGroupUpdate'  => false,
+        'hasPatrolFlight' => false
     ];
 
     private $natures = [

@@ -89,6 +89,7 @@ export const ClientShow = () => {
                     <TextField source="thanksTitle" label="Titre du formulaire"/>
                     <TextField source="consentText" label="Texte nécessitant consentement"/>
                     <RichTextField source="thanksMessage" label="Contenu de la page de redirection"/>
+                    <BooleanField source="hasPatrolFlight" label="Vol en patrouille" textAlign="center"/>
                     <BooleanField source="hasEmailConfirmation" label="Email de confirmation" textAlign="center"/>
                     <TextField source="confirmationSubject" label="Objet de l'email"/>
                     <RichTextField source="confirmationMessage" label="Contenu de l'email de confirmation"/>
