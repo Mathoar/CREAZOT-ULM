@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useInput } from "react-admin";
 import { useTaxRates } from "./useTaxRates";
 import { TextField, MenuItem, CircularProgress } from "@mui/material";
 
@@ -21,11 +21,10 @@ const TvaSelectInput = ({
   required = false,
 }: TvaSelectInputProps) => {
   const { choices, defaultRate, isLoading } = useTaxRates();
-  const { setValue, register } = useFormContext();
-  const currentValue = useWatch({ name: source });
+  const {
+    field: { value: currentValue, onChange: fieldOnChange },
+  } = useInput({ source });
   const defaultApplied = useRef(false);
-
-  register(source);
 
   useEffect(() => {
     if (defaultApplied.current) return;
@@ -33,14 +32,14 @@ const TvaSelectInput = ({
     if (choices.length === 0 || defaultRate === undefined) return;
 
     if (currentValue === undefined || currentValue === null || currentValue === "") {
-      setValue(source, defaultRate, { shouldDirty: false, shouldValidate: false });
+      fieldOnChange(defaultRate);
     }
     defaultApplied.current = true;
-  }, [choices, defaultRate, isCreate, currentValue, setValue, source]);
+  }, [choices, defaultRate, isCreate, currentValue, fieldOnChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
-    setValue(source, Number.isFinite(val) ? val : "", { shouldDirty: true, shouldValidate: true });
+    fieldOnChange(Number.isFinite(val) ? val : "");
   };
 
   const displayValue = currentValue !== undefined && currentValue !== null && currentValue !== ""
