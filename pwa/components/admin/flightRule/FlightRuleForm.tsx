@@ -49,11 +49,6 @@ export const FlightRuleForm = ({ onSubmit }: { onSubmit?: any }) => (
             nogoSource="maxGustKts" nogoLabel="Rafales NO GO"
             unit="kt"
         />
-        <ThresholdRow
-            limiteSource="limiteCrosswindKts" limiteLabel="Traversier LIMITE"
-            nogoSource="maxCrosswindKts" nogoLabel="Traversier NO GO"
-            unit="kt"
-        />
 
         <Divider sx={{ width: '100%', my: 2 }} />
         <SectionTitle title="Visibilité" />

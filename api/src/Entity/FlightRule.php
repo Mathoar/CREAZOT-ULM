@@ -72,14 +72,6 @@ class FlightRule implements TenantAwareInterface
     #[Groups(['FlightRule:read', 'FlightRule:write'])]
     private int $maxGustKts = 35;
 
-    #[ORM\Column(options: ['default' => 10])]
-    #[Groups(['FlightRule:read', 'FlightRule:write'])]
-    private int $limiteCrosswindKts = 10;
-
-    #[ORM\Column(options: ['default' => 15])]
-    #[Groups(['FlightRule:read', 'FlightRule:write'])]
-    private int $maxCrosswindKts = 15;
-
     #[ORM\Column(options: ['default' => 5000])]
     #[Groups(['FlightRule:read', 'FlightRule:write'])]
     private int $limiteVisibilityM = 5000;
@@ -95,10 +87,6 @@ class FlightRule implements TenantAwareInterface
     #[ORM\Column(options: ['default' => 500])]
     #[Groups(['FlightRule:read', 'FlightRule:write'])]
     private int $minCeilingFt = 500;
-
-    #[ORM\Column(nullable: true)]
-    #[Groups(['FlightRule:read', 'FlightRule:write'])]
-    private ?int $runwayQfu = null;
 
     #[ORM\Column(options: ['default' => 0])]
     #[Groups(['FlightRule:read', 'FlightRule:write'])]
@@ -154,10 +142,6 @@ class FlightRule implements TenantAwareInterface
     public function setLimiteGustKts(int $v): static { $this->limiteGustKts = $v; return $this; }
     public function getMaxGustKts(): int { return $this->maxGustKts; }
     public function setMaxGustKts(int $v): static { $this->maxGustKts = $v; return $this; }
-    public function getLimiteCrosswindKts(): int { return $this->limiteCrosswindKts; }
-    public function setLimiteCrosswindKts(int $v): static { $this->limiteCrosswindKts = $v; return $this; }
-    public function getMaxCrosswindKts(): int { return $this->maxCrosswindKts; }
-    public function setMaxCrosswindKts(int $v): static { $this->maxCrosswindKts = $v; return $this; }
     public function getLimiteVisibilityM(): int { return $this->limiteVisibilityM; }
     public function setLimiteVisibilityM(int $v): static { $this->limiteVisibilityM = $v; return $this; }
     public function getMinVisibilityM(): int { return $this->minVisibilityM; }
@@ -166,8 +150,6 @@ class FlightRule implements TenantAwareInterface
     public function setLimiteCeilingFt(int $v): static { $this->limiteCeilingFt = $v; return $this; }
     public function getMinCeilingFt(): int { return $this->minCeilingFt; }
     public function setMinCeilingFt(int $v): static { $this->minCeilingFt = $v; return $this; }
-    public function getRunwayQfu(): ?int { return $this->runwayQfu; }
-    public function setRunwayQfu(?int $v): static { $this->runwayQfu = $v; return $this; }
     public function getDayMarginMinutes(): int { return $this->dayMarginMinutes; }
     public function setDayMarginMinutes(int $v): static { $this->dayMarginMinutes = $v; return $this; }
     public function getNightMarginMinutes(): int { return $this->nightMarginMinutes; }
