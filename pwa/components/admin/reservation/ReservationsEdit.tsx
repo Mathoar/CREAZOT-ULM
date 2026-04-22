@@ -1,7 +1,7 @@
 import { Edit, SelectInput, useDataProvider, DateTimeInput, ReferenceInput, SimpleForm, TextInput, BooleanInput, ArrayInput, SimpleFormIterator, ReferenceArrayInput, SelectArrayInput, useRedirect, useNotify, useRecordContext, AutocompleteInput, required, AutocompleteArrayInput } from "react-admin";
 import { useWatch, useFormContext } from "react-hook-form";
 import { generateSafeCode, getFormattedValueForBackEnd, isDefined, isDefinedAndNotVoid, isNotBlank, isValid } from "../../../app/lib/utils";
-import { status, positions } from "../../../app/lib/reservation";
+import { status, positions, getPositionChoices } from "../../../app/lib/reservation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useClient } from '../../admin/ClientProvider';
 import { useLocation } from 'react-router-dom';
@@ -134,6 +134,16 @@ const FilteredAeronefInput = ({ client }) => {
       optionValue="@id"
     />
   );
+};
+
+const DynamicPositionInput = () => {
+    const dataProvider = useDataProvider();
+    const [aeronefCount, setAeronefCount] = useState(0);
+    useEffect(() => {
+        dataProvider.getList("aeronefs", { filter: {} }).then(({ data }) => setAeronefCount(data?.length ?? 0));
+    }, [dataProvider]);
+    const choices = useMemo(() => getPositionChoices(aeronefCount), [aeronefCount]);
+    return <SelectInput source="position" choices={ choices } defaultValue="-"/>;
 };
 
 const OptionInput = ({ client }) => !clientWithOptions(client) ? null : 
@@ -303,7 +313,7 @@ export const ReservationsEdit = () => {
           <OptionInput client={ client }/>
           <FilteredPiloteInput circuits={ circuits } client={ client }/>
           <FilteredAeronefInput client={ client }/>
-          { clientWithPatrolFlight(client) && <SelectInput source="position" choices={ positions } defaultValue="-"/> }
+          { clientWithPatrolFlight(client) && <DynamicPositionInput /> }
           <SelectInput source="statut" choices={ status } />
           <TextInput source="color" label="Code couleur"/>
           <OriginContactInput client={ client }/>

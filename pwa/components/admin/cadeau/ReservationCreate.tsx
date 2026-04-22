@@ -3,7 +3,7 @@ import { generateSafeCode, getFormattedValueForBackEnd, getRandomColor, isDefine
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClient } from '../../admin/ClientProvider';
-import { positions, status } from "../../../app/lib/reservation";
+import { positions, status, getPositionChoices } from "../../../app/lib/reservation";
 import { useFormContext, useWatch } from 'react-hook-form';
 import NoteAltIcon from '@mui/icons-material/NoteAlt';
 import { clientUsingAvailabilityFilter, clientWithGifts, clientWithOptions, clientWithPartners, clientWithPatrolFlight } from "../../../app/lib/client";
@@ -156,17 +156,25 @@ const FilteredAeronefInput = ({ client, prepayments, defaultStart = new Date((ne
 
 const PositionInput = ({ prepayments, client }) => {
     const selection = useWatch({ name: "prepayment"});
+    const dataProvider = useDataProvider();
+    const [aeronefCount, setAeronefCount] = useState(0);
 
     if (!clientWithPatrolFlight(client)) return null;
+
+    useEffect(() => {
+        dataProvider.getList("aeronefs", { filter: {} }).then(({ data }) => setAeronefCount(data?.length ?? 0));
+    }, [dataProvider]);
 
     const prepayment = useMemo(() => {
       return isNotBlank(selection) ? prepayments.find(p => p['@id'] === selection) : null;
     }, [selection, prepayments]);
 
+    const choices = useMemo(() => getPositionChoices(aeronefCount), [aeronefCount]);
+
     return (
         <SelectInput 
             source="position"
-            choices={ positions } 
+            choices={ choices } 
             defaultValue="-"
             readOnly={ !isNotBlank(prepayment?.quantite) || prepayment?.quantite > 1 || prepayment?.quantite === 0 }
         />

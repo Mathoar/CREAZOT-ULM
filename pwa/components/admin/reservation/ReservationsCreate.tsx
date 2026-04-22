@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { useWatch, useFormContext } from 'react-hook-form';
 import { generateSafeCode, getFormattedValueForBackEnd, getRandomColor, isDefined, isDefinedAndNotVoid, isNotBlank, isValid } from "../../../app/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { positions, status } from "../../../app/lib/reservation";
+import { positions, status, getPositionChoices } from "../../../app/lib/reservation";
 import { useClient } from '../../admin/ClientProvider';
 import { clientUsingAvailabilityFilter, clientWithGifts, clientWithOptions, clientWithOriginContact, clientWithPartners, clientWithPatrolFlight } from "../../../app/lib/client";
 import { Link } from 'react-router-dom';
@@ -187,10 +187,16 @@ const FilteredAeronefInput = ({ client, selectedQuantite, defaultStart = new Dat
 
 const PositionInput = ({ selectedQuantite, client }) => {
     if (!clientWithPatrolFlight(client)) return null;
+    const dataProvider = useDataProvider();
+    const [aeronefCount, setAeronefCount] = useState(0);
+    useEffect(() => {
+        dataProvider.getList("aeronefs", { filter: {} }).then(({ data }) => setAeronefCount(data?.length ?? 0));
+    }, [dataProvider]);
+    const choices = useMemo(() => getPositionChoices(aeronefCount), [aeronefCount]);
     return (
         <SelectInput 
             source="position"
-            choices={ positions } 
+            choices={ choices } 
             defaultValue="-"
             readOnly={ !isNotBlank(selectedQuantite) || selectedQuantite > 1 || selectedQuantite === 0 }
         />

@@ -16,3 +16,13 @@ export const positions = [
     {id: "4", name: "4"},
     {id: "-", name: "-"}
 ];
+
+export const getPositionChoices = (aeronefCount) => {
+    if (!aeronefCount || aeronefCount <= 1) return [{id: "-", name: "-"}];
+    const choices = [{id: "Leader", name: "Leader"}];
+    for (let i = 2; i <= aeronefCount; i++) {
+        choices.push({id: String(i), name: String(i)});
+    }
+    choices.push({id: "-", name: "-"});
+    return choices;
+};
