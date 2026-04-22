@@ -1,0 +1,50 @@
+{% extends 'emails/_base.html.twig' %}
+
+{% block heading %}Alerte entretien &middot; {{ immatriculation }}{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">Bonjour,</p>
+
+{% if horametre > entretien %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+<tr><td style="background-color:#fee2e2; border-left:4px solid #ef4444; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.5; color:#991b1b;">
+  <strong>&#9888; Entretien d&eacute;pass&eacute;</strong><br>
+  La maintenance de <strong>{{ immatriculation }}</strong> est {{ introduction }} <strong>{{ time }}</strong>.
+</td></tr>
+</table>
+{% else %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+<tr><td style="background-color:#fef3c7; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.5; color:#92400e;">
+  <strong>Entretien &agrave; pr&eacute;voir</strong><br>
+  La prochaine maintenance de <strong>{{ immatriculation }}</strong> est {{ introduction }} <strong>{{ time }}</strong>.
+</td></tr>
+</table>
+{% endif %}
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:45%;">A&eacute;ronef</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">{{ immatriculation }}</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:45%;">Horam&egrave;tre actuel</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">{{ horametre }} h</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:45%;">Entretien pr&eacute;vu &agrave;</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">{{ entretien }} h</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; width:45%;">Heures restantes</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e;">
+      {% if horametre > entretien %}
+        <span style="display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background-color:#fee2e2; color:#991b1b;">{{ time }}</span>
+      {% else %}
+        <span style="display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background-color:#fef3c7; color:#92400e;">{{ time }}</span>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<p style="margin:16px 0 0; font-size:15px; line-height:1.6; color:#374151;">Merci de planifier l'entretien de cet a&eacute;ronef dans les meilleurs d&eacute;lais.</p>
+{% endblock %}

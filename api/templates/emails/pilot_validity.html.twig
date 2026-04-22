@@ -1,0 +1,27 @@
+{% extends 'emails/_base.html.twig' %}
+
+{% block heading %}Alerte validit&eacute; documents{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">Bonjour {{ user.firstName }},</p>
+
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">Nous vous informons que certains de vos documents arrivent &agrave; &eacute;ch&eacute;ance ou sont expir&eacute;s :</p>
+
+{% for alert in alerts %}
+  {% if alert.expired %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0;">
+  <tr><td style="background-color:#fee2e2; border-left:4px solid #ef4444; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.5; color:#991b1b;">
+    <strong>&#9888; Expir&eacute;</strong> &mdash; Votre {{ alert.label }} a expir&eacute; le <strong>{{ alert.date }}</strong> ({{ alert.days }} jours).
+  </td></tr>
+  </table>
+  {% else %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0;">
+  <tr><td style="background-color:#fef3c7; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.5; color:#92400e;">
+    <strong>Expire bient&ocirc;t</strong> &mdash; Votre {{ alert.label }} expire le <strong>{{ alert.date }}</strong> ({{ alert.days }} jours restants).
+  </td></tr>
+  </table>
+  {% endif %}
+{% endfor %}
+
+<p style="margin:16px 0 0; font-size:15px; line-height:1.6; color:#374151;">Merci de r&eacute;gulariser votre situation avant l'expiration de ces documents.</p>
+{% endblock %}
