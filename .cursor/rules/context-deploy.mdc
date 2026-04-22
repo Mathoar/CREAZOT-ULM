@@ -1,0 +1,118 @@
+---
+description: Procédures de déploiement Docker, debugging, pièges connus
+globs:
+  - compose.yaml
+  - compose.prod.yaml
+  - Dockerfile
+  - docker-compose.*
+  - api/Dockerfile
+  - pwa/Dockerfile
+---
+# Déploiement et Debugging (Détails)
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+
+## Règles critiques
+
+1. **NE JAMAIS déployer sans instruction explicite de l'utilisateur.**
+2. **VÉRIFIER LA SYNCHRO LOCAL↔PROD AVANT TOUTE MODIFICATION** (cf. `context-git.mdc` § "Pré-requis obligatoire"). Local et prod doivent rester en miroir permanent.
+3. **Toujours utiliser les 2 fichiers compose** : `-f compose.yaml -f compose.prod.yaml`
+4. **Toujours `--no-cache`** pour le build PWA.
+5. **Après copie PHP** : supprimer le cache manuellement PUIS `cache:clear` PUIS restart.
+6. **Après tout déploiement réussi** : rapatrier les fichiers serveur modifiés (services.yaml, etc.) côté local + commit/push pour garder le miroir.
+
+---
+
+## Procédure de déploiement PWA
+
+```bash
+ssh root@c6l.creazot.com
+cd /root/CREAZOT-ULM/
+docker compose -f compose.yaml -f compose.prod.yaml build --no-cache pwa
+docker compose -f compose.yaml -f compose.prod.yaml up -d pwa
+```
+
+## Procédure de déploiement PHP (fichier individuel)
+
+```bash
+docker cp api/src/Service/VapiService.php creazot-ulm-php-1:/app/src/Service/VapiService.php
+docker exec creazot-ulm-php-1 rm -rf /app/var/cache/prod
+docker exec creazot-ulm-php-1 bin/console cache:clear
+docker restart creazot-ulm-php-1
+```
+
+## Mise à jour du schéma BDD
+
+```bash
+docker exec creazot-ulm-php-1 bin/console doctrine:schema:update --dump-sql
+docker exec creazot-ulm-php-1 bin/console doctrine:schema:update --force
+docker exec creazot-ulm-php-1 rm -rf /app/var/cache/prod
+docker exec creazot-ulm-php-1 bin/console cache:clear
+docker restart creazot-ulm-php-1
+```
+
+## Debugging
+
+- **Logs PHP** : `docker logs creazot-ulm-php-1 --tail=100`
+- **Logs PWA** : `docker logs creazot-ulm-pwa-1 --tail=100`
+- **Fichier dans container** : `docker exec creazot-ulm-php-1 cat /app/src/Entity/Client.php`
+- **Valider BDD** : `docker exec creazot-ulm-php-1 bin/console doctrine:schema:validate`
+
+## Pièges connus
+
+| Piège | Solution |
+|-------|----------|
+| `cache:clear` ne suffit pas | Toujours `rm -rf /app/var/cache/prod` AVANT |
+| Schema update semble OK mais colonne absente | `--dump-sql` pour vérifier, refaire `--force`, cache+restart |
+| Container PHP 500 après modif Entity | Cache Doctrine désynchronisé → purge + restart |
+| Build PWA sans `--no-cache` | Ancien code gardé → toujours `--no-cache` |
+| Oubli `-f compose.prod.yaml` | Mauvaise config → toujours les 2 fichiers |
+| Path `/srv/api/` au lieu de `/app/` | Ancien path, le bon est `/app/` |
+| Keycloak `Exited 137` après build PWA | OOM kill (RAM saturée) — voir blindage ci-dessous |
+| `/admin/...` → `ERR_TIMED_OUT` pendant un build PWA | Comportement attendu : le PWA est en cours de rebuild. Attendre la fin. |
+| `MediaObject->contentUrl` vaut `null` dans un contrôleur custom | Construire l'URL : `'/media/' . $mediaObject->filePath`. `contentUrl` n'est rempli que par le normalizer API Platform. |
+| Upload image rejetée 422 | Vérifier l'`accept` du `FileInput` (JPEG/PNG/PDF uniquement, cf. `Assert\File` du `MediaObject`) + présence du header `X-Client-Id` dans `createMediaObject` |
+
+---
+
+## Blindage Keycloak (anti-OOM)
+
+`compose.prod.yaml` — service `keycloak` :
+
+```yaml
+keycloak:
+  restart: unless-stopped
+  mem_limit: 768m
+  environment:
+    JAVA_OPTS_KC_HEAP: "-Xms256m -Xmx512m"
+```
+
+- `restart: unless-stopped` → relance auto en cas de SIGKILL.
+- `mem_limit: 768m` → empêche Keycloak de saturer la RAM serveur pendant un build PWA `--no-cache`.
+- `JAVA_OPTS_KC_HEAP` → borne le heap JVM bien sous le `mem_limit` (marge pour metaspace/threads).
+
+**Diagnostic OOM :**
+```bash
+docker inspect creazot-ulm-keycloak-1 --format '{{.State.OOMKilled}} {{.State.ExitCode}}'
+docker stats --no-stream
+free -m
+```
+
+**Recreate Keycloak seul (sans toucher PHP/PWA) :**
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d --force-recreate --no-deps keycloak
+```
+
+---
+
+## Maintenance disque
+
+Le build PWA `--no-cache` accumule du build cache et des layers obsolètes. Quand tous les conteneurs sont
+fonctionnels et que l'espace disque devient tendu :
+
+```bash
+docker system prune -a   # libère typiquement 30-60 Go (images, build cache, networks)
+df -h /
+```
+
+⚠️ **Ne jamais** exécuter `prune` avec un container en cours d'arrêt qu'on souhaite relancer (l'image serait perdue).

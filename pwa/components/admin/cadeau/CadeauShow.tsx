@@ -1,4 +1,4 @@
-import { Show, SimpleShowLayout, TextField, DateField, FunctionField, BooleanField, ArrayField, Datagrid } from 'react-admin';
+import { Show, SimpleShowLayout, TextField, DateField, FunctionField, BooleanField, NumberField, ArrayField, Datagrid } from 'react-admin';
 
 export const CadeauShow = () => (
     <Show title="Détail du prépaiement">
@@ -10,10 +10,11 @@ export const CadeauShow = () => (
             <TextField source="offreur" label="Payeur"/>
             <TextField source="email" label="Adresse email"/>
             <TextField source="telephone" label="N° de téléphone"/>
+            <NumberField source="quantite" label="Quantité"/>
             <FunctionField
                     source="circuit.code"
                     label="Circuit"
-                    render={record => <>{record.quantite}x {record.circuit.code}<span className="text-xs italic">{'-'}</span> { record.circuit.nom }</> }
+                    render={record => record.circuit ? <>{record.circuit.code}<span className="text-xs italic">{' — '}</span>{record.circuit.nom}</> : '—'}
                     textAlign="right"
                 />
             <FunctionField
@@ -30,9 +31,11 @@ export const CadeauShow = () => (
                         <TextField source="name" label="Nom"/>
                     </Datagrid>
                 </ArrayField>
+            <NumberField source="prix" label="Prix" options={{ style: 'currency', currency: 'EUR' }}/>
+            <NumberField source="cout" label="Coût" options={{ style: 'currency', currency: 'EUR' }}/>
             <TextField source="message" />
             <TextField source="paymentId" label="N° du paiement"/>
-            <BooleanField source="used" label="utilisé"/>
+            <BooleanField source="used" label="Utilisé"/>
         </SimpleShowLayout>
     </Show>
 )

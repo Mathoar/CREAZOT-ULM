@@ -1,0 +1,70 @@
+---
+description: Détails facturation Odoo — tarification, packs, sync, calcul mensuel
+globs:
+  - api/src/Service/OdooJsonRpcService.php
+  - api/src/Service/InvoiceCalculator.php
+  - api/src/Command/BillingCronCommand.php
+  - api/src/EventSubscriber/OdooSyncSubscriber.php
+  - api/src/Controller/OdooDocumentController.php
+  - api/src/Controller/OdooTestController.php
+  - api/src/Entity/ModulePack.php
+  - pwa/components/admin/modulePack/**
+  - pwa/components/admin/modulePackPrice/**
+  - pwa/components/admin/pricingCategory/**
+  - pwa/components/admin/pricingTier/**
+---
+# Facturation Odoo (Détails)
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+
+## Architecture
+
+- Odoo SaaS 19.2, appels JSON-RPC via `OdooApiService`
+- URL + identifiants dans variables d'env (`ODOO_URL`, `ODOO_DB`, `ODOO_LOGIN`, `ODOO_API_KEY`)
+- Synchronisation bidirectionnelle Client ↔ Odoo Partner
+
+---
+
+## Modèle de tarification
+
+### PricingCategory (grille tarifaire)
+- Chaque client a une `PricingCategory`
+- Si `name = "Personnalisé"` → les modules sont gérés individuellement (pas via ModulePack)
+- Contient des `PricingTier` (tranches par nombre d'aéronefs)
+
+### Calcul mensuel
+```
+MENSUEL = (PricingTier.pricePerAeronef × client.maxAeronefs)
+        + Σ(ModulePackPrice.monthlyPrice pour chaque pack actif)
+```
+
+### Cycle de facturation
+- `Client.billingCycle` : `monthly` ou `annual`
+- `Client.annualDiscount` : 30% par défaut sur cycle annuel
+- `BillingCronCommand` : génère les factures quotidiennement
+
+---
+
+## Synchronisation Odoo
+
+### OdooSyncSubscriber
+- Écoute les événements Doctrine sur `Client`
+- Crée/met à jour le partner Odoo correspondant
+
+### Champs Client liés à Odoo
+
+| Champ Client | Champ Odoo |
+|-------------|------------|
+| `odooPartnerId` | `id` (res.partner) |
+| `billingEmail` | `email` |
+| `billingAddress` | `street`, `city`, `zip`, `country_id` |
+| `siret` | `vat` |
+
+---
+
+## Entités
+
+- `ModulePack` : pack de modules avec booleans
+- `ModulePackPrice` : tarif mensuel d'un pack, lié à une `PricingCategory`
+- `PricingCategory` : grille tarifaire (Standard, Pro, Personnalisé, etc.)
+- `PricingTier` : tranches de prix par nb d'aéronefs dans une catégorie

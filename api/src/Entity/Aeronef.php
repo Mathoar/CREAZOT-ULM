@@ -40,7 +40,7 @@ use App\Entity\TenantAwareTrait;
         ),
         new Post(
             itemUriTemplate: '/aeronefs/{id}{._format}',
-            security: 'is_granted("ROLE_SUPER_ADMIN")'
+            security: 'is_granted("OIDC_ADMIN")'
         ),
         new Get(
             uriTemplate: '/aeronefs/{id}{._format}'

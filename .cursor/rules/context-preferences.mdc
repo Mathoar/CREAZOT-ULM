@@ -1,0 +1,60 @@
+---
+description: Préférences développeur — langue, style de travail, conventions code, debugging
+alwaysApply: true
+---
+# Préférences Développeur — Logic'Ciel
+
+## Langue et communication
+- Toujours répondre en **français**.
+- Être concis, aller droit au but.
+- Proposer un **plan avant de coder** si le sujet est complexe ou touche plusieurs fichiers.
+- Montrer les modifications avant de les appliquer si le changement est critique.
+
+## Déploiement — Règles strictes
+- **NE JAMAIS déployer sans demande explicite.**
+- **NE JAMAIS exécuter de commandes sur le serveur distant** sans instruction claire.
+- Proposer un **plan de déploiement** (fichiers à copier, commandes à exécuter) et **attendre validation**.
+- Toujours vérifier les logs et le résultat **après** un déploiement.
+
+## Git — Règles strictes
+- **NE JAMAIS committer sans demande explicite** — le repo contient des fichiers sensibles.
+- **NE JAMAIS push** sans instruction claire.
+- Le workspace local est **incomplet** : certains fichiers n'existent que sur le serveur.
+- Messages de commit en français, format : `Action + sujet + détail`.
+
+## Style de travail observé
+- L'utilisateur teste directement sur `https://logic-ciel.com` après déploiement.
+- L'utilisateur préfère voir le résultat avant de passer à la suite.
+- L'utilisateur donne souvent des retours par copie de requête HTTP ou message d'erreur → analyser la réponse, diagnostiquer, proposer un fix.
+- Si un fichier n'existe pas localement, **vérifier dans le container Docker** avant de conclure qu'il n'existe pas.
+- L'utilisateur peut demander de « revoir entièrement » une feature — dans ce cas, proposer un plan structuré avant toute modification.
+
+## Conventions de code
+
+### Backend PHP (Symfony 7.1)
+- Attributs PHP 8 (`#[Route]`, `#[ORM\Column]`, `#[Groups]`)
+- Injection de dépendances via constructeur
+- Services dans `api/src/Service/`, contrôleurs dans `api/src/Controller/`
+- Entités avec getters/setters (style Symfony standard)
+- Nommage : anglais pour le code, français acceptable dans les commentaires
+
+### Frontend React (Next.js 14 / React-Admin 5)
+- Composants fonctionnels avec hooks (`useState`, `useEffect`, `useCallback`, `useWatch`, `useRecordContext`)
+- MUI 5 pour les composants UI admin
+- Tailwind CSS dans le dashboard météo (`Dashboard.jsx`)
+- React-Admin : `BooleanInput`, `TextInput`, `TabbedForm`, etc.
+- IRI API Platform : toujours extraire l'ID numérique avec `rawId.replace(/.*\//, "")` avant les appels custom
+
+### Nommage
+- Variables/fonctions : **anglais** (`hasAI`, `fetchStatus`, `handleDelete`)
+- Labels UI : **français** (`"Caméras Windy"`, `"Assistant Vocal (téléphone)"`)
+- Commit messages : **français**
+- Commentaires code : éviter, sauf si logique non-évidente
+
+## Debugging — Réflexes à avoir
+1. **Logs PHP** en premier : `docker logs creazot-ulm-php-1 --tail=100`
+2. **Cache Doctrine** si erreur colonne/entité : `rm -rf /app/var/cache/prod` + `cache:clear` + restart
+3. **Schema Doctrine** si colonne manquante : `doctrine:schema:update --dump-sql` pour vérifier
+4. **Vérifier le container** si fichier "introuvable" : `docker exec ... cat /app/...`
+5. **Ne pas paniquer** : diagnostiquer avant de modifier du code
+6. **Réponse API 200 mais données nulles** → vérifier les logs côté service externe (pattern Vapi)

@@ -1,0 +1,386 @@
+import { type NextPage } from "next";
+import {
+  Datagrid,
+  List,
+  TextField,
+  CreateButton,
+  ExportButton,
+  TopToolbar,
+  EditButton,
+  SimpleList,
+  ShowButton,
+  FunctionField,
+  DateField,
+  useListContext,
+  DatagridBody,
+  Form,
+  TextInput,
+  DateInput,
+  ArrayField,
+  NumberField
+} from "react-admin";
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import { Fragment, useEffect, useState } from 'react';
+import { TableRow, TableCell, TableFooter, Box } from '@mui/material';
+import { useMercure } from "../../../utils/mercure";
+import { type Contact } from "../../../types/Contact";
+import { useMediaQuery, Theme } from '@mui/material';
+import { type PagedCollection } from "../../../types/collection";
+import { getFirstCharToUpperCase, getShipStyle, isDefined, isDefinedAndNotVoid, isNotBlank, matchesStartOfWord, toLocalDateString } from "../../../app/lib/utils";
+import { clientWithOriginContact, clientWithPartners, paymentMode } from "../../../app/lib/client";
+import BackupTableIcon from '@mui/icons-material/BackupTable';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { useSessionContext } from "../SessionContextProvider";
+import { useClient } from "../ClientProvider";
+
+
+export interface Props {
+  data: PagedCollection<Contact> | null;
+  hubURL: string | null;
+  page: number;
+}
+
+const rowSx = (record, index) => ({
+  backgroundColor:'#f5f5f5',
+  fontWeight: "lighter"
+});
+
+const CustomCSVButton = ({ isSmall, onClick }) => {
+  return (
+    <Button
+      size="small"
+      color="primary"
+      onClick={() => onClick()}
+      startIcon={<BackupTableIcon className={`${isSmall && 'mb-3'}`}/>}
+    >
+      {!isSmall && 'EXPORT CSV'}
+    </Button>
+  );
+};
+
+const CustomPDFButton = ({ isSmall, onClick }) => {
+  return (
+    <Button
+      size="small"
+      color="primary"
+      onClick={() => onClick()}
+      startIcon={<PictureAsPdfIcon className={`${isSmall && 'mb-3'}`}/>}
+    >
+      {!isSmall && 'EXPORT PDF'}
+    </Button>
+  );
+};
+
+const CustomListActions = ({ showMore, setShowMore, isSmall, resource }) => { 
+  const { filterValues } = useListContext();
+  const { session } = useSessionContext();
+  const params = new URLSearchParams();
+
+  Object.entries(filterValues).forEach(([key, value]) => {
+      // @ts-ignore
+      if (value && typeof value === 'object' && value.after) {
+          // @ts-ignore
+          if (value.after) params.append(`${key}[after]`, value.after);
+          // @ts-ignore
+          if (value.before) params.append(`${key}[before]`, value.before);
+      } else if (value != null) {
+          // @ts-ignore
+          params.append(key, value);
+      }
+  });
+
+  const handleExport = async (format) => {
+
+      const url = `/exports/${resource}?${params.toString()}&format=${format}`;
+      const response = await fetch(url, {headers: {'Authorization': `Bearer ${session?.accessToken}`}});
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${resource}.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+  };
+
+  return (
+    <TopToolbar>
+      <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
+      <CreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
+      <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
+      <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
+    </TopToolbar>
+  );
+};
+
+const CustomFilterBar = ({ showMore, isSmall, client }) => {
+
+  const { filterValues, setFilters } = useListContext();
+  const [formValues, setFormValues] = useState({
+      'date[after]': filterValues['date[after]'] ? toLocalDateString(new Date(filterValues['date[after]'])) : '',
+      'date[before]': filterValues['date[before]'] ? toLocalDateString(new Date(filterValues['date[before]'])) : '',
+      'details.mode': filterValues['details.mode'] || '',
+      'intitule': filterValues['intitule'] || '',
+      'origine.name': filterValues['origine.name'] || ''
+  });
+
+  useEffect(() => {
+      setFormValues({
+          'date[after]': filterValues['date[after]'] ? toLocalDateString(new Date(filterValues['date[after]'])) : '',
+          'date[before]': filterValues['date[before]'] ? toLocalDateString(new Date(filterValues['date[before]'])) : '',
+          'details.mode': filterValues['details.mode'] || '',
+          'intitule': filterValues['intitule'] || '',
+          'origine.name': filterValues['origine.name'] || ''
+      });
+  }, [filterValues]);
+
+  const handleChange = (e) => {
+      const { name, value } = e.target;
+      const newValues = { ...formValues, [name]: value };
+      setFormValues(newValues);
+      setFilters(newValues); 
+  };
+
+  return !showMore ? <></> :
+    <Form>
+        <Box display="flex" flexWrap="wrap" columnGap={isSmall ? 6 : 2} rowGap={0.5} mt={1} alignItems="flex-end">
+            <DateInput
+                source="date[after]"
+                label="Date Min"
+                onChange={handleChange}
+                defaultValue={formValues['date[after]']}
+                sx={{ width: isSmall ? '100%' : 200 }}
+            />
+            <DateInput
+                source="date[before]"
+                label="Date Max"
+                onChange={handleChange}
+                defaultValue={formValues['date[before]']}
+                sx={{ width: isSmall ? '100%' : 200 }}
+            />
+            <TextInput
+                source="details.mode"
+                label="Mode de paiement"
+                onChange={handleChange}
+                defaultValue={formValues['details.mode']}
+                sx={{ width: isSmall ? '100%' : 200 }}
+            />
+            <TextInput
+                source="intitule"
+                label="Intitulé"
+                onChange={handleChange}
+                defaultValue={formValues['intitule']}
+                sx={{ width: isSmall ? '100%' : 200 }}
+            />
+            { clientWithPartners(client) && 
+              <TextInput
+                  source="origine.name"
+                  label="Origine"
+                  onChange={handleChange}
+                  defaultValue={formValues['origine.name']}
+                  sx={{ width: isSmall ? '100%' : 200 }}
+              />
+            }
+        </Box>
+    </Form>
+};
+
+const CustomFilterButton = ({ showMore, setShowMore, isSmall }) => {
+  return (
+    <Button
+      size="small"
+      color="primary"
+      onClick={() => setShowMore(!showMore)}
+      startIcon={<FilterListIcon className={`${isSmall && 'mb-3'}`}/>}
+    >
+      {!isSmall && 'FILTRER'}
+    </Button>
+  );
+};
+
+const DetailsExpansion = () => {
+  return (
+    <ArrayField source="details">
+      <Datagrid isRowSelectable={record => false} rowClick={false} bulkActionButtons={false} sx={{ '& .RaDatagrid-headerCell': {display: "none"}}} rowSx={ rowSx } className="text-xs italic">
+        <FunctionField
+          source="mode"
+          render={({mode}) => getChipMode(mode)}
+        />
+         <FunctionField
+          source="prepayment"
+          render={({prepayment}) => isDefined(prepayment) ? 
+            <span className="text-xs italic">
+              <span>{ `${ prepayment.paymentId.startsWith('#') ? prepayment.paymentId : `#${ prepayment.paymentId }` } - ${ prepayment.offreur }` }<br/></span>
+              <span className="text-grey-500">{(new Date(prepayment.date)).toLocaleDateString()}</span>
+            </span>
+            : ''
+          }
+        />
+        <NumberField source="amount" label="Montant" options={{ style: 'currency', currency: 'EUR' }}/>
+      </Datagrid>
+    </ArrayField>
+  );
+};
+
+const getChipMode = mode => {
+  const modeWithColor = paymentMode.find(p => p.id === mode);
+  // @ts-ignore
+  return <Chip label={mode.toUpperCase()} size="small" sx={ getShipStyle(modeWithColor) }/>
+};
+
+const getModeList = details => {
+  const uniqueModes = Array.from(new Set(details.map(({ mode }) => mode)));
+  return uniqueModes.map((mode, i) => {
+    const modeWithColor = paymentMode.find(p => p.id === mode)
+    // @ts-ignore
+    return <Chip key={i} label={mode.toUpperCase()} size="small" sx={ getShipStyle(modeWithColor) }/>
+  });
+};
+
+const getOrigineList = ({ origine }) => {
+  if (isDefinedAndNotVoid(origine)) {
+    return origine
+      .filter(o => (isDefined(o.discount) && o.discount > 0) || (isDefined(o.hasCommission) && o.hasCommission))
+      .map((o, i) => {
+        // @ts-ignore
+        return <Chip key={ i } label={ getFirstCharToUpperCase(o.name) } size="small" sx={{ marginRight: '1em' }}/>
+      });
+  }
+  return [];
+};
+
+const CustomBody = (props) => {
+
+    const { data, isLoading, filterValues } = useListContext();
+    if (isLoading || !data) return null;
+
+    const filteredData = isLoading || !data ? [] :
+      data.map(payment => {
+          const modeFilter = filterValues['details.mode']?.toLowerCase();
+          const newDetails = modeFilter ? payment.details.filter(detail => detail.mode ? matchesStartOfWord(detail.mode, modeFilter) : false): payment.details;
+          return { ...payment, details: newDetails };
+      }).filter(payment => payment.details.length > 0);
+
+    const total = filteredData.reduce((sum, row) => sum + row.details.reduce((s, c) => s+= c.amount, 0), 0);
+
+    return (
+      <Fragment>
+        <DatagridBody {...props} data={filteredData}/>
+        <TableFooter>
+          <TableRow sx={{ backgroundColor: '#ededed', fontStyle: 'italic', fontWeight: 'bold', color: '#555'  }}>
+              <TableCell colSpan={2}/>
+              <TableCell colSpan={3} sx={{ fontStyle: 'italic', fontWeight: 'bold', color: '#555' }}>
+                Total
+              </TableCell>
+              <TableCell style={{ fontStyle: 'italic', fontWeight: 'bold', color: '#555', textAlign: 'center' }}>
+                <strong>{total.toFixed(2)} €</strong>
+              </TableCell>
+              <TableCell/>
+            </TableRow>
+          </TableFooter>
+      </Fragment>
+    );
+};
+
+const MobileFooter = (props) => {
+    const { data, isLoading, filterValues } = useListContext();
+    if (isLoading || !data) return null;
+
+    const filteredData = isLoading || !data ? [] :
+      data.map(payment => {
+          const modeFilter = filterValues['details.mode']?.toLowerCase();
+          const newDetails = modeFilter ? payment.details.filter(detail => detail.mode ? matchesStartOfWord(detail.mode, modeFilter) : false): payment.details;
+          return { ...payment, details: newDetails };
+      }).filter(payment => payment.details.length > 0);
+
+    const total = filteredData.reduce((sum, row) => sum + row.details.reduce((s, c) => s+= c.amount, 0), 0);
+
+    return (
+      <div style={{
+          padding: '0.5em 1em',
+          background: '#ededed',
+          fontSize: '0.9em',
+          fontWeight: 'bolder',
+          display: 'flex',
+          justifyContent: 'space-between'
+      }}>
+          <span>{`Total`}</span>
+          <span>{`${ total.toFixed(2) } €`}</span>
+      </div>
+    );
+}
+
+const PartnersField = ({ client }) => !clientWithPartners(client) ? null : 
+    <FunctionField
+        source="origine"
+        label="Origine de la prestation"
+        render={ record =>  getOrigineList(record) }
+    />
+
+const CustomDatagrid = ({ client }) => {
+
+  return (
+    <Datagrid body={<CustomBody />} expand={<DetailsExpansion/>}  sx={{ '& .RaDatagrid-headerCell': {backgroundColor: '#ededed', fontWeight: "lighter"}}}>
+        <DateField source="date" label="Date" sortable={ true } />
+        <FunctionField
+          source="name"
+          label="Intitulé"
+          render={ ({ name, label, details }) =>  <div>{ isNotBlank(name) ? name : (isNotBlank(label) ? label : '') }<br/>
+            { getModeList(details) }</div>
+          }
+        />
+        <PartnersField client={ client } />
+        <FunctionField
+          source="name"
+          label="Total"
+          render={({ details }) => (details.reduce((sum, current) => sum += current.amount, 0)).toFixed(2) + "€" }
+          sx={{textAlign: 'center'}}
+        />
+        <p className="text-right">
+            <ShowButton />
+            <EditButton />
+        </p>
+    </Datagrid>
+  );
+}
+
+
+export const PaymentsList: NextPage<Props> = ({ data, hubURL, page }) => {
+  const { client } = useClient();
+  const collection = useMercure(data, hubURL);
+  const options = { year: "numeric", month: "numeric", day: "numeric" };
+  const isSmall = useMediaQuery<Theme>(theme => theme.breakpoints.down('sm'));
+  const defaultFilters = {}; 
+  const [showMore, setShowMore] = useState(false);
+  const [filters, setFilters] = useState(defaultFilters);
+
+  return (
+    <List 
+      title="Paiements"
+      resource="payments" 
+      actions={<CustomListActions showMore={showMore} setShowMore={setShowMore} isSmall={isSmall} resource="payments"/>}
+      filters={<CustomFilterBar showMore={showMore} isSmall={isSmall} client={client}/>}
+      // @ts-ignore
+      filterValues={filters}
+      filterDefaultValues={defaultFilters}
+      disableSyncWithLocation
+    >
+        { isSmall ? 
+          <>
+            <SimpleList
+              primaryText={({ name, label }) =>  isNotBlank(name) ? name : (isNotBlank(label) ? label : '')}
+              // @ts-ignore
+              secondaryText={({ details, date }) => <div>{ getModeList(details) }<br/>{ `${ (new Date(date)).toLocaleDateString("fr-FR", options) } ` }</div>}
+              tertiaryText={({ details }) => (details.reduce((sum, current) => sum += current.amount, 0)).toFixed(2) + "€" }
+              linkType="show"
+            />
+            <MobileFooter/>
+          </>
+            : <CustomDatagrid client={ client }/>
+        }
+    </List>
+  );
+}

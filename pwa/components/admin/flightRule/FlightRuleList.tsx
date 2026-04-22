@@ -7,12 +7,12 @@ const NotamStrategyField = (props) => (
         render={(record) => {
             const strategy = record?.notamStrategy;
             const map = {
-                block: { label: 'Bloquant', color: 'error' as const },
-                warn: { label: 'Avertissement', color: 'warning' as const },
-                ignore: { label: 'Ignoré', color: 'default' as const },
+                block: { label: 'Bloquant', color: 'error' },
+                warn: { label: 'Avertissement', color: 'warning' },
+                ignore: { label: 'Ignoré', color: 'default' },
             };
             const cfg = map[strategy] || map.warn;
-            return <Chip label={cfg.label} color={cfg.color} size="small" />;
+            return <Chip label={cfg.label} color={cfg.color as any} size="small" />;
         }}
     />
 );

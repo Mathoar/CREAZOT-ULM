@@ -1,36 +1,29 @@
-import { useEffect, useState } from "react";
-import { useDataProvider, useRedirect, Title, CreateButton, TopToolbar } from "react-admin";
+import { useMemo, useCallback } from "react";
+import { useGetList, useRedirect, Title, CreateButton } from "react-admin";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
   Box,
+  Paper,
   Typography,
-  IconButton,
-  Tooltip,
+  Chip,
   Skeleton,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import FlightIcon from "@mui/icons-material/Flight";
+import BuildIcon from "@mui/icons-material/Build";
 
-interface PricingCategory {
-  id: string | number;
+interface Category {
+  id: number;
   "@id"?: string;
   name: string;
-  slug: string;
   discountPercent?: number;
   maintenanceDiscount?: number;
-  isActive?: boolean;
   isDefault?: boolean;
+  isActive?: boolean;
 }
 
-interface PricingTier {
-  id: string | number;
+interface Tier {
+  id: number;
   "@id"?: string;
   pricingCategory: string;
   minAeronefs: number;
@@ -38,288 +31,246 @@ interface PricingTier {
   pricePerAeronef: number;
 }
 
-const BRAND_COLORS: Record<string, { bg: string; head: string; accent: string }> = {
-  ffplum: { bg: "#f1f8e9", head: "#c8e6c9", accent: "#2e7d32" },
-};
-const DEFAULT_COLORS = { bg: "#fafafa", head: "#e3f2fd", accent: "#1565c0" };
-const catColors = (slug: string) => BRAND_COLORS[slug] || DEFAULT_COLORS;
-
-const catIri = (cat: { "@id"?: string; id: string | number }) =>
-  cat["@id"] || `/pricing-categories/${cat.id}`;
+const iri = (e: { "@id"?: string; id: number }, r: string) =>
+  e["@id"] || `/${r}/${e.id}`;
 
 export const PricingTiersList = () => {
-  const dataProvider = useDataProvider();
   const redirect = useRedirect();
 
-  const [categories, setCategories] = useState<PricingCategory[]>([]);
-  const [tiers, setTiers] = useState<PricingTier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories, isLoading: loadingCats } = useGetList<Category>(
+    "pricing-categories",
+    { pagination: { page: 1, perPage: 100 }, sort: { field: "name", order: "ASC" } }
+  );
 
-  useEffect(() => {
-    Promise.all([
-      dataProvider.getList("pricing-categories", {
-        pagination: { page: 1, perPage: 50 },
-        sort: { field: "name", order: "ASC" },
-        filter: {},
-      }),
-      dataProvider.getList("pricing-tiers", {
-        pagination: { page: 1, perPage: 100 },
-        sort: { field: "minAeronefs", order: "ASC" },
-        filter: {},
-      }),
-    ]).then(([catRes, tierRes]) => {
-      setCategories(catRes.data);
-      setTiers(tierRes.data);
-      setLoading(false);
-    });
-  }, [dataProvider]);
+  const { data: tiers, isLoading: loadingTiers } = useGetList<Tier>(
+    "pricing-tiers",
+    { pagination: { page: 1, perPage: 200 }, sort: { field: "minAeronefs", order: "ASC" } }
+  );
 
-  const getTiers = (cIri: string) =>
-    tiers.filter((t) => t.pricingCategory === cIri).sort((a, b) => a.minAeronefs - b.minAeronefs);
+  const activeCats = useMemo(
+    () => (categories || []).filter((c) => c.isActive !== false),
+    [categories]
+  );
 
-  if (loading) {
+  const defaultCat = useMemo(
+    () => activeCats.find((c) => c.isDefault) || activeCats[0],
+    [activeCats]
+  );
+
+  const getTiers = useCallback(
+    (catIri: string) =>
+      (tiers || [])
+        .filter((t) => t.pricingCategory === catIri)
+        .sort((a, b) => a.minAeronefs - b.minAeronefs),
+    [tiers]
+  );
+
+  const maxTierCount = useMemo(
+    () =>
+      Math.max(
+        ...activeCats.map((c) => getTiers(iri(c, "pricing-categories")).length),
+        0
+      ),
+    [activeCats, getTiers]
+  );
+
+  if (loadingCats || loadingTiers) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />
+      <Box p={2}>
+        <Skeleton variant="rectangular" height={250} sx={{ borderRadius: 2 }} />
       </Box>
     );
   }
 
-  const maxTierCount = Math.max(...categories.map((c) => getTiers(catIri(c)).length), 0);
-
   return (
-    <Box sx={{ width: "100%", px: { xs: 1, md: 3 }, py: 2 }}>
-      <Title title="Paliers tarifaires" />
+    <Box p={{ xs: 1.5, sm: 2, md: 3 }}>
+      <Title title="Tranches tarifaires" />
 
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Box>
-          <Typography variant="h5" fontWeight={700} color="text.primary">
-            Paliers tarifaires
+          <Typography variant="h6" fontWeight={700} color="#1e293b" fontSize={{ xs: "1.1rem", md: "1.25rem" }}>
+            Prix par aéronef
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Tarif par aéronef selon le nombre d&apos;appareils et la grille tarifaire
+          <Typography variant="body2" color="text.secondary" fontSize="0.8rem">
+            Tarif dégressif par grille tarifaire
           </Typography>
         </Box>
-        <TopToolbar sx={{ p: 0, minHeight: "auto" }}>
-          <CreateButton resource="pricing-tiers" label="Ajouter un palier" />
-        </TopToolbar>
+        <CreateButton resource="pricing-tiers" />
       </Box>
 
-      <Paper elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
-        {/* ── Bandeau ── */}
-        <Box sx={{ px: 2.5, py: 1.5, backgroundColor: "#263238", display: "flex", alignItems: "center", gap: 1 }}>
-          <FlightIcon sx={{ color: "#fff", fontSize: 20 }} />
-          <Typography variant="subtitle1" fontWeight={600} color="#fff">
-            Prix par aéronef / mois
-          </Typography>
-        </Box>
-
-        <TableContainer>
-          <Table>
-            {/* ── En-têtes grilles ── */}
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    minWidth: 220,
-                    backgroundColor: "#f5f5f5",
-                    borderRight: "2px solid #e0e0e0",
-                    py: 2,
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 2.5,
+          border: "1px solid #e2e8f0",
+          overflow: "hidden",
+        }}
+      >
+        <Box sx={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
+            <thead>
+              <tr style={{ backgroundColor: "#0f172a" }}>
+                <th
+                  style={{
+                    color: "#fff",
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    padding: "12px 16px",
+                    textAlign: "left",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  <Typography variant="subtitle2" fontWeight={700}>
-                    Nombre d&apos;aéronefs
-                  </Typography>
-                </TableCell>
-                {categories.map((cat) => {
-                  const c = catColors(cat.slug);
-                  return (
-                    <TableCell
-                      key={cat.id}
-                      align="center"
-                      sx={{
-                        fontWeight: 700,
-                        minWidth: 180,
-                        backgroundColor: c.head,
-                        borderRight: "1px solid #e0e0e0",
-                        py: 2,
-                      }}
-                    >
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        {cat.name}
-                      </Typography>
-                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center", mt: 0.5, flexWrap: "wrap" }}>
-                        {cat.discountPercent ? (
-                          <Chip
-                            label={`-${cat.discountPercent}% sur tarif public`}
-                            size="small"
-                            sx={{ backgroundColor: c.accent, color: "#fff", fontWeight: 600, height: 22, fontSize: "0.72rem" }}
-                          />
-                        ) : null}
-                        {cat.isDefault ? (
-                          <Chip label="Par défaut" size="small" variant="outlined" sx={{ height: 22, fontSize: "0.72rem" }} />
-                        ) : null}
-                      </Box>
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {/* ── Lignes paliers ── */}
-              {Array.from({ length: maxTierCount }).map((_, tierIdx) => {
-                const firstCat = categories[0];
-                const refTier = firstCat ? getTiers(catIri(firstCat))[tierIdx] : null;
-
-                return (
-                  <TableRow
-                    key={tierIdx}
-                    sx={{
-                      backgroundColor: tierIdx % 2 === 0 ? "#fff" : "#fafafa",
-                      "&:hover": { backgroundColor: "#f0f7ff" },
-                      transition: "background-color 0.15s",
+                  Nombre d&apos;aéronefs
+                </th>
+                {activeCats.map((cat) => (
+                  <th
+                    key={cat.id}
+                    style={{
+                      color: "#fff",
+                      fontWeight: 600,
+                      fontSize: "0.8rem",
+                      padding: "12px 16px",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <TableCell sx={{ borderRight: "2px solid #e0e0e0", py: 2 }}>
-                      {refTier && (
-                        <Box>
-                          <Typography variant="body1" fontWeight={600}>
-                            {refTier.maxAeronefs
-                              ? `${refTier.minAeronefs} à ${refTier.maxAeronefs}`
-                              : `${refTier.minAeronefs}+`}{" "}
-                            aéronefs
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {refTier.maxAeronefs
-                              ? `de ${refTier.minAeronefs} à ${refTier.maxAeronefs} appareils`
-                              : `à partir de ${refTier.minAeronefs} appareils`}
-                          </Typography>
-                        </Box>
-                      )}
-                    </TableCell>
-                    {categories.map((cat) => {
-                      const c = catColors(cat.slug);
-                      const tier = getTiers(catIri(cat))[tierIdx];
+                    {cat.name}
+                    {cat.discountPercent ? (
+                      <span
+                        style={{
+                          marginLeft: 6,
+                          backgroundColor: "#22c55e",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: "0.65rem",
+                          padding: "2px 7px",
+                          borderRadius: 20,
+                        }}
+                      >
+                        -{cat.discountPercent}%
+                      </span>
+                    ) : null}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: maxTierCount }).map((_, idx) => {
+                const refTier = defaultCat
+                  ? getTiers(iri(defaultCat, "pricing-categories"))[idx]
+                  : null;
+
+                return (
+                  <tr
+                    key={idx}
+                    style={{
+                      backgroundColor: idx % 2 === 0 ? "#fff" : "#f8fafc",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? "#fff" : "#f8fafc")
+                    }
+                  >
+                    <td
+                      style={{
+                        fontWeight: 500,
+                        color: "#334155",
+                        padding: "14px 16px",
+                        borderTop: "1px solid #f1f5f9",
+                        fontSize: "0.9rem",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {refTier
+                        ? refTier.maxAeronefs
+                          ? `${refTier.minAeronefs} à ${refTier.maxAeronefs} aéronefs`
+                          : `${refTier.minAeronefs}+ aéronefs`
+                        : "—"}
+                    </td>
+                    {activeCats.map((cat) => {
+                      const tier = getTiers(iri(cat, "pricing-categories"))[idx];
                       return (
-                        <TableCell
+                        <td
                           key={cat.id}
-                          align="center"
-                          sx={{
-                            borderRight: "1px solid #e0e0e0",
-                            backgroundColor: BRAND_COLORS[cat.slug] ? c.bg : undefined,
-                            py: 2,
+                          style={{
+                            padding: "14px 16px",
+                            borderTop: "1px solid #f1f5f9",
+                            textAlign: "center",
+                            whiteSpace: "nowrap",
                           }}
+                          onClick={() => tier && redirect("edit", "pricing-tiers", tier.id)}
                         >
                           {tier ? (
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
-                              <Typography variant="h5" fontWeight={700} color={c.accent}>
-                                {tier.pricePerAeronef.toFixed(0)} €
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                /aéronef
-                                <br />
-                                /mois
-                              </Typography>
-                              <Tooltip title="Modifier ce palier">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => redirect("edit", "pricing-tiers", tier.id)}
-                                  sx={{ opacity: 0.3, "&:hover": { opacity: 1 } }}
-                                >
-                                  <EditIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
+                            <>
+                              <span style={{ fontWeight: 700, fontSize: "1.4rem", color: "#0f172a" }}>
+                                {tier.pricePerAeronef}
+                              </span>
+                              <span style={{ fontSize: "0.75rem", color: "#94a3b8", marginLeft: 3 }}>
+                                €/mois
+                              </span>
+                            </>
                           ) : (
-                            <Typography color="text.disabled">—</Typography>
+                            <span style={{ color: "#cbd5e1" }}>—</span>
                           )}
-                        </TableCell>
+                        </td>
                       );
                     })}
-                  </TableRow>
+                  </tr>
                 );
               })}
 
-              {/* ── Ligne maintenance ── */}
-              {categories.some((c) => c.maintenanceDiscount) && (
-                <TableRow sx={{ backgroundColor: "#fff8e1" }}>
-                  <TableCell sx={{ borderRight: "2px solid #e0e0e0", py: 1.5 }}>
-                    <Typography variant="body2" fontWeight={600}>
+              {activeCats.some((c) => c.maintenanceDiscount) && (
+                <tr style={{ backgroundColor: "#fffbeb" }}>
+                  <td
+                    style={{
+                      fontWeight: 600,
+                      color: "#92400e",
+                      padding: "12px 16px",
+                      borderTop: "2px solid #fde68a",
+                      fontSize: "0.85rem",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <BuildIcon sx={{ fontSize: 16, color: "#d97706" }} />
                       Aéronef en maintenance
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      isAvailable = false
-                    </Typography>
-                  </TableCell>
-                  {categories.map((cat) => (
-                    <TableCell key={cat.id} align="center" sx={{ borderRight: "1px solid #e0e0e0", py: 1.5 }}>
+                    </Box>
+                  </td>
+                  {activeCats.map((cat) => (
+                    <td
+                      key={cat.id}
+                      style={{
+                        padding: "12px 16px",
+                        borderTop: "2px solid #fde68a",
+                        textAlign: "center",
+                      }}
+                    >
                       {cat.maintenanceDiscount ? (
-                        <Chip
-                          label={`-${cat.maintenanceDiscount}% sur le palier`}
-                          size="small"
-                          color="warning"
-                          variant="outlined"
-                          sx={{ fontWeight: 600, fontSize: "0.78rem" }}
-                        />
+                        <span
+                          style={{
+                            backgroundColor: "#fef3c7",
+                            color: "#92400e",
+                            fontWeight: 700,
+                            fontSize: "0.85rem",
+                            padding: "4px 12px",
+                            borderRadius: 20,
+                            border: "1px solid #fde68a",
+                          }}
+                        >
+                          -{cat.maintenanceDiscount}%
+                        </span>
                       ) : (
-                        <Typography color="text.disabled">—</Typography>
+                        <span style={{ color: "#cbd5e1" }}>—</span>
                       )}
-                    </TableCell>
+                    </td>
                   ))}
-                </TableRow>
+                </tr>
               )}
-
-              {/* ── Ligne exemple simulé ── */}
-              <TableRow sx={{ backgroundColor: "#e8eaf6" }}>
-                <TableCell sx={{ borderRight: "2px solid #e0e0e0", py: 1.5 }}>
-                  <Typography variant="body2" fontWeight={600} color="#283593">
-                    Exemple : 4 aéronefs
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    dont 1 en maintenance
-                  </Typography>
-                </TableCell>
-                {categories.map((cat) => {
-                  const c = catColors(cat.slug);
-                  const tierList = getTiers(catIri(cat));
-                  const tier = tierList.find((t) => 4 >= t.minAeronefs && (t.maxAeronefs === null || 4 <= t.maxAeronefs));
-                  if (!tier) return <TableCell key={cat.id} align="center" sx={{ borderRight: "1px solid #e0e0e0" }}>—</TableCell>;
-
-                  const discount = cat.maintenanceDiscount || 0;
-                  const fullPrice = tier.pricePerAeronef * 3;
-                  const maintenancePrice = tier.pricePerAeronef * (1 - discount / 100);
-                  const total = fullPrice + maintenancePrice;
-
-                  return (
-                    <TableCell key={cat.id} align="center" sx={{ borderRight: "1px solid #e0e0e0", py: 1.5 }}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        3 × {tier.pricePerAeronef.toFixed(0)}€ + 1 × {maintenancePrice.toFixed(0)}€
-                      </Typography>
-                      <Typography variant="h6" fontWeight={700} color={c.accent}>
-                        {total.toFixed(0)} €/mois
-                      </Typography>
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </tbody>
+          </table>
+        </Box>
       </Paper>
-
-      {/* ── Légende ── */}
-      <Box sx={{ mt: 2, display: "flex", gap: 4, color: "text.secondary", flexWrap: "wrap" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Chip label="-10%" size="small" color="warning" variant="outlined" sx={{ height: 18, fontSize: "0.65rem" }} />
-          <Typography variant="caption">Remise appliquée aux aéronefs en maintenance</Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Box sx={{ width: 14, height: 14, backgroundColor: "#e8eaf6", borderRadius: 0.5, border: "1px solid #c5cae9" }} />
-          <Typography variant="caption">Simulation de prix mensuel</Typography>
-        </Box>
-      </Box>
     </Box>
   );
 };

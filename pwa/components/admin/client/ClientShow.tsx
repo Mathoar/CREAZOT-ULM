@@ -26,8 +26,20 @@ export const ClientShow = () => {
                     <TextField source="phone" label="N° de téléphone"/>
                     <TextField source="email" label="Adresse email"/>
                     <TextField source="website" label="Site web"/>
-                    { isSuperAdminRole ? <TextField source="emailParams" label="Serveur d'email"/> : <TextField source="emailAddressSender" label="Email d'envoi configuré"/> }
+                    { isSuperAdminRole
+                        ? <TextField source="emailParams" label="Serveur d'email"/>
+                        : <TextField source="emailAddressSender" label="Email d'envoi configuré"/>
+                    }
                     <TextField source="emailAddressSender" label="Adresse email d'envoi"/>
+                    <FunctionField
+                        source="countryCode"
+                        label="Code pays (TVA)"
+                        render={record => {
+                            const cc = record.countryCode;
+                            if (!cc) return '';
+                            return `${cc.code} - ${cc.label}`;
+                        }}
+                    />
                     <DateField source="minHours" showDate={ false } showTime label="Heure de démarrage"/>
                     <DateField source="maxHours" showDate={ false } showTime label="Heure de fin"/>
                     <DateField source="createdAt" label="Créé le"/>
@@ -44,12 +56,20 @@ export const ClientShow = () => {
                     <BooleanField source="hasMicrotrakTag" label="Balise(s) Microtrak" textAlign="center"/>
                     <BooleanField source="hasWebshop" label="Site e-commerce lié" textAlign="center"/>
                     <BooleanField source="hasIndividualFlightLogs" label="Carnets de vols individuels" textAlign="center"/>
-                    <BooleanField source="useAvailabilityFilter" label="Fitrer sur les disponibilités" textAlign="center"/>
+                    <BooleanField source="useAvailabilityFilter" label="Filtrer sur les disponibilités" textAlign="center"/>
                     <BooleanField source="hasPaymentManagement" label="Gestion des paiements" textAlign="center"/>
                     <BooleanField source="hasGifts" label="Gestion des prépaiements" textAlign="center"/>
                     <BooleanField source="hasExpensesManagement" label="Gestion des dépenses" textAlign="center"/>
                     <BooleanField source="hasGroupUpdate" label="Mise à jour des groupes" textAlign="center"/>
                     <BooleanField source="hasNotam" label="NOTAMs / SNOWTAMs" textAlign="center"/>
+                    <BooleanField source="hasAI" label="Fonctions IA (Briefing, NOTAM, Kimi)" textAlign="center"/>
+                    <BooleanField source="hasCams" label="Caméras Windy" textAlign="center"/>
+                    <BooleanField source="hasAiReservationAssistant" label="Assistant IA réservation (email)" textAlign="center"/>
+                    <BooleanField source="hasVoiceAssistant" label="Assistant Vocal (téléphone)" textAlign="center"/>
+                    <BooleanField source="hasSMS" label="Notifications SMS" textAlign="center"/>
+                    <BooleanField source="hasPlanification" label="Planification" textAlign="center"/>
+                    <TextField source="smsSenderId" label="Expéditeur SMS"/>
+                    <TextField source="assistantCustomInstructions" label="Consignes personnalisées IA"/>
                 </TabbedShowLayout.Tab> }
                 <TabbedShowLayout.Tab label="Dashboard">
                     <FunctionField 
@@ -87,7 +107,33 @@ export const ClientShow = () => {
                             </p>
                         }
                     />
-                </TabbedShowLayout.Tab>   
+                </TabbedShowLayout.Tab>
+                { isSuperAdminRole && <TabbedShowLayout.Tab label="Abonnement">
+                    <FunctionField
+                        source="pricingCategory"
+                        label="Grille tarifaire"
+                        render={record => record.pricingCategory?.name || '—'}
+                    />
+                    <FunctionField
+                        source="modulePacks"
+                        label="Packs de modules"
+                        render={record => {
+                            const packs = record.modulePacks;
+                            if (!packs || !packs.length) return '—';
+                            return packs.map(p => typeof p === 'object' ? p.name : p).join(', ');
+                        }}
+                    />
+                    <TextField source="subscriptionStatus" label="Statut de l'abonnement"/>
+                    <DateField source="trialEndsAt" label="Fin de la période d'essai"/>
+                    <NumberField source="maxAeronefs" label="Nombre max d'aéronefs"/>
+                    <TextField source="billingCycle" label="Cycle de facturation"/>
+                    <NumberField source="annualDiscount" label="Remise annuelle (%)" options={{ style: 'percent', maximumFractionDigits: 0 }}/>
+                    <DateField source="nextBillingDate" label="Prochaine facturation"/>
+                    <DateField source="lastInvoiceDate" label="Dernière facture"/>
+                    <NumberField source="monthlyBasePrice" label="Prix mensuel calculé" options={{ style: 'currency', currency: 'EUR' }}/>
+                    <TextField source="odooCustomerId" label="ID client Odoo"/>
+                    <TextField source="odooSubscriptionId" label="ID abonnement Odoo"/>
+                </TabbedShowLayout.Tab> }
             </TabbedShowLayout>
         </Show>
     )

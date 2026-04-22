@@ -1,0 +1,164 @@
+---
+description: Briefing passager — entité Briefing, briefingHtml/Image sur Circuit, route publique /r/{shortcode}, page Next.js
+globs:
+  - api/src/Entity/Briefing.php
+  - api/src/Controller/PublicReservationController.php
+  - api/src/Service/ImageResizer.php
+  - api/src/EventSubscriber/MediaObjectImageResizeSubscriber.php
+  - pwa/components/admin/briefing/**
+  - pwa/components/admin/circuit/**
+  - pwa/app/r/**
+---
+# Briefing Public — Page passager (Détails)
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+> Conditionne : module client `hasPlanification` (sans lui : pas de menu, pas de variable de template, pas de page publique).
+
+---
+
+## Vue d'ensemble
+
+À chaque réservation est généré un `publicShortcode` (10 chars alphanumériques) qui permet au passager
+d'accéder à une page web mobile-first sans authentification : `https://logic-ciel.com/r/{shortcode}`.
+
+Cette page agrège :
+- Le **briefing général du club** (entité `Briefing`, 1 par client)
+- Le **briefing du circuit** réservé (champs `briefingHtml` + `briefingImage` sur `Circuit`)
+- Les coordonnées du club (adresse → Maps en mode itinéraire, téléphone, contacts additionnels)
+
+Le lien est inséré dans les SMS / emails via la variable `{{lien_briefing}}`
+(résolue par `NotificationService` uniquement si `client.hasPlanification`).
+
+---
+
+## Backend
+
+### Entité `Briefing` (`api/src/Entity/Briefing.php`)
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `ownerClient` | `OneToOne(Client)` UNIQUE | 1 briefing par client (`owner_client_id`) |
+| `html` | `text?` | Contenu RichTextInput rendu sur la page publique |
+| `headerImage` | `ManyToOne(MediaObject)` `SET NULL` | Image d'en-tête du hero |
+| `showMap` | `bool` (def. `true`) | Affiche le bouton "Voir l'itinéraire" |
+| `extraContacts` | `text?` | Contacts additionnels (texte libre, multilignes) |
+| `updatedAt` | `datetime_immutable` | `PreUpdate` callback |
+
+Tenant-aware (`TenantAwareTrait`). API Platform :
+`GET /briefings`, `GET /briefings/{id}`, `PUT/PATCH /briefings/{id}` (`OIDC_ADMIN`).
+
+Liaison côté `Client` : relation inverse `Client.briefing` (hydratée à la création du client via subscriber dédié — créer le briefing vide si manquant à l'avenir).
+
+### Champs `Circuit` (briefing commercial)
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `briefingHtml` | `text?` | Description détaillée du circuit (RichText) |
+| `briefingImage` | `ManyToOne(MediaObject)` | Visuel illustratif (carte, photo) |
+
+### Contrôleur public `PublicReservationController`
+
+```
+GET /r/{shortcode}    requirements: [a-zA-Z0-9]{10}
+```
+
+- **Pas de `X-Client-Id`** : le tenant est résolu via le shortcode (jamais énumérable).
+- **Rate-limit IP-based** via `RateLimiterFactory` `publicReservationLimiter`.
+- **Expiration** : 7 jours après `Reservation.debut` → `404 expired`.
+- **Annulation** : `statut == 'cancelled' | 'annule'` → `404 cancelled`.
+- Headers : `Cache-Control: private, no-store` + `X-Robots-Tag: noindex, nofollow`.
+
+**Payload retourné** (clés essentielles) :
+
+```json
+{
+  "client":   { "name", "logo", "phone", "lat", "lng", "timezone", "address", "zipcode", "city", "color" },
+  "reservation":     { "date", "time", "firstName", "circuit" },
+  "briefing":        { "html", "headerImage", "showMap", "extraContacts" } | null,
+  "circuitBriefing": { "html", "image" } | null
+}
+```
+
+**Erreurs** : `not_found`, `expired`, `cancelled`, `too_many_requests`.
+
+### ⚠️ Piège : `MediaObject->contentUrl` vaut `null` en accès direct
+
+`contentUrl` est rempli **uniquement** par `MediaObjectNormalizer` au moment de la sérialisation API Platform.
+Un contrôleur custom doit construire l'URL : `'/media/' . $mediaObject->filePath`.
+
+→ Helper `mediaUrl(?MediaObject)` dans `PublicReservationController` couvre les 2 cas (contentUrl si présent, sinon filePath).
+
+---
+
+## Resizer images automatique
+
+| Fichier | Rôle |
+|---------|------|
+| `api/src/Service/ImageResizer.php` | GD natif. Si image > **1920 px** de large : resize en gardant le ratio, recompresse JPEG q.85 / PNG niv.6 (transparence préservée). Ignore PDF et autres formats. |
+| `api/src/EventSubscriber/MediaObjectImageResizeSubscriber.php` | Doctrine listener `postPersist` sur `MediaObject` → appelle le service sur `<uploadDir>/<filePath>`. |
+| `api/config/services.yaml` | Binding `App\EventSubscriber\MediaObjectImageResizeSubscriber: { arguments: { $uploadDir: '%kernel.project_dir%/public/media' } }` |
+
+Logs : `docker logs creazot-ulm-php-1 | grep ImageResizer`.
+
+Le frontend (CircuitsCreate/Edit, BriefingsEdit) restreint l'`accept` à `image/jpeg + image/png` (cohérent avec `Assert\File` du `MediaObject`) et affiche un `helperText` :
+> *"JPEG ou PNG • Format paysage recommandé (1600 × 600 px, ratio 16:9 ou 21:9) • Les images > 1920 px sont automatiquement redimensionnées."*
+
+---
+
+## Frontend
+
+### Admin (formulaires)
+
+| Fichier | Rôle |
+|---------|------|
+| `pwa/components/admin/briefing/BriefingsEdit.tsx` | Edit briefing général (1 par client). Onglet menu "Briefing" si `client.hasPlanification`. |
+| `pwa/components/admin/briefing/index.ts` | Export ressource React-Admin (`edit`). |
+| `pwa/components/admin/circuit/CircuitsCreate.tsx` / `CircuitsEdit.tsx` | `TabbedForm syncWithLocation={false}` avec onglet conditionnel "Briefing commercial" (`hasPlanification`). |
+| `pwa/components/admin/shared/BriefingFileField.tsx` | `FileField` custom : résout filename via `contentUrl` / `src` / `rawFile.name` / `originalName`. |
+
+### Page publique `pwa/app/r/[shortcode]/`
+
+| Fichier | Rôle |
+|---------|------|
+| `page.tsx` | RSC, `dynamic = 'force-dynamic'`, fetch backend en SSR, gère 404 / not_found / expired / cancelled / 429, `metadata.robots = { index:false, follow:false }`. |
+| `PublicBriefing.tsx` | Client component : hero avec `client.color` (dégradé), tabs "Avant le vol" / "Le circuit", carte adresse + bouton CTA "Voir l'itinéraire" (Maps en mode `dir/?api=1&destination=<adresse>`), styles Tailwind + CSS jsx pour le HTML RichText. |
+| `types.ts` | Typage du payload backend. |
+
+**Header global masqué** sur `/r/` via `hiddenPaths` dans `pwa/components/common/Header.tsx`.
+
+**UX clés** :
+- Hero : si `briefing.headerImage` → image + voile coloré ; sinon dégradé `client.color`. **Ne retombe jamais sur l'image circuit**.
+- Image circuit : `w-full h-auto` (ratio naturel respecté, pas de crop) en haut du contenu de l'onglet circuit.
+- Adresse : carte arrondie + bouton CTA pleine largeur en couleur du club.
+- Couleur d'accent (tabs actif, icônes contacts) = `client.color` avec fallback `#0284c7`.
+
+### Variable `{{lien_briefing}}`
+
+Présente dans les helpers de tous les composers de message :
+- `pwa/components/admin/messageTemplate/MessageTemplateCreate.tsx` / `Edit.tsx`
+- `pwa/components/admin/planning/PlanningPage.tsx`
+
+Résolue côté backend par `NotificationService` uniquement si `client.hasPlanification` (sinon retirée du texte).
+
+---
+
+## Routing Caddy
+
+`Caddyfile` route `/r/*` (Accept: text/html) → reverse_proxy vers PWA Next.js.
+L'appel SSR depuis Next.js (`fetch('/r/{shortcode}', Accept: application/json)`) part vers `https://logic-ciel.com` puis Caddy → `php_server` (pas le PWA, distingué par le `Accept` header).
+
+---
+
+## Tests rapides
+
+```bash
+# Récupérer un shortcode actif
+docker exec creazot-ulm-php-1 bin/console dbal:run-sql \
+  "SELECT public_shortcode FROM reservation WHERE public_shortcode IS NOT NULL ORDER BY debut DESC LIMIT 1"
+
+# Test API JSON
+curl -H "Accept: application/json" "https://logic-ciel.com/r/<shortcode>"
+
+# Test page HTML SSR
+curl -H "Accept: text/html" "https://logic-ciel.com/r/<shortcode>"
+```

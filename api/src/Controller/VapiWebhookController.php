@@ -39,33 +39,25 @@ class VapiWebhookController extends AbstractController
         $payload = json_decode($request->getContent(), true);
 
         if (!$payload) {
+            $this->logger->warning('Vapi webhook: invalid JSON payload', ['raw' => substr($request->getContent(), 0, 500)]);
             return new JsonResponse(['error' => 'Invalid payload'], 400);
         }
 
         $type = $payload['message']['type'] ?? null;
-        $this->logger->error('[VAPI] webhook type={type} client={client}', [
-            'type' => $type ?? 'null',
-            'client' => $clientId,
-        ]);
+        $this->logger->info('Vapi webhook: type={type} client={client}', ['type' => $type ?? 'null', 'client' => $clientId]);
 
         if (!$type) {
+            $this->logger->warning('Vapi webhook: no message.type', ['keys' => array_keys($payload)]);
             return new JsonResponse(['ok' => true]);
         }
 
-        $response = match ($type) {
+        return match ($type) {
             'tool-calls' => $this->handleToolCalls($payload, $client),
             'end-of-call-report' => $this->handleEndOfCall($payload, $client),
             'status-update' => new JsonResponse(['ok' => true]),
             'assistant-request' => new JsonResponse(['ok' => true]),
             default => new JsonResponse(['ok' => true]),
         };
-
-        $this->logger->error('[VAPI] response for {type}: {body}', [
-            'type' => $type,
-            'body' => $response->getContent(),
-        ]);
-
-        return $response;
     }
 
     private function handleToolCalls(array $payload, Client $client): JsonResponse
@@ -73,29 +65,10 @@ class VapiWebhookController extends AbstractController
         $toolCallList = $payload['message']['toolCallList'] ?? [];
         $results = [];
 
-        $this->logger->error('[VAPI] toolCallList count={count}', [
-            'count' => count($toolCallList),
-        ]);
-
         foreach ($toolCallList as $toolCall) {
-            $name = $toolCall['function']['name']
-                ?? $toolCall['name']
-                ?? '';
-            $params = $toolCall['function']['arguments']
-                ?? $toolCall['parameters']
-                ?? $toolCall['arguments']
-                ?? [];
+            $name = $toolCall['name'] ?? '';
+            $params = $toolCall['parameters'] ?? [];
             $callId = $toolCall['id'] ?? '';
-
-            if (is_string($params)) {
-                $params = json_decode($params, true) ?? [];
-            }
-
-            $this->logger->error('[VAPI] tool call: {name} id={callId} params={params}', [
-                'name' => $name,
-                'callId' => $callId,
-                'params' => json_encode($params),
-            ]);
 
             $result = match ($name) {
                 'check_availability' => $this->toolCheckAvailability($params, $payload, $client),
@@ -170,7 +143,7 @@ class VapiWebhookController extends AbstractController
         $lines = [];
         foreach ($slots as $i => $slot) {
             $num = $i + 1;
-            $lines[] = "Créneau {$num} : {$this->spokenTime($slot['debut'])} à {$this->spokenTime($slot['fin'])} — {$slot['prix']} euros";
+            $lines[] = "Créneau {$num} : {$slot['debut']->format('H\\hi')} à {$slot['fin']->format('H\\hi')} — {$slot['prix']} €";
         }
 
         return "Créneaux disponibles pour {$circuit->getNom()} le {$date->format('d/m/Y')} :\n" . implode("\n", $lines)
@@ -203,18 +176,15 @@ class VapiWebhookController extends AbstractController
             return "Prestation \"{$circuitCode}\" non trouvée.";
         }
 
-        $tz = new \DateTimeZone($client->getTimezone() ?? 'Indian/Reunion');
         try {
-            $debut = new \DateTime("{$dateStr} {$timeStr}", $tz);
+            $debut = new \DateTime("{$dateStr} {$timeStr}");
         } catch (\Exception $e) {
             return "Date/heure invalide.";
         }
 
-        $hours = $circuit->getDuree() ? (int) $circuit->getDuree()->format('H') : 0;
-        $minutes = $circuit->getDuree() ? (int) $circuit->getDuree()->format('i') : 0;
-        $durationMinutes = ($hours - 20) * 60 + $minutes;
-        if ($durationMinutes <= 0) {
-            $durationMinutes = $hours * 60 + $minutes;
+        $durationMinutes = 0;
+        if ($circuit->getDuree()) {
+            $durationMinutes = (int) $circuit->getDuree()->format('H') * 60 + (int) $circuit->getDuree()->format('i');
         }
         $fin = (clone $debut)->modify("+{$durationMinutes} minutes");
 
@@ -224,45 +194,33 @@ class VapiWebhookController extends AbstractController
         }
 
         $customerPhone = $params['customer_phone'] ?? $payload['message']['call']['customer']['number'] ?? null;
+        $customerEmail = null;
+
+        $reservation = $this->reservationFactory->createFromAssistant(
+            $client, $circuit, $debut, $check['aeronef'], $check['pilote'],
+            $customerName, 'voice', [
+                'phone' => $customerPhone,
+                'email' => $customerEmail,
+                'quantity' => $quantity,
+            ]
+        );
 
         $thread = $this->trackConversation($payload, $client, [
-            'circuit_id' => $circuit->getId(),
-            'circuit_code' => $circuit->getCode(),
-            'date' => $dateStr,
-            'extracted' => [
-                'customer_name' => $customerName,
-                'customer_phone' => $customerPhone,
-                'circuit_code' => $circuit->getCode(),
-                'preferred_date' => $dateStr,
-                'preferred_time' => $timeStr,
-                'quantity' => $quantity,
-            ],
-            'proposed_slots' => [[
-                'debut' => $debut->format('Y-m-d H:i'),
-                'fin' => $fin->format('Y-m-d H:i'),
-                'aeronef' => $check['aeronef']->getImmatriculation(),
-                'prix' => $circuit->getPrix() ?? 0,
-            ]],
+            'confirmed' => true,
+            'reservation_debut' => $debut->format('Y-m-d H:i'),
         ]);
-
         if ($thread) {
-            $thread->setCustomerName($customerName);
-            $thread->setCustomerPhone($customerPhone);
-            $this->conversationManager->updateStatus($thread, 'awaiting_club');
+            $this->conversationManager->linkReservation($thread, $reservation);
+        } else {
+            $this->em->flush();
         }
 
-        $this->logger->error('[VAPI] reservation request → awaiting_club for {name}, {circuit} le {date} à {time}', [
+        $this->logger->info('Vapi: reservation created #{id} for {name}', [
+            'id' => $reservation->getId(),
             'name' => $customerName,
-            'circuit' => $circuit->getNom(),
-            'date' => $dateStr,
-            'time' => $timeStr,
         ]);
 
-        $clubName = $client->getNom() ?? 'le club';
-        return "Parfait {$customerName} ! J'ai bien noté votre demande pour un {$circuit->getNom()} le {$debut->format('d/m/Y')} à {$this->spokenTime($debut)}. "
-            . "Je transmets votre demande à l'équipe de {$clubName}. "
-            . "Un membre de l'équipe vous recontactera très rapidement pour confirmer votre réservation. "
-            . "Avez-vous d'autres questions ?";
+        return "Réservation confirmée ! {$circuit->getNom()} le {$debut->format('d/m/Y')} de {$debut->format('H\\hi')} à {$fin->format('H\\hi')} pour {$customerName}. Machine : {$check['aeronef']->getImmatriculation()}.";
     }
 
     private function toolListServices(Client $client): string
@@ -274,42 +232,12 @@ class VapiWebhookController extends AbstractController
 
         $lines = [];
         foreach ($circuits as $c) {
-            $nature = $c->getNature()?->getLabel() ?? '';
-            if (stripos($nature, 'Local') === false || stripos($nature, 'Onéreux') === false) {
-                continue;
-            }
-            $duree = $this->formatDuration($c->getDuree());
-            $prix = $c->getPrix() ? number_format($c->getPrix(), 2, ',', ' ') . ' euros' : 'sur devis';
-            $lines[] = "- {$c->getNom()} — Durée : {$duree} — Prix : {$prix}";
-        }
-
-        if (empty($lines)) {
-            return "Aucune prestation disponible pour ce club.";
+            $duree = $c->getDuree() ? $c->getDuree()->format('H\\hi') : '?';
+            $prix = $c->getPrix() ? number_format($c->getPrix(), 2, ',', ' ') . ' €' : 'sur devis';
+            $lines[] = "- {$c->getCode()} : {$c->getNom()} — Durée : {$duree} — Prix : {$prix}";
         }
 
         return "Voici nos prestations :\n" . implode("\n", $lines);
-    }
-
-    private function formatDuration(?\DateTimeInterface $duree): string
-    {
-        if (!$duree) {
-            return 'non définie';
-        }
-
-        $hours = (int) $duree->format('H');
-        $minutes = (int) $duree->format('i');
-        $totalMinutes = ($hours - 20) * 60 + $minutes;
-        if ($totalMinutes <= 0) {
-            $totalMinutes = $hours * 60 + $minutes;
-        }
-
-        if ($totalMinutes >= 60) {
-            $h = intdiv($totalMinutes, 60);
-            $m = $totalMinutes % 60;
-            return $m > 0 ? sprintf('%dh%02d', $h, $m) : "{$h}h";
-        }
-
-        return "{$totalMinutes} minutes";
     }
 
     private function toolCheckGiftCode(array $params, Client $client): string
@@ -376,15 +304,5 @@ class VapiWebhookController extends AbstractController
         $this->conversationManager->updateContext($thread, $contextUpdate);
 
         return $thread;
-    }
-
-    private function spokenTime(\DateTimeInterface $dt): string
-    {
-        $h = (int) $dt->format('G');
-        $m = (int) $dt->format('i');
-        if ($m === 0) {
-            return "{$h} heures";
-        }
-        return "{$h} heures {$m}";
     }
 }

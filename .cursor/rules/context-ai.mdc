@@ -1,0 +1,73 @@
+---
+description: Détails IA Kimi, Score OPS, proxy météo NOAA/Notamify
+globs:
+  - api/src/Service/KimiAiService.php
+  - api/src/Service/ScoreOpsService.php
+  - api/src/Controller/KimiProxyController.php
+  - api/src/Controller/ScoreOpsController.php
+  - pwa/components/dashboard/**
+---
+# IA — Kimi AI, Score OPS, Météo (Détails)
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+
+## Kimi AI (Moonshot)
+
+- API : `https://api.moonshot.cn/v1`
+- Modèle : `kimi-k2.5`
+- Clé API : `SiteSettings.kimiApiKey` (BDD, pas env)
+- Service : `KimiAiService` → appels via `HttpClientInterface`
+- Contexte système : prompt aéronautique dédié par type de requête
+
+### Routes IA
+
+| Method | Route | Usage |
+|--------|-------|-------|
+| POST | `/admin/ai/notam` | Interpréter NOTAM (texte → résumé FR structuré) |
+| POST | `/admin/ai/meteo-brief` | Briefing météo IA (METAR + TAF → analyse pilote) |
+| POST | `/admin/ai/chat` | Chat libre avec Kimi |
+
+### Conditions d'affichage (frontend)
+
+- `client.hasAI = true` → Onglet "Avis de KIMI" dans MetarView, bouton "Interpréter" NOTAM, bouton "Briefing IA"
+- `client.hasNotam = true` → Onglet "NOTAM" visible dans MetarView
+
+---
+
+## Score OPS
+
+### Principe
+Évaluation automatique de la compatibilité météo pour un vol :
+- Récupère METAR + TAF (NOAA) pour le code ICAO du client
+- Compare aux limites `FlightRule` (vent max, plafond min, visibilité min, etc.)
+- Calcule un score 0-100 avec couleur (rouge/orange/vert)
+
+### Routes
+
+| Method | Route | Controller |
+|--------|-------|------------|
+| GET | `/admin/score-ops/{icao}` | `ScoreOpsController` → `ScoreOpsService` |
+| GET | `/admin/score-ops/history/{icao}` | Historique des scores |
+
+### Frontend
+- Composant `ScoreOps.tsx` dans Dashboard
+- Cercle coloré animé avec score en pourcentage
+- Tooltip détaillé des paramètres évalués
+
+---
+
+## Proxy Météo
+
+| Method | Route | Source | Cache |
+|--------|-------|--------|-------|
+| GET | `/admin/weather/metar/{icao}` | NOAA AWC API | Redis 5min |
+| GET | `/admin/weather/taf/{icao}` | NOAA AWC API | Redis 15min |
+| GET | `/admin/weather/notam/{icao}` | Notamify API | Redis 30min |
+
+---
+
+## Entités liées
+
+- `FlightRule` : limites météo par type de vol (VFR jour, VFR nuit, IFR)
+- `PreFlightAnalysis` : résultat d'analyse pré-vol enregistré
+- `NotamCache` : cache NOTAM en BDD avec parsing structuré

@@ -119,6 +119,15 @@ class Circuit implements TenantAwareInterface
     #[Groups(groups: ['Circuit:write', 'Circuit:read'])]
     private ?string $webshopId = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(groups: ['Circuit:write', 'Circuit:read'])]
+    private ?string $briefingHtml = null;
+
+    #[ORM\ManyToOne(targetEntity: MediaObject::class)]
+    #[ORM\JoinColumn(name: 'briefing_image_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(groups: ['Circuit:write', 'Circuit:read'])]
+    private ?MediaObject $briefingImage = null;
+
     public function __construct()
     {
         $this->qualifications = new ArrayCollection();
@@ -300,6 +309,28 @@ class Circuit implements TenantAwareInterface
     {
         $this->webshopId = $webshopId;
 
+        return $this;
+    }
+
+    public function getBriefingHtml(): ?string
+    {
+        return $this->briefingHtml;
+    }
+
+    public function setBriefingHtml(?string $briefingHtml): static
+    {
+        $this->briefingHtml = $briefingHtml;
+        return $this;
+    }
+
+    public function getBriefingImage(): ?MediaObject
+    {
+        return $this->briefingImage;
+    }
+
+    public function setBriefingImage(?MediaObject $briefingImage): static
+    {
+        $this->briefingImage = $briefingImage;
         return $this;
     }
 }

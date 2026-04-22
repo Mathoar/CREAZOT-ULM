@@ -1,0 +1,247 @@
+---
+description: Contexte principal Logic'Ciel — stack, infra, modules, entités, multi-tenant
+alwaysApply: true
+---
+# CREAZOT-ULM — Contexte Projet (Logic'Ciel)
+
+## Règles générales
+
+- **Toujours répondre en français.**
+- **NE JAMAIS exécuter de commandes sur le serveur distant sans demande explicite.**
+- **NE JAMAIS déployer, rebuilder ou redémarrer de conteneurs Docker sans instruction claire.**
+- **Le workspace local est incomplet** : certains fichiers n'existent que sur le serveur.
+- **Après un `docker cp` dans le container PHP** : `rm -rf /app/var/cache/prod` + `bin/console cache:clear` + `docker restart creazot-ulm-php-1`.
+- **Chemin dans le container PHP = `/app/`** (pas `/srv/api/`).
+
+---
+
+## Infrastructure
+
+| Élément | Valeur |
+|---------|--------|
+| Serveur prod | `root@c6l.creazot.com` |
+| Chemin serveur | `/root/CREAZOT-ULM/` |
+| Domaine prod | `https://logic-ciel.com` |
+| BDD | PostgreSQL DigitalOcean (distante, `defaultdb`) |
+| BDD URL | `postgresql://doadmin:...@db-logic-ciel-do-user-18144705-0.h.db.ondigitalocean.com:25060/defaultdb?sslmode=require` |
+| Branche Git | `feature/ai-reservation-assistant` |
+| Workspace local | `/Users/mhoar/Desktop/CREAZOT-ULM` |
+
+---
+
+## Stack technique
+
+| Couche | Technologie |
+|--------|-------------|
+| API | PHP 8.3 / Symfony 7.1 / API Platform 4.0 / Doctrine ORM |
+| Serveur | FrankenPHP (Caddy) |
+| Frontend | Next.js 14 / React 18 / React-Admin 5 / MUI 5 / Tailwind |
+| Auth | Keycloak (OIDC/JWT) + NextAuth.js |
+| IA Texte | Moonshot AI / Kimi K2.5 |
+| IA Vocale | Vapi.ai |
+| Facturation | Odoo SaaS (JSON-RPC) |
+| SMS | Twilio (SDK 8.x) |
+
+---
+
+## Commandes de déploiement
+
+```bash
+# Build PWA (toujours --no-cache + les 2 compose files)
+docker compose -f compose.yaml -f compose.prod.yaml build --no-cache pwa
+docker compose -f compose.yaml -f compose.prod.yaml up -d pwa
+
+# Copier fichier PHP + refresh
+docker cp <fichier> creazot-ulm-php-1:/app/<path>
+docker exec creazot-ulm-php-1 rm -rf /app/var/cache/prod
+docker exec creazot-ulm-php-1 bin/console cache:clear
+docker restart creazot-ulm-php-1
+
+# Schema Doctrine
+docker exec creazot-ulm-php-1 bin/console doctrine:schema:update --force
+```
+
+---
+
+## Conteneurs Docker
+
+| Conteneur | Rôle | Path interne |
+|-----------|------|--------------|
+| `creazot-ulm-php-1` | API PHP (FrankenPHP) | `/app/` |
+| `creazot-ulm-pwa-1` | Frontend Next.js | — |
+| `creazot-ulm-keycloak-1` | Auth Keycloak | — |
+
+---
+
+## Arborescence clés
+
+| Dossier | Contenu |
+|---------|---------|
+| `pwa/components/admin/` | Composants React-Admin (client, modulePack, siteSettings, layout, planning, messageTemplate) |
+| `pwa/components/dashboard/components/Dashboard/` | Dashboard météo (MetarView, NotamView, ScoreOps, Cameras) |
+| `api/src/Entity/` | Entités Doctrine |
+| `api/src/Service/` | Services métier (VapiService, KimiAiService, ScoreOpsService, NotificationService, etc.) |
+| `api/src/Controller/` | Contrôleurs custom (Vapi, Weather, ScoreOps, AI, Odoo, Notification) |
+| `api/src/EventSubscriber/` | ModulePackSyncSubscriber, OdooSyncSubscriber, etc. |
+
+---
+
+## Architecture multi-tenant
+
+- Header `X-Client-Id` sur chaque requête API
+- `TenantFilterListener` → active filtre Doctrine `WHERE client_id = ?`
+- `TenantAssignSubscriber` → assigne `client_id` à la création
+- Frontend : `getClientHeaders()` dans `Admin.tsx`
+- `UserClientRole` relie user ↔ client avec rôle (`admin`/`pilot`)
+- Tables **sans** client_id (partagées) : `nature`, `qualification`, `profil_pilote`, `carnet_vol`, `certificat_medical`, `pilot_qualification`, `disponibilite`
+
+---
+
+## Modules Client (21 booleans sur `Client`)
+
+Synchronisés via `ModulePackSyncSubscriber` (introspection dynamique des champs boolean `has*`).
+
+```
+hasReservation, hasOptions, hasEmailConfirmation, hasGifts, hasWebshop,
+hasPartners, hasPassengerRegistration, hasOriginContact, hasPaymentManagement,
+hasExpensesManagement, hasMicrotrakTag, hasLandingManagement,
+hasIndividualFlightLogs, hasGroupUpdate, hasNotam,
+hasAI, hasAiReservationAssistant, hasVoiceAssistant, hasCams,
+hasSMS, hasPlanification
+```
+
+**Conditions d'affichage frontend :**
+
+| Module | Conditionne |
+|--------|-------------|
+| `hasAI` | Onglet "Avis de KIMI", bouton "Interpréter" NOTAM, bouton "Briefing IA" |
+| `hasNotam` | Onglet "NOTAM" dans MetarView |
+| `hasCams` | Bouton "Caméras" + composant `<Cameras>` dans Dashboard |
+| `hasVoiceAssistant` | Panneau Vapi dans ClientsEdit, menu "Assistant IA" |
+| `hasAiReservationAssistant` | Menu "Assistant IA" |
+| `hasPlanification` | Menu "Planification" + "Modèles messages" + menu "Briefing" + variable `{{lien_briefing}}` + page publique `/r/{shortcode}` |
+| `hasSMS` | Option SMS dans le select méthode d'envoi (page Planification) |
+
+**Formulaires :** `ClientsEdit.tsx` (onglet Options), `ModulePacksCreate.tsx`, `ModulePacksEdit.tsx`
+
+---
+
+## Domaines fonctionnels (détails dans fichiers dédiés)
+
+### Vapi.ai — Assistant Vocal
+→ Voir `context-vapi.mdc` pour les détails
+- Webhook tenant-aware : `POST /webhook/vapi/{clientId}`
+
+### Kimi AI — Briefing, NOTAM, Score OPS
+→ Voir `context-ai.mdc` pour les détails
+- Routes : `/admin/ai/notam`, `/admin/ai/meteo-brief`, `/admin/ai/chat`
+- Score OPS : `GET /admin/score-ops/{icao}`
+
+### Assistant IA Réservation (Email)
+- `ConversationThread`, `ConversationManager`, `ReservationAiService`, `EmailChannelService`
+- `PollInboundEmailsCommand` (CRON IMAP)
+
+### Planification & Notifications (SMS/Email)
+- `MessageTemplate` (tenant-aware) : modèles de messages avec variables `{{nom}}`, `{{circuit}}`, `{{date}}`, `{{heure}}`, `{{pilote}}`, `{{code}}`, `{{structure}}`, `{{lien_briefing}}`
+- `NotificationService` : envoi groupé SMS (Twilio) + Email (Symfony Mailer)
+- `NotificationController` : `POST /admin/notifications/send` + `POST /webhook/twilio/status`
+- Reservation : `notificationSent`, `notificationReceived`, `publicShortcode` (10 chars)
+- Credentials Twilio : sur `SiteSettings` (global), Sender ID déduit de `client.name` (11 chars max)
+- Frontend : page `/planning`, CRUD `/message_templates`, chips "Notifié" sur calendrier
+
+### Briefing public — Page passager
+→ Voir `context-briefing.mdc` pour les détails
+- Entité `Briefing` (1 par client) + champs `briefingHtml` / `briefingImage` sur `Circuit`
+- Route publique `GET /r/{shortcode}` (sans auth, rate-limit IP, expiration 7j)
+- Page Next.js `pwa/app/r/[shortcode]/` (SSR, mobile-first, dégradé `client.color`)
+- Resizer auto images > 1920 px (`ImageResizer` + listener `MediaObjectImageResizeSubscriber`)
+
+### Facturation Odoo
+→ Voir `context-billing.mdc` pour les détails
+- `MENSUEL = PricingTier.pricePerAeronef × maxAeronefs + Σ ModulePackPrice.monthlyPrice`
+
+---
+
+## Migration Planetair-Gestion → Logic'Ciel (2026-04-09)
+
+Migration complète de la base Planetair (mono-tenant) vers Logic'Ciel (SaaS multi-tenant, `client_id=5`).
+
+| Donnée | Détail |
+|--------|--------|
+| **Offset IDs** | +10000 sur tous les IDs entiers |
+| **Tables migrées** | 30 (dont 7 jointures) |
+| **Lignes importées** | ~16 300 |
+| **Users** | 24 nouveaux + 1 mappé (m_seb@icloud.com) |
+| **Rôles** | 4 admins + 22 pilotes (user_client_role) |
+| **UUID mapping** | `1effe8dc...` → `1f105d7c...` (m_seb) |
+| **Tables partagées** | nature (6) et qualification (7) identiques, pas importées |
+| **Config client** | cam_ids (15 caméras), airport_codes (FMEP/FMEE/LFMA), lat/lng, timezone |
+| **Validation** | Phase 1-4 passées (comptages, FK, cohérence, isolation) |
+| **Reste** | Fichiers physiques media_object (43) sur ancien serveur |
+
+Scripts : `docs/generate_migration.py`, `docs/migration_planetair_to_logicciel.sql`, `docs/planetair_dump_20260409.sql`
+
+---
+
+## Clients actifs
+
+| ID | Nom | Statut |
+|----|-----|--------|
+| 1 | Aix ULM | Actif |
+| 2 | Test Aero | Test |
+| 3 | Skyquest | Actif |
+| 5 | **Planetair974** | Migré (04/2026) |
+| 6 | Air Aventures | Actif |
+| 7 | Survol Réunion | Actif |
+
+---
+
+## Entités Doctrine principales
+
+**Client** (central), User, UserClientRole, ProfilPilote, Reservation, Circuit, Aeronef, Vol, CarnetVol, FlightRule, NotamCache, PreFlightAnalysis, ConversationThread, ModulePack, ModulePackPrice, PricingCategory, PricingTier, SiteSettings, ClientAccessRequest, Camera, Landing, Payment, PaymentDetail, Expense, CountryCode, Cadeau, Contact, Origine, Combinaison, Passager, CertificatMedical, PilotQualification, Disponibilite, Entretien, Rappel, MediaObject, MessageTemplate, **Briefing**.
+
+### Champs Client notables
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `vapiAssistantId` | string? | ID assistant Vapi |
+| `aiReservationEmail` | string? | Email assistant IA |
+| `lat`, `lng`, `timezone` | float, float, string | Coordonnées + fuseau |
+| `billingCycle` | string | `monthly` / `annual` |
+| `annualDiscount` | float | Remise annuelle (30%) |
+| `address`, `zipcode`, `city` | string? | Adresse postale (utilisée par la page publique briefing — Google Maps en mode itinéraire) |
+| `color` | string? (hex) | Couleur identité club — utilisée hero page publique, accent tabs, icônes contacts |
+| `briefing` | `OneToOne(Briefing)` | Briefing public général (côté `Briefing.ownerClient`) |
+
+---
+
+## Rôles
+
+| Rôle Keycloak | Symfony | Accès |
+|---------------|---------|-------|
+| `super_admin` | `ROLE_SUPER_ADMIN` | Bypass total UserGuard |
+| `admin` | `OIDC_ADMIN` | Admin client(s) rattaché(s) |
+| (aucun) | `OIDC_USER` | Filtré par client |
+
+---
+
+## Providers frontend (arbre)
+
+```
+SessionProvider → ClientProvider → SiteSettingsProvider → SessionContextProvider → UserGuard → AdminAdapter
+```
+
+- `ClientProvider` : charge clients du user, expose `{ client, clients, switchClient }`
+- `SiteSettingsProvider` : fetch `/site-settings`, expose `{ siteSettings }`
+
+---
+
+## Variables d'environnement
+
+| Variable | Usage |
+|----------|-------|
+| `NEXT_PUBLIC_ENTRYPOINT` | `https://logic-ciel.com` |
+| `ODOO_URL/DB/LOGIN/API_KEY` | Connexion Odoo |
+| `KEYCLOAK_ADMIN_USER/PASSWORD` | `admin` / `Aeroprakt22` |
+
+Clés API IA + Twilio : dans `SiteSettings` en BDD (pas en env).

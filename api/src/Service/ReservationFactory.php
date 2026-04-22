@@ -100,15 +100,10 @@ class ReservationFactory
     public function calculateEndTime(Circuit $circuit, \DateTimeInterface $debut): \DateTime
     {
         $duree = $circuit->getDuree();
-        $hours = (int) $duree->format('H');
-        $minutes = (int) $duree->format('i');
-        $totalMinutes = ($hours - 20) * 60 + $minutes;
-        if ($totalMinutes <= 0) {
-            $totalMinutes = $hours * 60 + $minutes;
-        }
+        $minutes = (int) $duree->format('H') * 60 + (int) $duree->format('i');
 
         $fin = \DateTime::createFromInterface($debut);
-        $fin->modify("+{$totalMinutes} minutes");
+        $fin->modify("+{$minutes} minutes");
 
         return $fin;
     }

@@ -13,7 +13,6 @@ use App\Service\EmailChannelService;
 use App\Service\ReservationAiService;
 use App\Service\ReservationFactory;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,7 +30,6 @@ class AiReservationController extends AbstractController
         private ReservationFactory $reservationFactory,
         private EmailChannelService $emailChannelService,
         private EntityManagerInterface $em,
-        private LoggerInterface $logger,
     ) {}
 
     #[Route('/admin/ai-reservation/webhook/email', name: 'ai_reservation_email_webhook', methods: ['POST'])]
@@ -94,10 +92,8 @@ class AiReservationController extends AbstractController
 
         $slot = $proposedSlots[$slotIndex] ?? $proposedSlots[0];
 
-        $client = $thread->getClient();
-        $tz = new \DateTimeZone($client->getTimezone() ?? 'Indian/Reunion');
-        $debut = new \DateTime($slot['debut'], $tz);
-        $fin = new \DateTime($slot['fin'], $tz);
+        $debut = new \DateTime($slot['debut']);
+        $fin = new \DateTime($slot['fin']);
 
         if ($circuitId) {
             $circuit = $this->em->getRepository(\App\Entity\Circuit::class)->find($circuitId);
@@ -105,16 +101,15 @@ class AiReservationController extends AbstractController
             return new JsonResponse(['error' => 'Aucun circuit associé à cette conversation.'], 400);
         }
 
+        $client = $thread->getClient();
         $check = $this->availabilityService->isSlotAvailable($client, $circuit, $debut, $fin);
         if ($check === false) {
             return new JsonResponse(['error' => 'Ce créneau n\'est plus disponible. Veuillez en choisir un autre.'], 409);
         }
 
-        $customerName = $extracted['customer_name'] ?? $thread->getCustomerName() ?? 'Client';
-
         $reservation = $this->reservationFactory->createFromAssistant(
             $client, $circuit, $debut, $check['aeronef'], $check['pilote'],
-            $customerName,
+            $extracted['customer_name'] ?? $thread->getCustomerName() ?? 'Client',
             $thread->getChannel(), [
                 'email' => $thread->getCustomerEmail(),
                 'phone' => $thread->getCustomerPhone(),
@@ -123,8 +118,6 @@ class AiReservationController extends AbstractController
         );
 
         $this->conversationManager->linkReservation($thread, $reservation);
-
-        $this->notifyCustomerConfirmation($thread, $reservation, $circuit, $debut);
 
         return new JsonResponse([
             'success' => true,
@@ -135,19 +128,14 @@ class AiReservationController extends AbstractController
 
     #[Route('/admin/ai-reservation/conversations/{id}/cancel', name: 'ai_reservation_cancel', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function cancelConversation(int $id, Request $request): JsonResponse
+    public function cancelConversation(int $id): JsonResponse
     {
         $thread = $this->threadRepo->find($id);
         if (!$thread) {
             return new JsonResponse(['error' => 'Conversation non trouvée.'], 404);
         }
 
-        $data = json_decode($request->getContent(), true) ?? [];
-        $reason = $data['reason'] ?? null;
-
         $this->conversationManager->cancel($thread);
-
-        $this->notifyCustomerCancellation($thread, $reason);
 
         return new JsonResponse(['success' => true, 'status' => 'cancelled']);
     }
@@ -199,110 +187,5 @@ class AiReservationController extends AbstractController
             'cancelled' => $counts['cancelled'] ?? 0,
             'total' => array_sum($counts),
         ]);
-    }
-
-    // ──────────── Notifications client ────────────
-
-    private function notifyCustomerConfirmation(
-        ConversationThread $thread,
-        Reservation $reservation,
-        \App\Entity\Circuit $circuit,
-        \DateTimeInterface $debut,
-    ): void {
-        $client = $thread->getClient();
-        $clubName = $client->getName() ?? 'Notre club';
-        $customerName = $thread->getCustomerName() ?? 'Client';
-        $phone = $client->getPhone() ?? '';
-
-        $dateStr = $debut->format('d/m/Y');
-        $timeStr = $debut->format('H\hi');
-        $circuitName = $circuit->getNom() ?? '';
-        $code = $reservation->getCode();
-
-        $message = "Bonjour {$customerName},\n\n"
-            . "Nous avons le plaisir de vous confirmer votre réservation :\n\n"
-            . "  Prestation : {$circuitName}\n"
-            . "  Date : {$dateStr}\n"
-            . "  Heure : {$timeStr}\n"
-            . "  Référence : {$code}\n\n"
-            . "Nous vous attendons avec impatience !\n\n"
-            . "À bientôt,\n"
-            . "L'équipe {$clubName}";
-
-        if ($phone) {
-            $message .= "\nTél : {$phone}";
-        }
-
-        $customerEmail = $thread->getCustomerEmail();
-        if ($customerEmail) {
-            $subject = "Confirmation de votre réservation — {$clubName}";
-            $this->sendNotificationEmail($client, $customerEmail, $subject, $message);
-        }
-
-        $this->conversationManager->appendMessage($thread, 'system', "Notification de confirmation envoyée au client.");
-
-        $this->logger->info('[AI-RESA] Confirmation notification sent for thread #{id}', [
-            'id' => $thread->getId(),
-            'email' => $customerEmail,
-            'phone' => $thread->getCustomerPhone(),
-        ]);
-    }
-
-    private function notifyCustomerCancellation(ConversationThread $thread, ?string $reason): void
-    {
-        $client = $thread->getClient();
-        $clubName = $client->getName() ?? 'Notre club';
-        $customerName = $thread->getCustomerName() ?? 'Client';
-        $phone = $client->getPhone() ?? '';
-
-        $context = $thread->getAiContext() ?? [];
-        $extracted = $context['extracted'] ?? [];
-        $circuitCode = $extracted['circuit_code'] ?? '';
-        $date = $extracted['preferred_date'] ?? '';
-
-        $message = "Bonjour {$customerName},\n\n"
-            . "Nous avons bien reçu votre demande de réservation";
-
-        if ($circuitCode && $date) {
-            $message .= " ({$circuitCode} le {$date})";
-        }
-
-        $message .= ".\n\nMalheureusement, nous ne sommes pas en mesure de confirmer ce créneau.";
-
-        if ($reason) {
-            $message .= "\nMotif : {$reason}";
-        }
-
-        $message .= "\n\nN'hésitez pas à nous recontacter pour trouver un autre créneau qui vous conviendrait."
-            . "\n\nCordialement,\nL'équipe {$clubName}";
-
-        if ($phone) {
-            $message .= "\nTél : {$phone}";
-        }
-
-        $customerEmail = $thread->getCustomerEmail();
-        if ($customerEmail) {
-            $subject = "Votre demande de réservation — {$clubName}";
-            $this->sendNotificationEmail($client, $customerEmail, $subject, $message);
-        }
-
-        $this->conversationManager->appendMessage($thread, 'system', "Notification d'annulation envoyée au client.");
-
-        $this->logger->info('[AI-RESA] Cancellation notification sent for thread #{id}', [
-            'id' => $thread->getId(),
-            'reason' => $reason,
-        ]);
-    }
-
-    private function sendNotificationEmail(\App\Entity\Client $client, string $toEmail, string $subject, string $body): void
-    {
-        try {
-            $this->emailChannelService->sendResponse($client, $toEmail, $subject, $body);
-        } catch (\Throwable $e) {
-            $this->logger->error('[AI-RESA] Failed to send notification email: {error}', [
-                'error' => $e->getMessage(),
-                'to' => $toEmail,
-            ]);
-        }
     }
 }

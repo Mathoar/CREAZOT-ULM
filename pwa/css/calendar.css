@@ -1,0 +1,91 @@
+.rbc-time-slot { 
+    min-height: 30px; 
+}
+
+.rbc-time-view {
+    min-height: 600px; 
+}
+
+.rbc-month-row {
+    min-height: 100px; 
+}
+
+.rbc-month-row {
+    min-height: 100px; 
+}
+
+.rbc-row-bg {
+    min-height: 100px; 
+}
+
+.calendar-container {
+    min-height: 740px;
+}
+
+.custom_row {
+    height: auto;
+}
+
+.rbc-event {
+    width: auto !important;
+}
+
+.rbc-event.event-reservation {
+    width: 33.33% !important;
+}
+
+.rbc-event[style*="width: 50%"] {
+    left: 33.33%!important;
+}
+
+.rbc-current-time-indicator {
+    display: none;
+}
+
+.rbc-allday-cell {
+    z-index: 0 !important;
+}
+  
+.rbc-event-allday {
+    z-index: 0 !important;
+    position: relative !important;
+}
+
+.rbc-row.rbc-allday-row {
+    z-index: 0 !important;
+    position: relative !important;
+}
+
+.rbc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    
+    gap: 0.5rem;
+  }
+  
+  .rbc-toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .rbc-toolbar-label {
+    /* font-weight: bold; */
+    font-size: 1rem;
+    text-align: center;
+    flex: 1;
+  }
+
+@media (min-width: 600px) {
+.rbc-toolbar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+}
+}
+  

@@ -1,0 +1,66 @@
+# compose.override.yaml 
+# Development environment override
+services:
+  php:
+    build:
+      context: ./api
+      target: frankenphp_dev
+    volumes:
+      - ./api:/app
+      - /app/var
+      - ./api/frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./api/frankenphp/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.dev.ini:ro
+    environment:
+      MERCURE_EXTRA_DIRECTIVES: demo
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    tty: true
+
+  pwa:
+    build:
+      context: ./pwa
+      target: dev
+    volumes:
+      - ./pwa:/srv/app
+    environment:
+      API_PLATFORM_CREATE_CLIENT_ENTRYPOINT: http://php
+      API_PLATFORM_CREATE_CLIENT_OUTPUT: .
+      WATCHPACK_POLLING: "true"
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+
+  database:
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+
+  keycloak:
+    build:
+      context: ./helm/api-platform/keycloak/
+      target: keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-!ChangeMe!}
+      KEYCLOAK_MODE: ${KEYCLOAK_MODE:-dev} # dev par défaut
+    volumes:
+      - ./helm/api-platform/keycloak/themes/api-platform-demo:/opt/keycloak/themes/api-platform-demo:ro
+      - ./helm/api-platform/keycloak/providers/owner-policy.jar:/opt/keycloak/providers/owner-policy.jar:ro
+    ports:
+      - "8080:8080"
+
+
+  keycloak-config-cli:
+    build:
+      context: ./helm/api-platform/keycloak
+    environment:
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-!ChangeMe!}
+      KEYCLOAK_URL: http://keycloak:8080/
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-!ChangeMe!}
+      KC_AVAILABILITYCHECK_ENABLED: "true"
+      KC_AVAILABILITYCHECK_TIMEOUT: 120s
+      IMPORT_FILES_LOCATIONS: "/config/*"
+    volumes:
+      - ./helm/api-platform/keycloak/config:/config
+      - ./helm/api-platform/keycloak/keycloak-config-cli.jar:/opt/keycloak/bin/keycloak-config-cli.jar

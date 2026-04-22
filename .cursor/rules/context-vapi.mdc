@@ -1,0 +1,63 @@
+---
+description: Détails Vapi.ai — routes, webhook, service, frontend, bug fixes
+globs:
+  - api/src/Service/VapiService.php
+  - api/src/Controller/VapiAdminController.php
+  - api/src/Controller/VapiWebhookController.php
+  - pwa/components/admin/client/ClientsEdit.tsx
+---
+# Vapi.ai — Assistant Vocal (Détails)
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+
+## Principe
+
+Chaque client peut avoir un assistant vocal Vapi.ai. L'assistant est créé/géré depuis l'onglet Options de `ClientsEdit.tsx`. La clé API est globale (SaaS) dans `SiteSettings.vapiApiKey`.
+
+---
+
+## Routes Backend
+
+### Admin (gestion)
+
+| Method | Route | Controller |
+|--------|-------|------------|
+| POST | `/admin/vapi/setup-assistant/{clientId}` | `VapiAdminController::setupAssistant` |
+| DELETE | `/admin/vapi/delete-assistant/{clientId}` | `VapiAdminController::deleteAssistant` |
+| GET | `/admin/vapi/assistant-status/{clientId}` | `VapiAdminController::assistantStatus` |
+
+### Webhook (réception appels)
+
+| Method | Route | Controller |
+|--------|-------|------------|
+| POST | `/webhook/vapi/{clientId}` | `VapiWebhookController::handleWebhook` |
+
+- URL **tenant-aware** : le `clientId` est dans le path.
+- Types gérés : `tool-calls` (check_availability, confirm_reservation, list_services), `end-of-call-report`.
+
+---
+
+## VapiService (`api/src/Service/VapiService.php`)
+
+- Méthodes : `createAssistant`, `updateAssistant`, `getAssistant`, `deleteAssistant`, `listAssistants`
+- Voice provider = `11labs` (PAS `elevenlabs` → erreur 400)
+- Voice ID = `sarah` (voix par défaut)
+- Gestion erreurs : vérifie `statusCode >= 400`, throw `RuntimeException` avec body Vapi
+
+---
+
+## Frontend (ClientsEdit.tsx)
+
+Composant `VapiClientSetup` dans l'onglet Options :
+- Affiche statut (Chip vert/gris)
+- Détails : nom assistant, ID, date création, webhook URL
+- Actions : Créer/Mettre à jour, Supprimer, Tester sur Vapi.ai, Refresh
+- Extraction clientId depuis IRI : `rawId.replace(/.*\//, "")`
+
+---
+
+## Bug fixes historiques
+
+1. **URL malformée** : IRI complet passé comme clientId → double slash → 404. Fix : extraction numérique.
+2. **assistant_id: null** : provider `elevenlabs` au lieu de `11labs` → 400 silencieux. Fix : correction provider + error handling explicite.
+3. **Webhook non tenant-aware** : URL générique sans clientId. Fix : route `/webhook/vapi/{clientId}`.

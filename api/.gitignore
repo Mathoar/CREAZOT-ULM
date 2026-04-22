@@ -1,0 +1,40 @@
+/docker/db/data
+
+###> symfony/framework-bundle ###
+/.env
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+.phpunit.result.cache
+###< phpunit/phpunit ###
+
+###> Docker/Dockerfile to allow debug in prod ###
+/Dockerfile
+###< Docker/Dockerfile to allow debug in prod ###
+
+###> Files containing env secret variables ###
+/point.env.(dev)
+/point.env.(prod)
+###< Files containing env secret variables ###
+###> liip/imagine-bundle ###
+/public/media/cache/
+###< liip/imagine-bundle ###
+/public/images/
+/public/media/

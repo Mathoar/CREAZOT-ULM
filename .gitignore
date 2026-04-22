@@ -1,14 +1,21 @@
-# Fichiers sensibles
+/.env
+/helm/api-platform/charts/*
+!/helm/api-platform/charts/.gitignore
+
+###> Compose/Prod Compose with env secret vars ###
+/compose.yaml
+/compose.*.yaml
+/compoz.prod.yaml
+/compoze.(dev).yaml
+/compoze.(prod).yaml
+###< Compose/Prod Compose with env secret vars ###
+
+/API_ARCHIVES/
+/app/
+/components/
+/types/
+###> Fichiers secrets ###
 api/.env
-
-# OS / IDE
-.DS_Store
-**/.DS_Store
-.vscode/
-.cursor/
-
-# Dependencies / Generated
-node_modules/
-api/vendor/
-api/var/
-pwa/.next/
+**/.env.local
+**/.env.*.local
+###< Fichiers secrets ###

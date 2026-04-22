@@ -8,14 +8,11 @@ use App\Entity\Aeronef;
 use App\Entity\Circuit;
 use App\Entity\Client;
 use App\Entity\ProfilPilote;
-use App\Entity\UserClientRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
 class AvailabilityService
 {
-    private const TURNAROUND_MINUTES = 15;
-
     public function __construct(
         private EntityManagerInterface $em,
         private LoggerInterface $logger,
@@ -27,10 +24,8 @@ class AvailabilityService
     public function findAvailableSlots(Client $client, Circuit $circuit, \DateTimeInterface $date, int $maxSlots = 5): array
     {
         $durationMinutes = $this->getCircuitDurationMinutes($circuit);
-        $this->logger->error('[AVAIL] duration={min}min for circuit={code}', [
-            'min' => $durationMinutes, 'code' => $circuit->getCode(),
-        ]);
         if ($durationMinutes <= 0) {
+            $this->logger->warning('Circuit {code} has no valid duration', ['code' => $circuit->getCode()]);
             return [];
         }
 
@@ -41,35 +36,25 @@ class AvailabilityService
         $dayEnd = $this->buildDayBoundary($date, $client->getMaxHours(), $tz, 20, 0);
 
         $aircraft = $this->getAvailableAircraft($clientId);
-        $this->logger->error('[AVAIL] aircraft count={count} for client={id}', [
-            'count' => count($aircraft), 'id' => $clientId,
-        ]);
         if (empty($aircraft)) {
+            $this->logger->info('No available aircraft for client {id}', ['id' => $clientId]);
             return [];
         }
 
         $pilots = $this->getQualifiedPilots($clientId, $circuit);
-        $this->logger->error('[AVAIL] pilots count={count} for circuit={code} client={id}', [
-            'count' => count($pilots), 'code' => $circuit->getCode(), 'id' => $clientId,
-        ]);
         if (empty($pilots)) {
+            $this->logger->info('No qualified pilot for circuit {code} / client {id}', [
+                'code' => $circuit->getCode(), 'id' => $clientId,
+            ]);
             return [];
         }
 
         $existingReservations = $this->getReservationsForDay($clientId, $dayStart, $dayEnd);
         $unavailabilities = $this->getUnavailabilitiesForDay($pilots, $dayStart, $dayEnd);
 
-        $this->logger->error('[AVAIL] window={start} -> {end}, resas={resas}, indispos={indispos}', [
-            'start' => $dayStart->format('Y-m-d H:i T'),
-            'end' => $dayEnd->format('Y-m-d H:i T'),
-            'resas' => count($existingReservations),
-            'indispos' => count($unavailabilities),
-        ]);
-
         $slots = [];
         $cursor = clone $dayStart;
         $interval = new \DateInterval("PT{$durationMinutes}M");
-        $stepMinutes = $durationMinutes + self::TURNAROUND_MINUTES;
 
         while ($cursor < $dayEnd && count($slots) < $maxSlots) {
             $slotEnd = (clone $cursor)->add($interval);
@@ -98,7 +83,7 @@ class AvailabilityService
                 'prix' => $circuit->getPrix() ?? 0.0,
             ];
 
-            $cursor = (clone $cursor)->modify("+{$stepMinutes} minutes");
+            $cursor = clone $slotEnd;
         }
 
         return $slots;
@@ -121,15 +106,7 @@ class AvailabilityService
         $dayStart = $this->buildDayBoundary($debut, $client->getMinHours(), $tz, 6, 0);
         $dayEnd = $this->buildDayBoundary($debut, $client->getMaxHours(), $tz, 20, 0);
 
-        $this->logger->error('[AVAIL] isSlotAvailable debut={d} fin={f} dayStart={s} dayEnd={e}', [
-            'd' => $debut->format('Y-m-d H:i P'),
-            'f' => $fin->format('Y-m-d H:i P'),
-            's' => $dayStart->format('Y-m-d H:i P'),
-            'e' => $dayEnd->format('Y-m-d H:i P'),
-        ]);
-
         if ($debut < $dayStart || $fin > $dayEnd) {
-            $this->logger->error('[AVAIL] REJECTED: outside day boundary');
             return false;
         }
 
@@ -138,10 +115,6 @@ class AvailabilityService
         $reservations = $this->getReservationsForDay($clientId, $dayStart, $dayEnd);
         $unavailabilities = $this->getUnavailabilitiesForDay($pilots, $dayStart, $dayEnd);
 
-        $this->logger->error('[AVAIL] isSlot: aircraft={a} pilots={p} resas={r}', [
-            'a' => count($aircraft), 'p' => count($pilots), 'r' => count($reservations),
-        ]);
-
         $aeronef = null;
         if ($preferredAeronef && $this->isAircraftFree($preferredAeronef, $reservations, $debut, $fin)) {
             $aeronef = $preferredAeronef;
@@ -149,7 +122,6 @@ class AvailabilityService
             $aeronef = $this->findFreeAircraft($aircraft, $reservations, $debut, $fin);
         }
         if (!$aeronef) {
-            $this->logger->error('[AVAIL] REJECTED: no free aircraft');
             return false;
         }
 
@@ -160,7 +132,6 @@ class AvailabilityService
             $pilote = $this->findFreePilot($pilots, $reservations, $unavailabilities, $debut, $fin);
         }
         if (!$pilote) {
-            $this->logger->error('[AVAIL] REJECTED: no free pilot');
             return false;
         }
 
@@ -191,16 +162,7 @@ class AvailabilityService
             return 0;
         }
 
-        $hours = (int) $duree->format('H');
-        $minutes = (int) $duree->format('i');
-
-        $totalMinutes = ($hours - 20) * 60 + $minutes;
-
-        if ($totalMinutes <= 0) {
-            $totalMinutes = $hours * 60 + $minutes;
-        }
-
-        return $totalMinutes;
+        return (int) $duree->format('H') * 60 + (int) $duree->format('i');
     }
 
     private function buildDayBoundary(
@@ -213,9 +175,8 @@ class AvailabilityService
         $h = $hourRef ? (int) $hourRef->format('H') : $defaultHour;
         $m = $hourRef ? (int) $hourRef->format('i') : $defaultMinute;
 
-        $dt = new \DateTime($date->format('Y-m-d'), new \DateTimeZone('UTC'));
+        $dt = new \DateTime($date->format('Y-m-d'), $tz);
         $dt->setTime($h, $m, 0);
-        $dt->setTimezone($tz);
 
         return $dt;
     }
@@ -244,7 +205,8 @@ class AvailabilityService
             ->select('pp')
             ->from(ProfilPilote::class, 'pp')
             ->join('pp.pilote', 'u')
-            ->join(UserClientRole::class, 'ucr', 'WITH', 'ucr.user = u AND ucr.client = :clientId')
+            ->join('u.clients', 'cl')
+            ->andWhere('cl.id = :clientId')
             ->setParameter('clientId', $clientId);
 
         $requiredQualifications = $circuit->getQualifications();
@@ -318,15 +280,8 @@ class AvailabilityService
 
     private function isAircraftFree(Aeronef $aeronef, array $reservations, \DateTimeInterface $debut, \DateTimeInterface $fin): bool
     {
-        $buffer = self::TURNAROUND_MINUTES;
         foreach ($reservations as $r) {
-            if ((int) $r['aeronef_id'] !== $aeronef->getId()) {
-                continue;
-            }
-            $resEnd = $r['fin'] instanceof \DateTimeInterface
-                ? (clone $r['fin'])->modify("+{$buffer} minutes")
-                : $r['fin'];
-            if ($this->overlaps($r['debut'], $resEnd, $debut, $fin)) {
+            if ((int) $r['aeronef_id'] === $aeronef->getId() && $this->overlaps($r['debut'], $r['fin'], $debut, $fin)) {
                 return false;
             }
         }
@@ -350,15 +305,8 @@ class AvailabilityService
             return false;
         }
 
-        $buffer = self::TURNAROUND_MINUTES;
         foreach ($reservations as $r) {
-            if (!$r['pilote_id'] || (string) $r['pilote_id'] !== (string) $userId) {
-                continue;
-            }
-            $resEnd = $r['fin'] instanceof \DateTimeInterface
-                ? (clone $r['fin'])->modify("+{$buffer} minutes")
-                : $r['fin'];
-            if ($this->overlaps($r['debut'], $resEnd, $debut, $fin)) {
+            if ($r['pilote_id'] && (string) $r['pilote_id'] === (string) $userId && $this->overlaps($r['debut'], $r['fin'], $debut, $fin)) {
                 return false;
             }
         }

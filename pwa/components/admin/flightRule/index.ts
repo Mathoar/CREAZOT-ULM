@@ -1,6 +1,6 @@
-import { FlightRuleList } from "./FlightRuleList";
-import { FlightRuleCreate } from "./FlightRuleCreate";
-import { FlightRuleEdit } from "./FlightRuleEdit";
+import { FlightRuleList } from './FlightRuleList';
+import { FlightRuleCreate } from './FlightRuleCreate';
+import { FlightRuleEdit } from './FlightRuleEdit';
 
 const flightRuleResourceProps = {
     list: FlightRuleList,

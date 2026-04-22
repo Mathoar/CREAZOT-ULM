@@ -1,0 +1,139 @@
+---
+description: Cartographie fine du code — entités, controllers, services, providers, frontend
+globs:
+  - api/src/**
+  - pwa/components/**
+  - pwa/app/**
+---
+# Cartographie du Code — Logic'Ciel
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+> Objectif : permettre à un nouvel agent de savoir **quel fichier fait quoi** sans tout explorer.
+
+---
+
+## Backend PHP (`api/src/`)
+
+### Entités (`Entity/`)
+
+| Fichier | Rôle | Champs clés |
+|---------|------|-------------|
+| `Client.php` | **Central** — structure multi-tenant | 19 booleans modules, `vapiAssistantId`, `aiReservationEmail`, `lat/lng/timezone`, `billingCycle`, `odooPartnerId` |
+| `User.php` | Utilisateur Keycloak (OIDC) | Rattaché à 1+ `Client`, rôles Symfony |
+| `SiteSettings.php` | Config globale SaaS (singleton) | `kimiApiKey`, `vapiApiKey`, `url` (logo base URL) |
+| `ModulePack.php` | Pack de modules facturables | Mêmes 19 booleans que `Client` |
+| `FlightRule.php` | Règles météo par type de vol | `maxWind`, `minCeiling`, `minVisibility`, etc. |
+| `NotamCache.php` | Cache NOTAM en BDD | ICAO, texte brut, parsing structuré |
+| `ConversationThread.php` | Conversation IA réservation (email) | Messages, statut, client |
+| `MediaObject.php` | Upload fichiers (API Platform) | `Assert\File` strict : JPEG/PNG/PDF |
+| `Briefing.php` | Briefing public général (1 par client) | `ownerClient` (OneToOne), `html`, `headerImage`, `showMap`, `extraContacts` |
+| `Reservation.php` | Réservation passager | + `publicShortcode` (10 chars, base de la page `/r/`) |
+
+### Contrôleurs (`Controller/`)
+
+| Fichier | Routes | Rôle |
+|---------|--------|------|
+| `VapiAdminController.php` | `POST/DELETE/GET /admin/vapi/*` | Gestion assistants vocaux Vapi |
+| `VapiWebhookController.php` | `POST /webhook/vapi/{clientId}` | Réception appels Vapi |
+| `ScoreOpsController.php` | `GET /admin/score-ops/{icao}`, `POST .../save` | Calcul + sauvegarde Score OPS |
+| `KimiProxyController.php` | `POST /admin/ai/{notam,meteo-brief,chat,analyze-image}` | Proxy vers Kimi AI |
+| `AiReservationController.php` | `POST /admin/ai-reservation/*` | Webhook email + conversations IA |
+| `OdooDocumentController.php` | `POST/GET/DELETE /admin/odoo-documents/*` | Upload/download docs Odoo |
+| `OdooTestController.php` | `POST /admin/odoo/test-connection` | Test connexion Odoo |
+| `PublicReservationController.php` | `GET /r/{shortcode}` | Page passager publique (sans auth, rate-limit IP, exp. 7j). Helper `mediaUrl()` car `MediaObject->contentUrl` vaut `null` hors API Platform. |
+| `NotificationController.php` | `POST /admin/notifications/send` + `POST /webhook/twilio/status` | Envoi groupé SMS/email + ack Twilio |
+
+### Services (`Service/`)
+
+| Fichier | Rôle | Appelé par |
+|---------|------|------------|
+| `VapiService.php` | Appels API Vapi.ai (CRUD assistants) | `VapiAdminController` |
+| `KimiAiService.php` | Appels API Moonshot/Kimi K2.5 | `KimiProxyController`, `ReservationAiService` |
+| `ScoreOpsService.php` | Calcul score météo vs FlightRule | `ScoreOpsController` |
+| `ReservationAiService.php` | Orchestration IA réservation | `AiReservationController` |
+| `ConversationManager.php` | CRUD ConversationThread | `ReservationAiService` |
+| `EmailChannelService.php` | Envoi/réception emails (IMAP/SMTP) | `PollInboundEmailsCommand` |
+| `AvailabilityService.php` | Vérification dispos (réservation) | `VapiWebhookController`, `ReservationAiService` |
+| `OdooJsonRpcService.php` | Appels JSON-RPC Odoo | `OdooSyncSubscriber`, controllers Odoo |
+| `InvoiceCalculator.php` | Calcul montant facturation | `BillingCronCommand` |
+| `NotificationService.php` | Envoi SMS Twilio + Email Symfony Mailer, résolution variables (dont `{{lien_briefing}}` si `hasPlanification`) | `NotificationController` |
+| `ImageResizer.php` | Resize GD natif (max 1920 px largeur, JPEG q.85 / PNG niv.6, transparence préservée) | `MediaObjectImageResizeSubscriber` |
+| `ShortcodeGenerator.php` | Génération `publicShortcode` (10 chars alphanumériques) | `ReservationFactory` |
+
+### EventSubscribers
+
+| Fichier | Écoute | Action |
+|---------|--------|--------|
+| `ModulePackSyncSubscriber.php` | Changement `PricingCategory` | Synchronise modules du pack → client |
+| `OdooSyncSubscriber.php` | Création/modification `Client` | Crée/met à jour partner Odoo |
+| `MediaObjectImageResizeSubscriber.php` | `postPersist MediaObject` | Resize automatique image > 1920 px via `ImageResizer` |
+
+### Commands
+
+| Fichier | Commande | Exécution |
+|---------|----------|-----------|
+| `BillingCronCommand.php` | `app:billing-cron` | CRON quotidien — factures |
+| `PollInboundEmailsCommand.php` | `app:poll-emails` | CRON — emails entrants (IMAP) |
+| `TestOdooFlowCommand.php` | `app:test-odoo` | Test manuel connexion Odoo |
+
+---
+
+## Frontend Next.js (`pwa/`)
+
+### Providers (arbre)
+
+```
+SessionProvider (NextAuth)
+  └─ ClientProvider (useClient → { client, clients, switchClient })
+       └─ SiteSettingsProvider (useSiteSettings → { siteSettings })
+            └─ SessionContextProvider (useSessionContext)
+                 └─ UserGuard → Admin.tsx (HydraAdmin)
+```
+
+> `ClientProvider`, `SiteSettingsProvider`, `SessionContextProvider` ne sont **pas dans le workspace local** — uniquement sur le serveur.
+
+### CRUD Admin (`components/admin/`)
+
+| Dossier | Entité | Fichiers |
+|---------|--------|----------|
+| `client/` | Client | `ClientsCreate`, `ClientsEdit`, `ClientShow` |
+| `user/` | User | `UsersList`, `UserEdit` |
+| `modulePack/` | ModulePack | `ModulePacksCreate`, `ModulePacksEdit` |
+| `flightRule/` | FlightRule | List, Create, Edit, Form |
+| `profile/` | ProfilPilote | Create, Edit, List |
+| `conversationThread/` | ConversationThread | List, Show |
+| `siteSettings/` | SiteSettings | `SiteSettingsEdit` |
+| `briefing/` | Briefing | `BriefingsEdit` (1 par client, menu visible si `hasPlanification`) |
+| `circuit/` | Circuit | `CircuitsCreate`/`Edit` (`TabbedForm syncWithLocation={false}`, onglet "Briefing commercial" si `hasPlanification`) |
+| `messageTemplate/` | MessageTemplate | `MessageTemplateCreate`/`Edit` (variables incl. `{{lien_briefing}}`) |
+| `planning/` | — | `PlanningPage` (composer SMS/email + calendrier) |
+| `shared/` | — | `BriefingFileField` (FileField custom : résout filename via contentUrl/src/rawFile) |
+
+### Dashboard météo (`components/dashboard/`)
+
+| Fichier | Rôle | Conditionné par |
+|---------|------|-----------------|
+| `Dashboard.jsx` | Principal : onglets Windy/Météo/Cams | — |
+| `MetarView.jsx` | METAR décodé + "Avis de KIMI" | `hasAI` |
+| `NotamView.jsx` | NOTAMs + "Interpréter" | `hasNotam`, `hasAI` |
+| `ScoreOpsView.jsx` / `ScoreOpsWidget.jsx` | Score OPS | — |
+| `MapView.jsx` | Carte balises | — |
+
+### Pages publiques (`pwa/app/`)
+
+| Fichier | Rôle |
+|---------|------|
+| `r/[shortcode]/page.tsx` | RSC, fetch SSR `/r/{shortcode}`, gère 404/expired/cancelled/429, `noindex` |
+| `r/[shortcode]/PublicBriefing.tsx` | Client component : hero (image + voile `client.color` ou dégradé), tabs briefing général/circuit, carte adresse + bouton CTA Maps `dir/?api=1&destination=<adresse>` |
+| `r/[shortcode]/types.ts` | Typage payload backend |
+
+Header global (`pwa/components/common/Header.tsx`) masqué sur `/r/` via `hiddenPaths`.
+
+### Fichiers manquants localement
+
+- `components/admin/ClientProvider` → `useClient()`
+- `components/admin/SiteSettingsProvider` → `useSiteSettings()`
+- `components/admin/SessionContextProvider` → `useSessionContext()`
+- `app/lib/utils`, `app/lib/getSiteSettings`
+
+Pour les modifier : `docker exec creazot-ulm-pwa-1 cat /app/...` puis `docker cp`.

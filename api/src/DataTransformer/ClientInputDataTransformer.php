@@ -1,0 +1,131 @@
+<?php
+
+namespace App\DataTransformer;
+
+use ApiPlatform\Symfony\Validator\Exception\ValidationException;
+use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\State\ProviderInterface;
+use ApiPlatform\Validator\ValidatorInterface;
+use App\Dto\ClientInput;
+use App\Entity\Client;
+use App\Service\FileUploader;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+class ClientInputDataTransformer implements ProcessorInterface
+{
+    public function __construct(
+        private readonly ProcessorInterface $persistProcessor,
+        private readonly ValidatorInterface $validator,
+        private readonly FileUploader $fileUploader,
+        private readonly ProviderInterface $itemProvider,
+        private readonly EntityManagerInterface $entityManager
+    ) {}
+
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Client
+    {
+        $this->validator->validate($data);
+
+        if ($data instanceof ClientInput) {
+            // Récupère un Client existant ou en crée un nouveau
+            $shouldHydrateExistingClient = isset($context['input']['class'])
+                && $context['input']['class'] === ClientInput::class
+                && isset($uriVariables['id']);
+
+            $client = $shouldHydrateExistingClient
+                ? $this->itemProvider->provide($operation->withClass(Client::class), $uriVariables, $context)
+                : new Client();
+
+            $client->setName($data->name);
+            $client->setSlug($data->slug);
+            $client->setEmail($data->email);
+            $client->setPhone($data->phone);
+            $client->setColor($data->color);
+            $client->setLat($data->lat);
+            $client->setLng($data->lng);
+            $client->setZoom($data->zoom);
+            $client->setOpacity($data->opacity);
+            $client->setActive($data->active);
+            $client->setTimezone($data->timezone);
+            $client->setAddress($data->address);
+            $client->setZipcode($data->zipcode);
+            $client->setCity($data->city);
+            $client->setWebsite($data->website);
+            $client->setUrl($data->url);
+            $client->setHasReservation($data->hasReservation);
+            $client->setHasPassengerRegistration($data->hasPassengerRegistration);
+            $client->setHasOriginContact($data->hasOriginContact);
+            $client->setHasOptions($data->hasOptions);
+            $client->setHasPartners($data->hasPartners);
+            $client->setHasGifts($data->hasGifts);
+            $client->setThanksTitle($data->thanksTitle);
+            $client->setThanksMessage($data->thanksMessage);
+            $client->setHasLandingManagement($data->hasLandingManagement);
+            $client->setHasEmailConfirmation($data->hasEmailConfirmation);
+            $client->setEmailServer($data->emailServer);
+            $client->setConfirmationMessage($data->confirmationMessage);
+            $client->setEmailAddressSender($data->emailAddressSender);
+            $client->setConfirmationSubject($data->confirmationSubject);
+            $client->setHasPaymentManagement($data->hasPaymentManagement);
+            $client->setHasMicrotrakTag($data->hasMicrotrakTag);
+            $client->setHasWebshop($data->hasWebshop);
+            $client->setSeuilMedical($data->seuilMedical);
+            $client->setSeuilQualifications($data->seuilQualifications);
+            $client->setHasIndividualFlightLogs($data->hasIndividualFlightLogs);
+            $client->setHasExpensesManagement($data->hasExpensesManagement);
+            $client->setUseAvailabilityFilter($data->useAvailabilityFilter);
+            $client->setHasGroupUpdate($data->hasGroupUpdate);
+            $client->setConsentText($data->consentText);
+            $client->setMinHours($data->minHours);
+            $client->setMaxHours($data->maxHours);
+
+            $hasFileUploads = ($data->logo instanceof UploadedFile)
+                || ($data->favicon instanceof UploadedFile)
+                || ($data->pdfBackground instanceof UploadedFile)
+                || ($data->thanksImage instanceof UploadedFile)
+                || ($data->mapIcon instanceof UploadedFile);
+
+            if (!$shouldHydrateExistingClient && $hasFileUploads) {
+                $this->entityManager->persist($client);
+                $this->entityManager->flush();
+            }
+
+            $clientId = $client->getId();
+
+            if ($data->logo instanceof UploadedFile) {
+                $client->setLogo($this->fileUploader->upload($data->logo, 'logo', null, $clientId));
+            } elseif ($data->logo === 'DELETE') {
+                $client->setLogo(null);
+            }
+
+            if ($data->favicon instanceof UploadedFile) {
+                $client->setFavicon($this->fileUploader->upload($data->favicon, 'favicon', null, $clientId));
+            } elseif ($data->favicon === 'DELETE') {
+                $client->setFavicon(null);
+            }
+
+            if ($data->pdfBackground instanceof UploadedFile) {
+                $client->setPdfBackground($this->fileUploader->upload($data->pdfBackground, 'pdfBackground', $data->opacity, $clientId));
+            } elseif ($data->pdfBackground === 'DELETE') {
+                $client->setPdfBackground(null);
+            }
+
+            if ($data->thanksImage instanceof UploadedFile) {
+                $client->setThanksImage($this->fileUploader->upload($data->thanksImage, 'thanksImage', null, $clientId));
+            } elseif ($data->thanksImage === 'DELETE') {
+                $client->setThanksImage(null);
+            }
+
+            if ($data->mapIcon instanceof UploadedFile) {
+                $client->setMapIcon($this->fileUploader->upload($data->mapIcon, 'mapIcon', null, $clientId));
+            } elseif ($data->mapIcon === 'DELETE') {
+                $client->setMapIcon(null);
+            }
+        } else {
+            $client = $data;
+        }
+
+        return $this->persistProcessor->process($client, $operation, $uriVariables, $context);
+    }
+}

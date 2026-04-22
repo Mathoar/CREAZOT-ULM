@@ -140,7 +140,7 @@ class AssistantContextBuilder
         $sections = [];
 
         $sections[] = $this->buildIdentitySection($clubName, $channel);
-        $sections[] = $this->buildCatalogSection($context['circuits'], $channel);
+        $sections[] = $this->buildCatalogSection($context['circuits']);
         $sections[] = $this->buildScheduleSection($context['horaires']);
 
         if (($context['modules']['hasOptions'] ?? false) && !empty($context['options'])) {
@@ -163,12 +163,7 @@ class AssistantContextBuilder
 
     private function buildIdentitySection(string $clubName, string $channel): string
     {
-        $now = new \DateTime('now', new \DateTimeZone('Indian/Reunion'));
-        $jours = ['Sunday' => 'dimanche', 'Monday' => 'lundi', 'Tuesday' => 'mardi', 'Wednesday' => 'mercredi', 'Thursday' => 'jeudi', 'Friday' => 'vendredi', 'Saturday' => 'samedi'];
-        $mois = ['January' => 'janvier', 'February' => 'février', 'March' => 'mars', 'April' => 'avril', 'May' => 'mai', 'June' => 'juin', 'July' => 'juillet', 'August' => 'août', 'September' => 'septembre', 'October' => 'octobre', 'November' => 'novembre', 'December' => 'décembre'];
-        $today = ($jours[$now->format('l')] ?? $now->format('l')) . ' ' . $now->format('d') . ' ' . ($mois[$now->format('F')] ?? $now->format('F')) . ' ' . $now->format('Y');
         $base = "=== IDENTITÉ ===\nTu es l'assistant de réservation de {$clubName}, un club de vol ULM / aviation légère.";
-        $base .= "\nNous sommes le {$today}.";
 
         if ($channel === 'voice') {
             $base .= "\nTu parles au téléphone. Sois chaleureux, concis, naturel. Ne lis pas de codes internes.";
@@ -179,98 +174,49 @@ class AssistantContextBuilder
         return $base;
     }
 
-    private function buildCatalogSection(array $circuits, string $channel): string
+    private function buildCatalogSection(array $circuits): string
     {
         $lines = ["=== CATALOGUE ==="];
 
-        $filtered = array_filter($circuits, function (array $c) use ($channel) {
-            if ($channel === 'voice') {
-                $nature = $c['nature'] ?? '';
-                return stripos($nature, 'Local') !== false && stripos($nature, 'Onéreux') !== false;
-            }
-            return true;
-        });
-
-        if (empty($filtered)) {
-            $lines[] = "Aucune prestation disponible.";
+        if (empty($circuits)) {
+            $lines[] = "Aucune prestation configurée.";
             return implode("\n", $lines);
         }
 
-        foreach ($filtered as $c) {
-            $duree = $this->formatDuration($c['duree'] ?? null);
-            $prix = $c['prix'] !== null ? number_format($c['prix'], 2, ',', ' ') . ' euros' : 'sur devis';
-            $lines[] = "- {$c['nom']} — Durée : {$duree} — Prix : {$prix}";
+        foreach ($circuits as $c) {
+            $duree = $c['duree'] ?? '?';
+            $prix = $c['prix'] !== null ? number_format($c['prix'], 2, ',', ' ') . ' €' : 'sur devis';
+            $nature = $c['nature'] ?? '';
+            $line = "- [{$c['code']}] {$c['nom']} — Durée : {$duree} — Prix : {$prix}";
+            if ($nature) {
+                $line .= " — Nature : {$nature}";
+            }
+            $lines[] = $line;
         }
 
         $lines[] = "";
-        $lines[] = "Table de correspondance nom ↔ code (usage interne, ne pas dire au client) :";
-        foreach ($filtered as $c) {
+        $lines[] = "Table de correspondance nom ↔ code :";
+        foreach ($circuits as $c) {
             $lines[] = "  \"{$c['nom']}\" = {$c['code']}";
         }
 
         return implode("\n", $lines);
     }
 
-    private function formatDuration(?string $timeStr): string
-    {
-        if (!$timeStr) {
-            return 'non définie';
-        }
-
-        $parts = explode(':', $timeStr);
-        $hours = (int) ($parts[0] ?? 0);
-        $minutes = (int) ($parts[1] ?? 0);
-
-        $totalMinutes = ($hours - 20) * 60 + $minutes;
-        if ($totalMinutes <= 0) {
-            $totalMinutes = $hours * 60 + $minutes;
-        }
-
-        if ($totalMinutes >= 60) {
-            $h = intdiv($totalMinutes, 60);
-            $m = $totalMinutes % 60;
-            return $m > 0 ? sprintf('%dh%02d', $h, $m) : "{$h}h";
-        }
-
-        return "{$totalMinutes} minutes";
-    }
-
     private function buildScheduleSection(array $horaires): string
     {
-        $tz = $horaires['timezone'] ?? 'Indian/Reunion';
-        $localTz = new \DateTimeZone($tz);
+        $min = $horaires['min'] ?? '?';
+        $max = $horaires['max'] ?? '?';
+        $tz = $horaires['timezone'] ?? 'Europe/Paris';
 
-        $minSpoken = '?';
-        if ($horaires['min'] ?? null) {
-            $dt = new \DateTime('today ' . $horaires['min'], new \DateTimeZone('UTC'));
-            $dt->setTimezone($localTz);
-            $minSpoken = $this->spokenTime($dt);
-        }
-        $maxSpoken = '?';
-        if ($horaires['max'] ?? null) {
-            $dt = new \DateTime('today ' . $horaires['max'], new \DateTimeZone('UTC'));
-            $dt->setTimezone($localTz);
-            $maxSpoken = $this->spokenTime($dt);
-        }
-
-        return "=== HORAIRES ===\nLe club est ouvert de {$minSpoken} à {$maxSpoken} (heure locale).";
-    }
-
-    private function spokenTime(\DateTimeInterface $dt): string
-    {
-        $h = (int) $dt->format('G');
-        $m = (int) $dt->format('i');
-        if ($m === 0) {
-            return "{$h} heures";
-        }
-        return "{$h} heures {$m}";
+        return "=== HORAIRES ===\nLe club est ouvert de {$min} à {$max} (fuseau {$tz}).";
     }
 
     private function buildOptionsSection(array $options): string
     {
         $lines = ["=== OPTIONS DISPONIBLES ==="];
         foreach ($options as $o) {
-            $prix = $o['prix'] !== null ? number_format($o['prix'], 2, ',', ' ') . ' euros' : 'inclus';
+            $prix = $o['prix'] !== null ? number_format($o['prix'], 2, ',', ' ') . ' €' : 'inclus';
             $lines[] = "- {$o['nom']} — {$prix}";
         }
         return implode("\n", $lines);
@@ -291,9 +237,7 @@ class AssistantContextBuilder
             "- Toujours parler en français.",
             "- Collecter : prestation souhaitée, date, heure, nom du client, nombre de personnes.",
             "- Ne jamais mentionner d'IDs ou de codes internes au client.",
-            "- Quand tu annonces des horaires, dis-les de façon naturelle : par exemple « 6 heures » ou « 6 heures 35 ».",
-            "- Attendre la confirmation explicite du client avant d'enregistrer la demande.",
-            "- IMPORTANT : Tu ne confirmes PAS la réservation toi-même. Tu transmets la demande à l'équipe du club qui validera et recontactera le client. Dis bien au client qu'un membre de l'équipe le rappellera pour confirmer.",
+            "- Attendre la confirmation explicite du client avant de créer la réservation.",
             "- Si aucun créneau n'est disponible à la date demandée, proposer une autre date.",
             "- Terminer en souhaitant un bon vol.",
         ];

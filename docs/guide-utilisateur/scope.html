@@ -441,7 +441,7 @@
     </div>
     <div class="score-banner">
         <div class="score-circle">
-            <div class="score-num">76%</div>
+            <div class="score-num">72%</div>
             <div class="score-lbl">Couverture</div>
         </div>
     </div>
@@ -454,11 +454,11 @@
         <div class="stat-label">Clubs cibles</div>
     </div>
     <div class="stat-item">
-        <div class="stat-value green">34</div>
+        <div class="stat-value green">30</div>
         <div class="stat-label">Exigences couvertes</div>
     </div>
     <div class="stat-item">
-        <div class="stat-value amber">10</div>
+        <div class="stat-value amber">14</div>
         <div class="stat-label">Adaptations partielles</div>
     </div>
     <div class="stat-item">
@@ -550,15 +550,15 @@
         <tbody>
             <tr>
                 <td><strong>Gestion VLO</strong><br>(Vol Local)</td>
-                <td><span class="entity-tag">Vol</span> <span class="entity-tag">CarnetVol</span> <span class="entity-tag">Prestation</span> <span class="entity-tag">Circuit</span> <span class="entity-tag">Nature</span><br>Carnets de vol avec suivi heures, pilotes, machines. Classification via entité <strong>Nature</strong> (CRUD complet, éditable via <code>/admin#/natures</code>) liée à Circuit.</td>
+                <td><span class="entity-tag">Vol</span> <span class="entity-tag">CarnetVol</span> <span class="entity-tag">Prestation</span><br>Carnets de vol avec suivi heures, pilotes, machines</td>
                 <td><span class="status-covered">🟢 Couvert</span></td>
-                <td>Créer les entrées Nature "VLO" et ajouter champs spécifiques réglementaires si nécessaire</td>
+                <td>Ajouter type d'activité "VLO" et champs spécifiques réglementaires</td>
             </tr>
             <tr>
                 <td><strong>Gestion VLD</strong><br>(Vol de Découverte)</td>
-                <td><span class="entity-tag">Prestation</span> <span class="entity-tag">Passager</span> <span class="entity-tag">Circuit</span> <span class="entity-tag">Nature</span><br>Gestion passagers, circuits, réservations. Type d'activité classifiable via Nature.</td>
+                <td><span class="entity-tag">Prestation</span> <span class="entity-tag">Passager</span> <span class="entity-tag">Circuit</span><br>Gestion passagers, circuits, réservations</td>
                 <td><span class="status-covered">🟢 Couvert</span></td>
-                <td>Créer les entrées Nature "VLD" et adapter le vocabulaire</td>
+                <td>Adapter le vocabulaire et ajouter champs VLD spécifiques</td>
             </tr>
             <tr>
                 <td><strong>Activités Particulières</strong><br>(MANEX)</td>
@@ -603,7 +603,7 @@
         <thead><tr><th style="width:25%">Exigence FFPLUM</th><th style="width:35%">Couverture C6L</th><th style="width:15%">Statut</th><th style="width:25%">Écart / Action</th></tr></thead>
         <tbody>
             <tr><td><strong>Carnets de vol</strong></td><td><span class="entity-tag">CarnetVol</span> <span class="entity-tag">Vol</span><br>Enregistrement complet : pilote, machine, durée, horamètres</td><td><span class="status-covered">🟢 Couvert</span></td><td>Fonctionnalité core mature</td></tr>
-            <tr><td><strong>Historique modifications</strong></td><td><span class="tech-tag">EntitiesMetaSubscriber</span><br><code>createdAt</code>/<code>updatedAt</code> + <code>createdBy</code>/<code>updatedBy</code> (auteur identifié) sur Aeronef, Entretien, CarnetVol, ProfilPilote et sous-entités</td><td><span class="status-covered">🟢 Couvert</span></td><td>Horodatage + auteur opérationnels. Historique diff/changelog optionnel.</td></tr>
+            <tr><td><strong>Historique modifications</strong></td><td><span class="tech-tag">Doctrine</span><br>Timestamps created/updated</td><td><span class="status-partial">🟡 Partiel</span></td><td>Implémenter audit log complet avec auteur</td></tr>
             <tr><td><strong>Export DGAC</strong></td><td><span class="tech-tag">CSV</span> <span class="tech-tag">PDF</span><br>Exports multi-formats existants</td><td><span class="status-todo">🔴 À développer</span></td><td>Créer format d'export conforme DGAC</td></tr>
             <tr><td><strong>Signature numérique</strong></td><td>Non disponible</td><td><span class="status-todo">🔴 À développer</span></td><td>Implémenter signature électronique des documents</td></tr>
         </tbody>
@@ -654,8 +654,7 @@
         <tbody>
             <tr><td><strong>PWA</strong></td><td><span class="tech-tag">Next.js 14</span> <span class="tech-tag">PWA</span><br>Application web progressive avec support offline</td><td><span class="status-covered">🟢 Couvert</span></td><td>Architecture PWA native</td></tr>
             <tr><td><strong>API REST</strong></td><td><span class="tech-tag">API Platform</span> <span class="tech-tag">OpenAPI</span><br>API REST/Hydra avec documentation automatique</td><td><span class="status-covered">🟢 Couvert</span></td><td>API Platform mature, documentation OpenAPI</td></tr>
-            <tr><td><strong>SSO / Keycloak</strong></td><td><span class="tech-tag">Keycloak</span> <span class="tech-tag">OIDC</span> <span class="tech-tag">NextAuth</span><br>SSO centralisé Keycloak pleinement opérationnel : authentification, logout, <code>keycloakId</code> sur User</td><td><span class="status-covered">🟢 Couvert</span></td><td>SSO fonctionnel en production</td></tr>
-            <tr><td><strong>MFA</strong></td><td>Configuration MFA dans Keycloak</td><td><span class="status-partial">🟡 Partiel</span></td><td>Activer MFA (OTP) dans la configuration du realm Keycloak</td></tr>
+            <tr><td><strong>MFA</strong></td><td><span class="tech-tag">Keycloak</span> <span class="tech-tag">OIDC</span><br>SSO centralisé Keycloak</td><td><span class="status-partial">🟡 Partiel</span></td><td>Activer MFA dans configuration Keycloak</td></tr>
             <tr><td><strong>Multi-tenant</strong></td><td><span class="entity-tag">Client</span><br>Architecture multi-tenant native</td><td><span class="status-covered">🟢 Couvert</span></td><td>Point fort majeur pour 700 clubs</td></tr>
             <tr><td><strong>Scalabilité</strong></td><td><span class="tech-tag">Kubernetes</span> <span class="tech-tag">Helm</span><br>Infrastructure containerisée orchestrée</td><td><span class="status-covered">🟢 Couvert</span></td><td>Architecture cloud-native prête</td></tr>
         </tbody>
@@ -689,8 +688,8 @@
 
     <div class="alert-box info">
         <strong>Légende des statuts</strong><br>
-        🟢 Couvert (34 exigences) — Fonctionnalité présente et opérationnelle<br>
-        🟡 Partiel (10 exigences) — Fonctionnalité existante nécessitant adaptation<br>
+        🟢 Couvert (30 exigences) — Fonctionnalité présente et opérationnelle<br>
+        🟡 Partiel (14 exigences) — Fonctionnalité existante nécessitant adaptation<br>
         🔴 À développer (11 exigences) — Développement nouveau requis
     </div>
 
@@ -702,14 +701,14 @@
             <tr><td><strong>Carnets de vol</strong></td><td>3</td><td>1</td><td>0</td><td><span class="status-covered">85%</span></td></tr>
             <tr><td><strong>Alertes / Validités</strong></td><td>3</td><td>1</td><td>0</td><td><span class="status-covered">80%</span></td></tr>
             <tr><td><strong>Planning / Réservations</strong></td><td>4</td><td>1</td><td>0</td><td><span class="status-covered">85%</span></td></tr>
-            <tr><td><strong>Activités VLO/VLD</strong></td><td>2</td><td>1</td><td>1</td><td><span class="status-covered">75%</span></td></tr>
+            <tr><td><strong>Activités VLO/VLD</strong></td><td>0</td><td>3</td><td>1</td><td><span class="status-partial">60%</span></td></tr>
             <tr><td><strong>Formation</strong></td><td>1</td><td>1</td><td>2</td><td><span class="status-partial">45%</span></td></tr>
             <tr><td><strong>Connecteurs externes</strong></td><td>0</td><td>0</td><td>5</td><td><span class="status-todo">0%</span></td></tr>
-            <tr><td><strong>Traçabilité avancée</strong></td><td>2</td><td>0</td><td>2</td><td><span class="status-partial">50%</span></td></tr>
-            <tr><td><strong>Architecture / Sécurité</strong></td><td>6</td><td>1</td><td>0</td><td><span class="status-covered">90%</span></td></tr>
+            <tr><td><strong>Traçabilité avancée</strong></td><td>1</td><td>1</td><td>2</td><td><span class="status-partial">40%</span></td></tr>
+            <tr><td><strong>Architecture / Sécurité</strong></td><td>5</td><td>2</td><td>0</td><td><span class="status-covered">85%</span></td></tr>
             <tr><td><strong>RGPD</strong></td><td>2</td><td>2</td><td>0</td><td><span class="status-covered">75%</span></td></tr>
             <tr><td><strong>Maintenance</strong></td><td>3</td><td>0</td><td>1</td><td><span class="status-covered">80%</span></td></tr>
-            <tr style="background:var(--slate-100); font-weight:bold;"><td><strong>TOTAL</strong></td><td>34</td><td>10</td><td>11</td><td><span class="status-covered">76%</span></td></tr>
+            <tr style="background:var(--slate-100); font-weight:bold;"><td><strong>TOTAL</strong></td><td>30</td><td>14</td><td>11</td><td><span class="status-partial">72%</span></td></tr>
         </tbody>
     </table>
 
@@ -726,9 +725,9 @@
     <h3>6.2 Adaptations Prioritaires (OPS — Phase 1)</h3>
     <div class="domain-grid">
         <div class="domain-card"><h4>🟡 Vocabulaire ULM</h4><p>Adapter la terminologie : brevets → licences, certificats, qualifications ULM spécifiques</p></div>
-        <div class="domain-card"><h4>🟢 Types d'activité VLO/VLD</h4><p>Architecture en place via entité <strong>Nature</strong> (CRUD complet). Créer les entrées VLO/VLD avec les codes réglementaires.</p></div>
+        <div class="domain-card"><h4>🟡 Types d'activité VLO/VLD</h4><p>Ajouter classification des vols selon réglementation février 2025</p></div>
         <div class="domain-card"><h4>🟡 Blocages automatiques</h4><p>Renforcer les contrôles bloquants si documents expirés</p></div>
-        <div class="domain-card"><h4>🟢 Audit log</h4><p>Horodatage (<code>createdAt</code>/<code>updatedAt</code>) + auteur (<code>createdBy</code>/<code>updatedBy</code>) opérationnels via <code>EntitiesMetaSubscriber</code>.</p></div>
+        <div class="domain-card"><h4>🟡 Audit log complet</h4><p>Traçabilité complète avec auteur et horodatage</p></div>
     </div>
 
     <h3>6.3 Développements Bonus (V2/V3)</h3>
@@ -741,12 +740,12 @@
         <thead><tr><th style="width:40%">Module / Développement</th><th style="width:20%">Complexité</th><th style="width:20%">Priorité</th><th style="width:20%">Phase</th></tr></thead>
         <tbody>
             <tr><td>Adaptation vocabulaire ULM</td><td>Faible</td><td>Haute</td><td>OPS</td></tr>
-            <tr><td>Types activité VLO/VLD</td><td><span class="status-covered">Faible</span> — architecture Nature existante</td><td>Haute</td><td>OPS</td></tr>
+            <tr><td>Types activité VLO/VLD</td><td>Moyenne</td><td>Haute</td><td>OPS</td></tr>
             <tr><td>Connecteur Exalto</td><td>Moyenne</td><td>Haute</td><td>OPS</td></tr>
             <tr><td>Export format DGAC</td><td>Moyenne</td><td>Haute</td><td>OPS</td></tr>
             <tr><td>Module MANEX</td><td>Haute</td><td>Moyenne</td><td>OPS</td></tr>
             <tr><td>Signature numérique</td><td>Moyenne</td><td>Moyenne</td><td>OPS</td></tr>
-            <tr><td>Audit log</td><td><span class="status-covered">Couvert</span> — createdBy/updatedBy opérationnels</td><td>—</td><td>—</td></tr>
+            <tr><td>Audit log complet</td><td>Moyenne</td><td>Moyenne</td><td>OPS</td></tr>
             <tr><td>Activation MFA Keycloak</td><td>Faible</td><td>Moyenne</td><td>OPS</td></tr>
             <tr><td>Connecteur DSAC</td><td>Haute</td><td>Basse</td><td>V2</td></tr>
             <tr><td>Module Formation</td><td>Haute</td><td>Basse</td><td>V2</td></tr>
@@ -766,16 +765,12 @@
             <li><strong>Système d'alertes automatiques</strong> — Notifications proactives</li>
             <li><strong>Planning et réservations</strong> — Fonctionnalité complète</li>
             <li><strong>Architecture moderne</strong> — Symfony 6, Next.js 14, Keycloak, Kubernetes</li>
-            <li><strong>SSO Keycloak opérationnel</strong> — Authentification OIDC, gestion utilisateurs centralisée</li>
-            <li><strong>Audit log avec auteur</strong> — Horodatage + identification auteur sur les entités clés</li>
-            <li><strong>Classification VLO/VLD prête</strong> — Entité Nature (CRUD) liée aux circuits</li>
-            <li><strong>Plateforme SaaS complète</strong> — SiteSettings, pricing, abonnements, onboarding, tracking GPS Microtrak</li>
             <li><strong>RGPD intégré</strong> — Gestion consentement passagers</li>
         </ul>
     </div>
 
     <h3>7.1 Synthèse de l'Adéquation</h3>
-    <p>Avec un <strong>score de couverture de 76%</strong>, C6L Gestion 4.0 constitue une base solide pour répondre aux besoins de la FFPLUM. Les fonctionnalités cœur (gestion pilotes, machines, carnets de vol, maintenance, planning) sont matures et opérationnelles. Le SSO Keycloak est pleinement fonctionnel, la classification VLO/VLD est prise en charge via l'entité Nature (CRUD complet), et l'audit log avec auteur et horodatage est opérationnel.</p>
+    <p>Avec un <strong>score de couverture de 72%</strong>, C6L Gestion 4.0 constitue une base solide pour répondre aux besoins de la FFPLUM. Les fonctionnalités cœur (gestion pilotes, machines, carnets de vol, maintenance, planning) sont matures et opérationnelles.</p>
     <p>Les développements nécessaires concernent principalement :</p>
     <ul>
         <li><strong>Les spécificités réglementaires ULM</strong> (VLO/VLD, MANEX) — Adaptation métier</li>

@@ -1,0 +1,96 @@
+---
+description: Workflow Git — synchro obligatoire local↔prod, conventions commit, sécurité
+alwaysApply: true
+---
+# Git & Workflow — Logic'Ciel
+
+## État du dépôt (depuis 21/04/2026)
+
+Le dépôt Git local `/Users/mhoar/Desktop/CREAZOT-ULM` est un **repo dédié au projet** :
+- Remote : `https://github.com/Mathoar/CREAZOT-ULM.git`
+- Branche unique : `main`
+
+Le serveur de production (`root@c6l.creazot.com:/root/CREAZOT-ULM/`) possède son propre dépôt Git, **mais c'est désormais le repo local qui est la source de vérité**. La synchronisation local↔prod a été faite intégralement le 21/04/2026 (commit `1836687`).
+
+## ⚠️ PRÉ-REQUIS OBLIGATOIRE — Vérification synchro local↔prod
+
+**À CHAQUE début de session de modification de code**, l'agent DOIT vérifier que le repo local est synchronisé avec ce qui tourne en prod, AVANT toute modification. C'est un pré-requis non négociable pour éviter les régressions.
+
+### Procédure de vérification — DEUX étapes obligatoires
+
+**Étape 1 — Diff sur les fichiers déjà connus (M / ??)**
+
+```bash
+cd /Users/mhoar/Desktop/CREAZOT-ULM
+git status --porcelain | awk '{print $2}' > /tmp/changed_paths.txt
+rsync -anc --itemize-changes -r --files-from=/tmp/changed_paths.txt \
+  root@c6l.creazot.com:/root/CREAZOT-ULM/ . > /tmp/sync_check.txt
+grep '^>f' /tmp/sync_check.txt   # serveur en avance → rapatrier
+```
+
+**Étape 2 — Détection des fichiers serveur-only sur le périmètre tracké** (sinon on ne voit pas les régressions silencieuses)
+
+Le repo local est volontairement minimaliste (cf. § "Périmètre du repo local"). Pour les **dossiers du périmètre tracké** uniquement, vérifier qu'aucun fichier n'existe en prod sans contrepartie locale :
+
+```bash
+for d in api/src api/config api/migrations api/templates pwa/app/lib pwa/app/r pwa/components docs; do
+  diff <(ssh root@c6l.creazot.com "find /root/CREAZOT-ULM/$d -type f 2>/dev/null | sed 's|/root/CREAZOT-ULM/||' | sort") \
+       <(find "$d" -type f 2>/dev/null | sort) \
+    | grep '^<' | sed 's|^< |MISSING_LOCAL: |'
+done
+```
+
+Toute ligne `MISSING_LOCAL:` est une régression : rapatrier immédiatement avec `scp`, puis commiter.
+
+**Si Étape 1 ou 2 révèle un divergent** → STOPPER, analyser, rapatrier AVANT toute modification.
+
+### Périmètre du repo local (figé en 04/2026)
+
+Tracké en git — source de vérité pour ces dossiers :
+- `compose.prod.yaml`, `CONTEXT_MAP.md`
+- `api/{config, migrations, src, templates, composer.json, composer.lock}`
+- `pwa/{app/lib, app/r, components}`
+- `docs/`
+
+Hors périmètre (présent uniquement en prod, intentionnel) :
+- `api/{Dockerfile, .env.local, frankenphp/, public/, vendor/, var/, bin/, tests/, ...}`
+- `pwa/{Dockerfile, package.json, pnpm-lock.yaml, config/, utils/, types/, styles/, public/, ...}`
+- `compose.yaml` (le développement local n'a pas de Docker)
+
+### Règle de comportement de l'agent
+
+1. **Avant toute modif de fichier** dans une session de dev : exécuter le check ci-dessus si la session implique d'écrire/déployer du code.
+2. **Si désynchro détectée** : alerter l'utilisateur + proposer la stratégie (rapatriement serveur→local ou déploiement local→serveur selon l'antériorité de chaque divergent — vérifier mtime+size+diff).
+3. **Ne JAMAIS modifier un fichier en local quand sa version serveur est plus récente** sans avoir d'abord rapatrié et compris le diff.
+4. **Workflow nominal** : modif locale → push (scp / docker cp) vers serveur → build/restart Docker → test prod → commit local + push origin/main. Le local et le serveur doivent rester en miroir permanent.
+
+## Workflow de déploiement actuel
+
+1. **Modification locale** dans `/Users/mhoar/Desktop/CREAZOT-ULM/`
+2. **Push vers le serveur** : `scp` (fichiers individuels) ou `rsync` (dossiers)
+3. **Rebuild conteneur concerné** : `docker compose -f compose.yaml -f compose.prod.yaml build [php|pwa]` puis `up -d`
+4. **Test direct** sur `https://logic-ciel.com`
+5. **Commit + push** sur `origin/main` (local et prod sont alors en miroir)
+
+Workflow de **déploiement direct** sans CI/CD.
+
+## Points d'attention
+
+1. **Ne JAMAIS committer sans demande explicite** de l'utilisateur.
+2. **Ne JAMAIS push** sur `origin/main` sans demande explicite.
+3. **Pas de `.gitignore`** côté repo (héritage historique) → `git add -A` reste safe car le repo est isolé au sous-dossier CREAZOT-ULM.
+4. Les modifications sont déployées via **Docker**, pas via `git pull` sur le serveur.
+5. **Si une feature dépend d'une nouvelle dépendance composer** : utiliser `composer require PACKAGE:VERSION_EXACTE --no-update --no-scripts && composer update PACKAGE --no-install --no-scripts` dans le container PHP, puis rapatrier `composer.json` + `composer.lock` côté local. Les versions Symfony sont **figées en exact** dans `composer.json` (cf. série `7.1.x`) — ne jamais les modifier sans validation explicite.
+
+## Conventions de commit
+
+Format : **action + sujet + détail optionnel**, en français.
+
+```
+Ajout assistant vocal Vapi.ai — routes admin, webhook, service
+Fix provider Vapi (11labs au lieu d'elevenlabs) — corrige erreur 400
+Ajout module hasCams — entité, formulaires, dashboard conditionnel
+Suppression sécurisée images briefing/circuit + resync composer.lock
+```
+
+Pour les commits multi-features ou de synchronisation, structurer en sections (Backend / Frontend / Phase A / Phase B), une seule ligne de titre suivie d'un corps détaillé.

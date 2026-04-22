@@ -71,33 +71,33 @@ const ListActions = ({ isSmall, resource }) => {
   );
 };
 
+const ClientsExpand = () => {
+  const record = useRecordContext();
+  const clients = record?.pilote?.clients;
+  if (!clients?.length) return <Typography variant="body2" color="text.secondary" sx={{ p: 1 }}>Aucun client rattaché</Typography>;
+  return (
+    <Box sx={{ p: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+      {clients.map((c, i) => (
+        <Chip
+          key={c['@id'] || i}
+          label={c.name}
+          size="small"
+          sx={{
+            backgroundColor: c.color ? `${c.color}20` : '#e0e0e0',
+            color: c.color || '#666',
+            border: `1px solid ${c.color ? `${c.color}55` : '#ccc'}`,
+            fontWeight: 500,
+            fontSize: '0.75rem',
+          }}
+        />
+      ))}
+    </Box>
+  );
+};
+
 export const ProfilesList: NextPage<Props> = ({ data, hubURL, page }) => {
 
   const isSmall = useMediaQuery<Theme>(theme => theme.breakpoints.down('sm'));
-
-  const ClientsExpand = () => {
-    const record = useRecordContext();
-    const clients = record?.pilote?.clients;
-    if (!clients?.length) return <Typography variant="body2" color="text.secondary" sx={{ p: 1 }}>Aucun client rattaché</Typography>;
-    return (
-      <Box sx={{ p: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-        {clients.map((c, i) => (
-          <Chip
-            key={c['@id'] || i}
-            label={c.name}
-            size="small"
-            sx={{
-              backgroundColor: c.color ? `${c.color}20` : '#e0e0e0',
-              color: c.color || '#666',
-              border: `1px solid ${c.color ? `${c.color}55` : '#ccc'}`,
-              fontWeight: 500,
-              fontSize: '0.75rem',
-            }}
-          />
-        ))}
-      </Box>
-    );
-  };
 
   const getPilotQualifications = ({ pilotQualifications }) => isDefinedAndNotVoid(pilotQualifications) && <span className="text-right flex flex-end">{ pilotQualifications.map((q, i) => <Chip key={i} label={q.qualification.slug} size="small" sx={ getShipStyle(q.qualification, q.validUntil) }/>) }</span>
   const getFormattedPilotMedicalStatus = ({ availableCertificate }) => !isDefined(availableCertificate) ? <></> : <span className="mr-2">{ availableCertificate ? <span className="text-green-500"><DoneIcon/></span> : <span className="text-red-500"><ClearIcon/></span> }</span>

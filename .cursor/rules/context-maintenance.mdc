@@ -1,0 +1,30 @@
+---
+description: Règle auto — proposer la MAJ des fichiers contexte après chaque session significative
+alwaysApply: true
+---
+# Règle : Maintenance des fichiers contexte
+
+## Déclencheur
+
+Après toute modification significative du projet (nouvelle feature, nouveau module, bug fix critique, changement d'architecture), **proposer proactivement** à l'utilisateur de mettre à jour les fichiers contexte concernés.
+
+## Formulation suggérée
+
+> « Cette session a modifié [domaine]. Souhaites-tu que je mette à jour `context-xxx.mdc` et `CONTEXT_MAP.md` ? »
+
+## Procédure de mise à jour
+
+1. Identifier les fichiers contexte impactés (`.cursor/rules/context*.mdc`)
+2. Mettre à jour les fichiers concernés avec les nouvelles informations
+3. Mettre à jour le tableau dans `CONTEXT_MAP.md` (date + état)
+4. Mettre à jour les dates dans `docs/context-dashboard.html` (objet `dates`)
+5. Si nouveau domaine → proposer de créer un nouveau `context-*.mdc`
+
+## Ce qui constitue une "modification significative"
+
+- Ajout/suppression d'entité ou de champ Doctrine
+- Nouvelle route ou controller
+- Nouveau module client (boolean)
+- Bug fix avec pattern à retenir
+- Changement d'infrastructure ou de processus de déploiement
+- Intégration d'un nouveau service externe
