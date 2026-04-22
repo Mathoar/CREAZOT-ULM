@@ -58,7 +58,8 @@ export const CommercialTab = ({ data, loading }: Props) => {
     );
   }
 
-  const { revenue, payment_modes, circuit_types, top_circuits, reservation_statuses, ticket_moyen, prepayment_conversion, origines } = data;
+  const { revenue, revenue_source, payment_modes, circuit_types, top_circuits, reservation_statuses, ticket_moyen, prepayment_conversion, origines } = data;
+  const sourceLabel = revenue_source === 'payments' ? 'via paiements' : 'via prix vols';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -66,7 +67,7 @@ export const CommercialTab = ({ data, loading }: Props) => {
       {/* KPI cards row */}
       <Grid container spacing={2}>
         <Grid item xs={6} md={3}>
-          <KpiCard title="Chiffre d'affaires" value={fmt(revenue?.total ?? 0)} icon={<EuroIcon />} color="#2e7d32" />
+          <KpiCard title="Chiffre d'affaires" value={fmt(revenue?.total ?? 0)} subtitle={sourceLabel} icon={<EuroIcon />} color="#2e7d32" />
         </Grid>
         <Grid item xs={6} md={3}>
           <KpiCard title="Ticket moyen" value={fmt(ticket_moyen ?? 0)} icon={<TrendingUpIcon />} color="#1565c0" />

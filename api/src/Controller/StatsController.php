@@ -24,10 +24,12 @@ class StatsController extends AbstractController
     #[Route('/commercial', methods: ['GET'])]
     public function commercial(Request $request): JsonResponse
     {
-        $clientId = $this->clientGetter->get()->getId();
+        $client = $this->clientGetter->get();
+        $clientId = $client->getId();
         $from = $request->query->get('from', date('Y-01-01'));
         $to = $request->query->get('to', date('Y-m-d'));
         $granularity = $request->query->get('granularity', 'month');
+        $usePayments = (bool) $client->getHasPaymentManagement();
 
         $truncExpr = match ($granularity) {
             'day'       => "TO_CHAR(p.date, 'YYYY-MM-DD')",
@@ -39,22 +41,44 @@ class StatsController extends AbstractController
             default     => "TO_CHAR(p.date, 'YYYY-MM')",
         };
 
+        $payTruncExpr = str_replace('p.date', 'pay.date', $truncExpr);
         $resTruncExpr = str_replace('p.date', 'r.debut', $truncExpr);
 
         return new JsonResponse([
-            'revenue'               => $this->getRevenue($clientId, $from, $to, $truncExpr),
+            'revenue'               => $this->getRevenue($clientId, $from, $to, $truncExpr, $usePayments, $payTruncExpr),
+            'revenue_source'        => $usePayments ? 'payments' : 'vols',
             'payment_modes'         => $this->getPaymentModes($clientId, $from, $to),
             'circuit_types'         => $this->getCircuitTypes($clientId, $from, $to),
             'top_circuits'          => $this->getTopCircuits($clientId, $from, $to),
             'reservation_statuses'  => $this->getReservationStatuses($clientId, $from, $to, $resTruncExpr),
-            'ticket_moyen'          => $this->getTicketMoyen($clientId, $from, $to),
+            'ticket_moyen'          => $this->getTicketMoyen($clientId, $from, $to, $usePayments),
             'prepayment_conversion' => $this->getPrepaymentConversion($clientId, $from, $to),
             'origines'              => $this->getOrigines($clientId, $from, $to),
         ]);
     }
 
-    private function getRevenue(int $clientId, string $from, string $to, string $truncExpr): array
+    private function getRevenue(int $clientId, string $from, string $to, string $truncExpr, bool $usePayments, string $payTruncExpr): array
     {
+        if ($usePayments) {
+            $payTotal = (float) $this->conn->fetchOne(
+                "SELECT COALESCE(SUM(pd.amount), 0) FROM payment_detail pd
+                 JOIN payment pay ON pd.payment_id = pay.id
+                 WHERE pay.client_id = :cid AND pay.date >= :from AND pay.date <= :to",
+                ['cid' => $clientId, 'from' => $from, 'to' => $to]
+            );
+
+            if ($payTotal > 0) {
+                $timeline = $this->conn->fetchAllAssociative(
+                    "SELECT $payTruncExpr AS period, COALESCE(SUM(pd.amount), 0) AS value, COUNT(pd.id) AS count
+                     FROM payment_detail pd JOIN payment pay ON pd.payment_id = pay.id
+                     WHERE pay.client_id = :cid AND pay.date >= :from AND pay.date <= :to
+                     GROUP BY period ORDER BY period",
+                    ['cid' => $clientId, 'from' => $from, 'to' => $to]
+                );
+                return ['total' => $payTotal, 'timeline' => $timeline];
+            }
+        }
+
         $total = (float) $this->conn->fetchOne(
             "SELECT COALESCE(SUM(v.prix), 0) FROM vol v
              JOIN prestation p ON v.prestation_id = p.id
@@ -133,8 +157,25 @@ class StatsController extends AbstractController
         return ['by_status' => $byStatus, 'timeline' => $timeline];
     }
 
-    private function getTicketMoyen(int $clientId, string $from, string $to): float
+    private function getTicketMoyen(int $clientId, string $from, string $to, bool $usePayments): float
     {
+        if ($usePayments) {
+            $payResult = $this->conn->fetchAssociative(
+                "SELECT COALESCE(SUM(pd.amount), 0) AS total, COUNT(DISTINCT pay.id) AS count
+                 FROM payment_detail pd JOIN payment pay ON pd.payment_id = pay.id
+                 WHERE pay.client_id = :cid AND pay.date >= :from AND pay.date <= :to",
+                ['cid' => $clientId, 'from' => $from, 'to' => $to]
+            );
+            if ((float) $payResult['total'] > 0) {
+                $volCount = (int) $this->conn->fetchOne(
+                    "SELECT COUNT(v.id) FROM vol v JOIN prestation p ON v.prestation_id = p.id
+                     WHERE p.client_id = :cid AND p.date >= :from AND p.date <= :to",
+                    ['cid' => $clientId, 'from' => $from, 'to' => $to]
+                );
+                return $volCount > 0 ? round((float) $payResult['total'] / $volCount, 2) : 0;
+            }
+        }
+
         $result = $this->conn->fetchAssociative(
             "SELECT COALESCE(SUM(v.prix), 0) AS total, COUNT(v.id) AS count
              FROM vol v JOIN prestation p ON v.prestation_id = p.id
