@@ -63,6 +63,7 @@ import messageTemplateResourceProps from "./messageTemplate";
 import briefingResourceProps from "./briefing";
 import { PlanningPage } from "./planning/PlanningPage";
 import { ClientChannels } from "./channel/ClientChannels";
+import { AnalyticsPage } from "./analytics/AnalyticsPage";
 
 const getClientHeaders = () => {
   try {
@@ -210,6 +211,7 @@ const AdminWithOIDC = () => {
           <Route path="/members" element={<MembersList />} />
           <Route path="/client-channels" element={<ClientChannels />} />
           <Route path="/planning" element={<PlanningPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
         </CustomRoutes>
       </AdminAdapter>
     </UserGuard>

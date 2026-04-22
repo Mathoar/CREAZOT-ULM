@@ -51,6 +51,7 @@ import MessageIcon from "@mui/icons-material/Message";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import { Badge } from '@mui/material';
 import { useAiReservationStats } from '../../../app/lib/mercure';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 const CustomMenu = () => {
 
@@ -92,6 +93,13 @@ const CustomMenu = () => {
   return (
     <Menu>
       <Menu.DashboardItem />
+      { isAdmin &&
+        <Menu.Item
+          to="/analytics"
+          primaryText="Statistiques"
+          leftIcon={<BarChartIcon />}
+        />
+      }
       {/* @ts-ignore */}
       { (isDefined(client) && isDefined(client.hasReservation) && client.hasReservation) && isAdmin &&
         <Menu.Item
