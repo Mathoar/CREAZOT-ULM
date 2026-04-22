@@ -128,6 +128,10 @@ class Circuit implements TenantAwareInterface
     #[Groups(groups: ['Circuit:write', 'Circuit:read'])]
     private ?MediaObject $briefingImage = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Circuit:write', 'Circuit:read', 'Vol:read', 'Prestation:read', 'Reservation:read', 'Cadeau:read', 'PaymentDetail:read', 'Payment:read'])]
+    private ?float $tauxTva = null;
+
     public function __construct()
     {
         $this->qualifications = new ArrayCollection();
@@ -332,5 +336,26 @@ class Circuit implements TenantAwareInterface
     {
         $this->briefingImage = $briefingImage;
         return $this;
+    }
+
+    public function getTauxTva(): ?float
+    {
+        return $this->tauxTva;
+    }
+
+    public function setTauxTva(?float $tauxTva): static
+    {
+        $this->tauxTva = $tauxTva;
+        return $this;
+    }
+
+    #[Groups(groups: ['Circuit:read'])]
+    public function getPrixHT(): ?float
+    {
+        if ($this->prix === null) {
+            return null;
+        }
+        $tva = $this->tauxTva ?? 0.0;
+        return $tva > 0 ? round($this->prix / (1 + $tva), 2) : $this->prix;
     }
 }

@@ -161,6 +161,10 @@ class Cadeau implements TenantAwareInterface
     #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?string $telephone = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Cadeau:write', 'Cadeau:read', 'Reservation:read', 'PaymentDetail:read', 'Payment:read'])]
+    private ?float $tauxTva = null;
+
     public function __construct()
     {
         $this->origine = new ArrayCollection();
@@ -479,5 +483,26 @@ class Cadeau implements TenantAwareInterface
         $this->selectedOptions->removeElement($option);
 
         return $this;
+    }
+
+    public function getTauxTva(): ?float
+    {
+        return $this->tauxTva;
+    }
+
+    public function setTauxTva(?float $tauxTva): static
+    {
+        $this->tauxTva = $tauxTva;
+        return $this;
+    }
+
+    #[Groups(groups: ['Cadeau:read'])]
+    public function getPrixHT(): ?float
+    {
+        if ($this->prix === null) {
+            return null;
+        }
+        $tva = $this->tauxTva ?? $this->circuit?->getTauxTva() ?? 0.0;
+        return $tva > 0 ? round($this->prix / (1 + $tva), 2) : $this->prix;
     }
 }

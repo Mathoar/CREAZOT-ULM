@@ -78,6 +78,10 @@ class PaymentDetail implements TenantAwareInterface
     #[Groups(groups: ['PaymentDetail:read'])]
     private ?Expense $expense = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['PaymentDetail:write', 'Payment:write', 'PaymentDetail:read', 'Payment:read', 'Expense:write', 'Expense:read', 'Entretien:read'])]
+    private ?float $tauxTva = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -141,5 +145,35 @@ class PaymentDetail implements TenantAwareInterface
         $this->expense = $expense;
 
         return $this;
+    }
+
+    public function getTauxTva(): ?float
+    {
+        return $this->tauxTva;
+    }
+
+    public function setTauxTva(?float $tauxTva): static
+    {
+        $this->tauxTva = $tauxTva;
+        return $this;
+    }
+
+    #[Groups(groups: ['PaymentDetail:read', 'Payment:read', 'Expense:read', 'Entretien:read'])]
+    public function getAmountHT(): ?float
+    {
+        if ($this->amount === null) {
+            return null;
+        }
+        $tva = $this->tauxTva ?? 0.0;
+        return $tva > 0 ? round($this->amount / (1 + $tva), 2) : $this->amount;
+    }
+
+    #[Groups(groups: ['PaymentDetail:read', 'Payment:read', 'Expense:read', 'Entretien:read'])]
+    public function getMontantTva(): ?float
+    {
+        if ($this->amount === null) {
+            return null;
+        }
+        return round($this->amount - ($this->getAmountHT() ?? $this->amount), 2);
     }
 }

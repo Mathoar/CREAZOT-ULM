@@ -123,6 +123,21 @@ export const PrestationShow = () => {
                             }
                         />
                         <OptionField />
+                        <FunctionField
+                            source="prix"
+                            label="Prix TTC"
+                            render={record => record.prix != null ? record.prix.toFixed(2) + ' €' : '—'}
+                        />
+                        <FunctionField
+                            source="tauxTva"
+                            label="TVA"
+                            render={record => record.tauxTva != null ? `${(record.tauxTva * 100).toFixed(1)} %` : '—'}
+                        />
+                        <FunctionField
+                            source="prixHT"
+                            label="Prix HT"
+                            render={record => record.prixHT != null ? record.prixHT.toFixed(2) + ' €' : '—'}
+                        />
                     </Datagrid>
                 </ArrayField>
                 <TextField source="remarques" label="Remarques"/>

@@ -38,20 +38,37 @@ export const ExpenseShow = () => {
                         />
                         <FunctionField
                             source="amount"
-                            label="Montant (€)"
-                            render={({ amount }) => amount.toFixed(2) + "€" }
+                            label="Montant TTC"
+                            render={({ amount }) => amount.toFixed(2) + " €" }
+                        />
+                        <FunctionField
+                            source="tauxTva"
+                            label="TVA"
+                            render={({ tauxTva }) => tauxTva != null ? `${(tauxTva * 100).toFixed(1)} %` : '—'}
+                        />
+                        <FunctionField
+                            source="amountHT"
+                            label="Montant HT"
+                            render={({ amountHT }) => amountHT != null ? amountHT.toFixed(2) + " €" : '—'}
                         />
                     </Datagrid>
                 </ArrayField>
                 <FunctionField
                     source="totalTTC"
                     label="Total TTC"
-                    render={({ totalTTC, details }) => isDefined(totalTTC) ? totalTTC.toFixed(2) + " €" : '' }
+                    render={({ totalTTC }) => isDefined(totalTTC) ? totalTTC.toFixed(2) + " €" : '' }
                 />
                 <FunctionField
-                    source="tva"
-                    label="TVA appliquée"
-                    render={({ tva }) => isDefined(tva) ? (tva * 100).toFixed(2) + ' %' : '' }
+                    label="Total TVA"
+                    render={({ details }) => {
+                        if (!details?.length) return '—';
+                        const totalTva = details.reduce((sum, d) => {
+                            const amt = d.amount ?? 0;
+                            const tva = d.tauxTva ?? 0;
+                            return sum + (tva > 0 ? amt - amt / (1 + tva) : 0);
+                        }, 0);
+                        return totalTva > 0 ? totalTva.toFixed(2) + ' €' : '—';
+                    }}
                 />
                 <FunctionField
                     source="totalHT"

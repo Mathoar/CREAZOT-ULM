@@ -245,4 +245,30 @@ class Payment implements TenantAwareInterface
 
         return $this;
     }
+
+    #[Groups(groups: ['Payment:read'])]
+    public function getTotalTTC(): ?float
+    {
+        $total = 0.0;
+        foreach ($this->details as $detail) {
+            $total += $detail->getAmount() ?? 0.0;
+        }
+        return round($total, 2);
+    }
+
+    #[Groups(groups: ['Payment:read'])]
+    public function getTotalHT(): ?float
+    {
+        $total = 0.0;
+        foreach ($this->details as $detail) {
+            $total += $detail->getAmountHT() ?? 0.0;
+        }
+        return round($total, 2);
+    }
+
+    #[Groups(groups: ['Payment:read'])]
+    public function getTotalTva(): ?float
+    {
+        return round($this->getTotalTTC() - $this->getTotalHT(), 2);
+    }
 }

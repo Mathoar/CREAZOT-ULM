@@ -7,6 +7,7 @@ import { Box, Typography } from "@mui/material";
 import { RichTextInput } from "ra-input-rich-text";
 import { useSessionContext } from "../SessionContextProvider";
 import { BriefingFileField, formatMediaObject } from "../shared/BriefingFileField";
+import TvaSelectInput from "../shared/TvaSelectInput";
 
 export const CircuitsEdit = () => {
 
@@ -79,10 +80,13 @@ export const CircuitsEdit = () => {
         </Box>
         <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
           <Box flex={1}>
-              <NumberInput source="prix" defaultValue={ 0 } validate={required()}/>
+              <NumberInput source="prix" label="Prix TTC (€)" defaultValue={ 0 } validate={required()}/>
           </Box>
           <Box flex={1}>
-              <NumberInput source="cout" defaultValue={ 0 } validate={required()}/>
+              <NumberInput source="cout" label="Coût pilote (€)" defaultValue={ 0 } validate={required()}/>
+          </Box>
+          <Box flex={1}>
+              <TvaSelectInput source="tauxTva" label="TVA" />
           </Box>
         </Box>
         <ReferenceInput reference="natures" source="nature.@id">

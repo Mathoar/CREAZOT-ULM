@@ -27,7 +27,13 @@ export const CircuitShow = () => {
                     { clientWithWebshop(client) && <TextField source="webshopId" label="Code e-commerce"/> }
                     <DateField source="duree" label="Durée" showTime showDate={false}/>
                     <BooleanField source="prixFixe" label="Prix fixe"/>
-                    <NumberField source="prix" options={{ style: 'currency', currency: 'EUR' }}/>
+                    <NumberField source="prix" label="Prix TTC" options={{ style: 'currency', currency: 'EUR' }}/>
+                    <FunctionField
+                        source="tauxTva"
+                        label="TVA"
+                        render={record => record.tauxTva != null ? `${(record.tauxTva * 100).toFixed(1)} %` : '—'}
+                    />
+                    <NumberField source="prixHT" label="Prix HT" options={{ style: 'currency', currency: 'EUR' }}/>
                     <NumberField source="cout" label="Coût pilote" options={{ style: 'currency', currency: 'EUR' }}/>
                     <TextField source="nature.label" label="Nature de la prestation"/>
                     <FunctionField

@@ -101,6 +101,10 @@ final class PrestationCreateSubscriber implements EventSubscriberInterface
         foreach ($prestation->getVols() as $vol) {
             $defaultCost = $this->calculateFlightCost($prestation, $aeronef, $vol);
             $vol->setCout($defaultCost);
+
+            if ($vol->getTauxTva() === null && $vol->getCircuit()?->getTauxTva() !== null) {
+                $vol->setTauxTva($vol->getCircuit()->getTauxTva());
+            }
         }
     }
 

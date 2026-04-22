@@ -45,8 +45,18 @@ export const PaymentShow = () => {
                 />
                 <FunctionField
                     source="amount"
-                    label="Total"
-                    render={({ details }) => (details.reduce((sum, current) => sum += current.amount, 0)).toFixed(2) + "€" }
+                    label="Total TTC"
+                    render={({ totalTTC }) => totalTTC != null ? totalTTC.toFixed(2) + " €" : (0).toFixed(2) + " €" }
+                />
+                <FunctionField
+                    source="totalHT"
+                    label="Total HT"
+                    render={({ totalHT }) => totalHT != null ? totalHT.toFixed(2) + " €" : '—' }
+                />
+                <FunctionField
+                    source="totalTva"
+                    label="Montant TVA"
+                    render={({ totalTva }) => totalTva != null && totalTva > 0 ? totalTva.toFixed(2) + " €" : '—' }
                 />
                 <ArrayField source="details">
                     <Datagrid
@@ -64,8 +74,18 @@ export const PaymentShow = () => {
                         />
                         <FunctionField
                             source="amount"
-                            label="Montant (€)"
-                            render={({ amount }) => amount.toFixed(2) + "€" }
+                            label="Montant TTC"
+                            render={({ amount }) => amount.toFixed(2) + " €" }
+                        />
+                        <FunctionField
+                            source="tauxTva"
+                            label="TVA"
+                            render={({ tauxTva }) => tauxTva != null ? `${(tauxTva * 100).toFixed(1)} %` : '—'}
+                        />
+                        <FunctionField
+                            source="amountHT"
+                            label="Montant HT"
+                            render={({ amountHT }) => amountHT != null ? amountHT.toFixed(2) + " €" : '—'}
                         />
                     </Datagrid>
                 </ArrayField>

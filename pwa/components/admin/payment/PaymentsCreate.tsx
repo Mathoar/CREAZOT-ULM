@@ -6,6 +6,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { generateSafeCode, getFormattedValueForBackEnd, isDefined, isDefinedAndNotVoid } from "../../../app/lib/utils";
 import { clientWithOriginContact, clientWithPartners, paymentMode } from "../../../app/lib/client";
 import { useClient } from "../ClientProvider";
+import TvaSelectInput from "../shared/TvaSelectInput";
 
 const ReservationField = ({ choices = [], isLoading = false, setSelection, defaultDetails }) => {
     const { control, setValue } = useFormContext();
@@ -18,15 +19,17 @@ const ReservationField = ({ choices = [], isLoading = false, setSelection, defau
     useEffect(() => {   
         setSelection(selectedChoice);
         if (isDefined(selectedChoice)) {
+            const circuitTva = selectedChoice.circuitTva ?? null;
             if (isDefinedAndNotVoid(selectedChoice.prepayments)) {
                 const details = selectedChoice.prepayments.map(p => ({
                     mode: 'web', 
                     amount: isDefined(p.prix) ? p.prix : isDefined(p.cout) ? p.cout : 0,
-                    prepayment: p['@id']
+                    prepayment: p['@id'],
+                    ...(circuitTva != null ? { tauxTva: circuitTva } : {}),
                 }));
                 setValue('details', details);
             } else {
-                setValue('details', [{mode: 'cb', amount: selectedChoice.prix ?? ''}])
+                setValue('details', [{mode: 'cb', amount: selectedChoice.prix ?? '', ...(circuitTva != null ? { tauxTva: circuitTva } : {})}])
             }
         } else {
             setValue('details', defaultDetails);
@@ -134,7 +137,8 @@ export const PaymentsCreate = () => {
                     prix: 0,
                     paid: false,
                     prepayments: [],
-                    amount: 0
+                    amount: 0,
+                    circuitTva: resa.circuit?.tauxTva ?? null,
                 };
             }
             acc[key].ids.push(resa['@id']);
@@ -203,7 +207,8 @@ export const PaymentsCreate = () => {
                             label="Mode"
                             choices={ paymentMode }
                         />
-                        <NumberInput source="amount" label="Montant (€)" validate={required()}/>
+                        <NumberInput source="amount" label="Montant TTC (€)" validate={required()}/>
+                        <TvaSelectInput source="tauxTva" label="TVA" isCreate size="small" fullWidth={false} />
                     </SimpleFormIterator>
                 </ArrayInput>
                 <PartnersInput client={ client } reservations={ reservationsMemo }/>

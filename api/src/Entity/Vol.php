@@ -120,6 +120,10 @@ class Vol implements TenantAwareInterface
     #[Groups(groups: ['Vol:write', 'Prestation:write', 'Vol:read', 'Prestation:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Vol:write', 'Prestation:write', 'Vol:read', 'Prestation:read'])]
+    private ?float $tauxTva = null;
+
     public function __construct()
     {
         $this->landings = new ArrayCollection();
@@ -307,5 +311,35 @@ class Vol implements TenantAwareInterface
         $this->updatedAt = $updatedAt;
 
         return $this;
+    }
+
+    public function getTauxTva(): ?float
+    {
+        return $this->tauxTva;
+    }
+
+    public function setTauxTva(?float $tauxTva): static
+    {
+        $this->tauxTva = $tauxTva;
+        return $this;
+    }
+
+    #[Groups(groups: ['Vol:read', 'Prestation:read'])]
+    public function getPrixHT(): ?float
+    {
+        if ($this->prix === null) {
+            return null;
+        }
+        $tva = $this->tauxTva ?? $this->circuit?->getTauxTva() ?? 0.0;
+        return $tva > 0 ? round($this->prix / (1 + $tva), 2) : $this->prix;
+    }
+
+    #[Groups(groups: ['Vol:read', 'Prestation:read'])]
+    public function getMontantTva(): ?float
+    {
+        if ($this->prix === null) {
+            return null;
+        }
+        return round($this->prix - ($this->getPrixHT() ?? $this->prix), 2);
     }
 }

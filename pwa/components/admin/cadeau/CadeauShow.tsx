@@ -31,7 +31,13 @@ export const CadeauShow = () => (
                         <TextField source="name" label="Nom"/>
                     </Datagrid>
                 </ArrayField>
-            <NumberField source="prix" label="Prix" options={{ style: 'currency', currency: 'EUR' }}/>
+            <NumberField source="prix" label="Prix TTC" options={{ style: 'currency', currency: 'EUR' }}/>
+            <FunctionField
+                source="tauxTva"
+                label="TVA"
+                render={record => record.tauxTva != null ? `${(record.tauxTva * 100).toFixed(1)} %` : '—'}
+            />
+            <NumberField source="prixHT" label="Prix HT" options={{ style: 'currency', currency: 'EUR' }}/>
             <NumberField source="cout" label="Coût" options={{ style: 'currency', currency: 'EUR' }}/>
             <TextField source="message" />
             <TextField source="paymentId" label="N° du paiement"/>

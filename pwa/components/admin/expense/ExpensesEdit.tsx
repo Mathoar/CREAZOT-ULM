@@ -7,14 +7,12 @@ import { isDefined } from "../../../app/lib/utils";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useEffect, useRef } from "react";
 import { MyFileField } from "../shared/OdooDocumentField";
-import TvaSelectInput from "./TvaSelectInput";
+import SharedTvaSelectInput from "../shared/TvaSelectInput";
 
 const TotalsWatcher = () => {
   const record = useRecordContext();
   const { setValue, getValues, control } = useFormContext();
   const details = useWatch({ name: "details", control }) || [];
-  const tvaRaw = useWatch({ name: "tva", control }) ?? 0;
-  const tvaRate = parseFloat(String(tvaRaw)) || 0;
 
   const initializedRef = useRef(false);
   const manualEditedRef = useRef(false);
@@ -57,24 +55,31 @@ const TotalsWatcher = () => {
       .map((d: any) => parseFloat(d?.amount ?? 0) || 0)
       .reduce((acc: number, val: number) => acc + val, 0);
 
-    const totalHT = tvaRate > 0 ? parseFloat((totalTTC / (1 + tvaRate)).toFixed(2)) : totalTTC;
+    const totalHT = details
+      .map((d: any) => {
+        const amt = parseFloat(d?.amount ?? 0) || 0;
+        const tva = parseFloat(d?.tauxTva ?? 0) || 0;
+        return tva > 0 ? amt / (1 + tva) : amt;
+      })
+      .reduce((acc: number, val: number) => acc + val, 0);
 
+    const roundedHT = parseFloat(totalHT.toFixed(2));
     const prevTotalTTC = getValues("totalTTC");
     const prevTotalHT = getValues("totalHT");
 
     if (prevTotalTTC !== totalTTC) {
       setValue("totalTTC", totalTTC, { shouldDirty: true });
     }
-    if (prevTotalHT !== totalHT) {
-      setValue("totalHT", totalHT, { shouldDirty: true });
+    if (prevTotalHT !== roundedHT) {
+      setValue("totalHT", roundedHT, { shouldDirty: true });
     }
-  }, [details, tvaRate, setValue, getValues]);
+  }, [details, setValue, getValues]);
 
   return (
     <NumberInput
       source="totalHT"
       label="Total HT (€)"
-      helperText="Le montant HT est recalculé si vous changez les paiements ou la TVA. Vous pouvez le modifier manuellement (arrête le recalcul)."
+      helperText="Le montant HT est recalculé à partir des TVA par ligne. Vous pouvez le modifier manuellement (arrête le recalcul)."
       onChange={(e: any) => {
         manualEditedRef.current = true;
         const v = parseFloat(e?.target?.value);
@@ -108,11 +113,11 @@ export const ExpensesEdit = () => {
         <ArrayInput source="details" label="" defaultValue={defaultDetails}>
           <SimpleFormIterator inline disableAdd={false} disableRemove={true}>
             <SelectInput source="mode" label="Mode" choices={paymentMode} />
-            <NumberInput source="amount" label="Montant (€)" />
+            <NumberInput source="amount" label="Montant TTC (€)" />
+            <SharedTvaSelectInput source="tauxTva" label="TVA" size="small" fullWidth={false} />
           </SimpleFormIterator>
         </ArrayInput>
         <NumberInput source="totalTTC" label="Total TTC (€)" readOnly />
-        <TvaSelectInput />
         <TotalsWatcher />
         <Box display="flex" gap={2} flexWrap="nowrap" width="100%" sx={{ marginTop: '1.5em', marginBottom: '2em' }}>
           <Box flex={1}>

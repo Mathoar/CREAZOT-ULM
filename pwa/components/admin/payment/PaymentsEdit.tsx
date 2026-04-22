@@ -5,6 +5,7 @@ import { getFormattedValueForBackEnd, isDefined, isDefinedAndNotVoid } from "../
 import { useClient } from "../ClientProvider";
 import { useFormContext } from "react-hook-form";
 import { useEffect } from "react";
+import TvaSelectInput from "../shared/TvaSelectInput";
 
 const PartnersInput = ({ client }) => { 
 
@@ -50,7 +51,8 @@ export const PaymentsEdit = () => {
                       label="Mode"
                       choices={ paymentMode }
                   />
-                  <NumberInput source="amount" label="Montant (€)"/>
+                  <NumberInput source="amount" label="Montant TTC (€)"/>
+                  <TvaSelectInput source="tauxTva" label="TVA" size="small" fullWidth={false} />
                   <TextInput source="prepayment.code" label="Prépaiement" readOnly/>
               </SimpleFormIterator>
           </ArrayInput>

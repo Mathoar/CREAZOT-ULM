@@ -71,6 +71,10 @@ class Option implements TenantAwareInterface
     #[Groups(groups: ['Option:write', 'Option:read', 'Vol:read', 'Cadeau:read', 'Prestation:read', 'Reservation:read', 'Combinaison:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?float $prix = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Option:write', 'Option:read', 'Vol:read', 'Cadeau:read', 'Prestation:read', 'Reservation:read', 'Combinaison:read', 'PaymentDetail:read', 'Payment:read'])]
+    private ?float $tauxTva = null;
+
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     #[Groups(groups: ['Option:write', 'Option:read'])]
     private bool $isAvailable = true;
@@ -120,5 +124,26 @@ class Option implements TenantAwareInterface
         $this->isAvailable = $isAvailable;
 
         return $this;
+    }
+
+    public function getTauxTva(): ?float
+    {
+        return $this->tauxTva;
+    }
+
+    public function setTauxTva(?float $tauxTva): static
+    {
+        $this->tauxTva = $tauxTva;
+        return $this;
+    }
+
+    #[Groups(groups: ['Option:read'])]
+    public function getPrixHT(): ?float
+    {
+        if ($this->prix === null) {
+            return null;
+        }
+        $tva = $this->tauxTva ?? 0.0;
+        return $tva > 0 ? round($this->prix / (1 + $tva), 2) : $this->prix;
     }
 }

@@ -6,12 +6,11 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { isDefined } from "../../../app/lib/utils";
 import { MyFileField } from "../shared/OdooDocumentField";
-import TvaSelectInput from "./TvaSelectInput";
+import SharedTvaSelectInput from "../shared/TvaSelectInput";
 
 const TotalsWatcher = () => {
   const { setValue } = useFormContext();
   const details = useWatch({ name: "details" }) || [];
-  const tvaRate = parseFloat(useWatch({ name: "tva" }) || 0);
   const [manualHT, setManualHT] = useState<boolean>(false);
 
   useEffect(() => {
@@ -22,16 +21,22 @@ const TotalsWatcher = () => {
     setValue("totalTTC", totalTTC, { shouldValidate: true, shouldDirty: true });
 
     if (!manualHT) {
-      const totalHT = tvaRate > 0 ? parseFloat((totalTTC / (1 + tvaRate)).toFixed(2)) : totalTTC;
-      setValue("totalHT", totalHT, { shouldValidate: true, shouldDirty: true });
+      const totalHT = details
+        .map((d: any) => {
+          const amt = parseFloat(d?.amount || 0);
+          const tva = parseFloat(d?.tauxTva || 0);
+          return tva > 0 ? amt / (1 + tva) : amt;
+        })
+        .reduce((acc: number, val: number) => acc + val, 0);
+      setValue("totalHT", parseFloat(totalHT.toFixed(2)), { shouldValidate: true, shouldDirty: true });
     }
-  }, [details, tvaRate, manualHT, setValue]);
+  }, [details, manualHT, setValue]);
 
   return (
     <NumberInput
       source="totalHT"
       label="Total HT (€)"
-      helperText="Le montant HT est calculé automatiquement. Vous pouvez l'ajuster si nécessaire."
+      helperText="Le montant HT est calculé automatiquement à partir des TVA par ligne. Vous pouvez l'ajuster si nécessaire."
       onChange={(e: any) => {
         setManualHT(true);
         setValue("totalHT", parseFloat(e.target.value), { shouldValidate: true, shouldDirty: true });
@@ -64,11 +69,11 @@ export const ExpensesCreate = () => {
         <ArrayInput source="details" label="" defaultValue={defaultDetails}>
           <SimpleFormIterator inline disableAdd={false} disableRemove={true}>
             <SelectInput source="mode" label="Mode" choices={paymentMode} />
-            <NumberInput source="amount" label="Montant (€)" validate={required()} />
+            <NumberInput source="amount" label="Montant TTC (€)" validate={required()} />
+            <SharedTvaSelectInput source="tauxTva" label="TVA" isCreate size="small" fullWidth={false} />
           </SimpleFormIterator>
         </ArrayInput>
         <NumberInput source="totalTTC" label="Total TTC (€)" readOnly />
-        <TvaSelectInput isCreate />
         <TotalsWatcher />
         <Box display="flex" gap={2} flexWrap="nowrap" width="100%" sx={{ marginTop: '2em', marginBottom: '2em' }}>
           <Box flex={1}>
