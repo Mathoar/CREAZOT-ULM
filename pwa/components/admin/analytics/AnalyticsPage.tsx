@@ -5,6 +5,7 @@ import { Box, Card, CardContent, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typ
 import { CommercialTab } from './CommercialTab';
 import { OperationnelTab } from './OperationnelTab';
 import { TechniqueTab } from './TechniqueTab';
+import { FiscalTab } from './FiscalTab';
 
 const granularities = [
   { id: 'day', label: 'Jour' },
@@ -98,7 +99,7 @@ export const AnalyticsPage = () => {
       }
     } catch (e) {}
 
-    const endpoint = tab === 0 ? 'commercial' : tab === 1 ? 'operational' : 'technical';
+    const endpoint = tab === 0 ? 'commercial' : tab === 1 ? 'operational' : tab === 2 ? 'technical' : 'fiscal';
 
     fetch(`/admin/stats/${endpoint}?from=${from}&to=${to}&granularity=${granularity}`, { headers })
       .then(r => r.json())
@@ -137,11 +138,13 @@ export const AnalyticsPage = () => {
           <Tab label="Commercial" />
           <Tab label="Opérationnel" />
           <Tab label="Technique" />
+          <Tab label="Fiscal / TVA" />
         </Tabs>
         <CardContent>
           {tab === 0 && <CommercialTab data={data} loading={loading} />}
           {tab === 1 && <OperationnelTab data={data} loading={loading} />}
           {tab === 2 && <TechniqueTab data={data} loading={loading} />}
+          {tab === 3 && <FiscalTab data={data} loading={loading} />}
         </CardContent>
       </Card>
     </Box>

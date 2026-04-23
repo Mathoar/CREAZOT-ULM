@@ -208,6 +208,120 @@ class StatsController extends AbstractController
         ];
     }
 
+    // ── Fiscal ─────────────────────────────────────────────────────
+
+    #[Route('/fiscal', methods: ['GET'])]
+    public function fiscal(Request $request): JsonResponse
+    {
+        $clientId = $this->clientGetter->get()->getId();
+        $from = $request->query->get('from', date('Y-01-01'));
+        $to = $request->query->get('to', date('Y-m-d'));
+        $granularity = $request->query->get('granularity', 'month');
+
+        $truncPay = $this->getTruncExpr($granularity, 'pay.date');
+        $truncExp = $this->getTruncExpr($granularity, 'e.date');
+
+        return new JsonResponse([
+            'tva_collectee'   => $this->getTvaCollectee($clientId, $from, $to, $truncPay),
+            'tva_deductible'  => $this->getTvaDeductible($clientId, $from, $to, $truncExp),
+            'tva_par_taux'    => $this->getTvaParTaux($clientId, $from, $to),
+            'synthese'        => $this->getSyntheseFiscale($clientId, $from, $to),
+        ]);
+    }
+
+    private function getTruncExpr(string $granularity, string $dateCol): string
+    {
+        return match ($granularity) {
+            'day'       => "TO_CHAR($dateCol, 'YYYY-MM-DD')",
+            'week'      => "TO_CHAR(DATE_TRUNC('week', $dateCol), 'YYYY-\"W\"IW')",
+            'month'     => "TO_CHAR($dateCol, 'YYYY-MM')",
+            'quarter'   => "TO_CHAR($dateCol, 'YYYY-\"Q\"') || EXTRACT(QUARTER FROM $dateCol)",
+            'semester'  => "EXTRACT(YEAR FROM $dateCol) || '-S' || CASE WHEN EXTRACT(MONTH FROM $dateCol) <= 6 THEN '1' ELSE '2' END",
+            'year'      => "TO_CHAR($dateCol, 'YYYY')",
+            default     => "TO_CHAR($dateCol, 'YYYY-MM')",
+        };
+    }
+
+    private function getTvaCollectee(int $clientId, string $from, string $to, string $truncExpr): array
+    {
+        return $this->conn->fetchAllAssociative(
+            "SELECT $truncExpr AS period,
+                    COALESCE(SUM(pd.amount), 0) AS total_ttc,
+                    COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount / (1 + pd.taux_tva) ELSE pd.amount END), 0) AS total_ht,
+                    COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount - pd.amount / (1 + pd.taux_tva) ELSE 0 END), 0) AS total_tva
+             FROM payment_detail pd
+             JOIN payment pay ON pd.payment_id = pay.id
+             WHERE pay.client_id = :cid AND pay.date >= :from AND pay.date <= :to
+             GROUP BY period ORDER BY period",
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
+        );
+    }
+
+    private function getTvaDeductible(int $clientId, string $from, string $to, string $truncExpr): array
+    {
+        return $this->conn->fetchAllAssociative(
+            "SELECT $truncExpr AS period,
+                    COALESCE(SUM(pd.amount), 0) AS total_ttc,
+                    COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount / (1 + pd.taux_tva) ELSE pd.amount END), 0) AS total_ht,
+                    COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount - pd.amount / (1 + pd.taux_tva) ELSE 0 END), 0) AS total_tva
+             FROM payment_detail pd
+             JOIN expense e ON pd.expense_id = e.id
+             WHERE e.client_id = :cid AND e.date >= :from AND e.date <= :to
+             GROUP BY period ORDER BY period",
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
+        );
+    }
+
+    private function getTvaParTaux(int $clientId, string $from, string $to): array
+    {
+        $collectee = $this->conn->fetchAllAssociative(
+            "SELECT pd.taux_tva AS taux,
+                    COALESCE(SUM(pd.amount), 0) AS total_ttc,
+                    COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount - pd.amount / (1 + pd.taux_tva) ELSE 0 END), 0) AS tva
+             FROM payment_detail pd
+             JOIN payment pay ON pd.payment_id = pay.id
+             WHERE pay.client_id = :cid AND pay.date >= :from AND pay.date <= :to AND pd.taux_tva IS NOT NULL
+             GROUP BY pd.taux_tva ORDER BY pd.taux_tva DESC",
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
+        );
+
+        $deductible = $this->conn->fetchAllAssociative(
+            "SELECT pd.taux_tva AS taux,
+                    COALESCE(SUM(pd.amount), 0) AS total_ttc,
+                    COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount - pd.amount / (1 + pd.taux_tva) ELSE 0 END), 0) AS tva
+             FROM payment_detail pd
+             JOIN expense e ON pd.expense_id = e.id
+             WHERE e.client_id = :cid AND e.date >= :from AND e.date <= :to AND pd.taux_tva IS NOT NULL
+             GROUP BY pd.taux_tva ORDER BY pd.taux_tva DESC",
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
+        );
+
+        return ['collectee' => $collectee, 'deductible' => $deductible];
+    }
+
+    private function getSyntheseFiscale(int $clientId, string $from, string $to): array
+    {
+        $collectee = (float) $this->conn->fetchOne(
+            "SELECT COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount - pd.amount / (1 + pd.taux_tva) ELSE 0 END), 0)
+             FROM payment_detail pd JOIN payment pay ON pd.payment_id = pay.id
+             WHERE pay.client_id = :cid AND pay.date >= :from AND pay.date <= :to",
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
+        );
+
+        $deductible = (float) $this->conn->fetchOne(
+            "SELECT COALESCE(SUM(CASE WHEN pd.taux_tva > 0 THEN pd.amount - pd.amount / (1 + pd.taux_tva) ELSE 0 END), 0)
+             FROM payment_detail pd JOIN expense e ON pd.expense_id = e.id
+             WHERE e.client_id = :cid AND e.date >= :from AND e.date <= :to",
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
+        );
+
+        return [
+            'tva_collectee'  => round($collectee, 2),
+            'tva_deductible' => round($deductible, 2),
+            'tva_nette'      => round($collectee - $deductible, 2),
+        ];
+    }
+
     // ── Opérationnel ──────────────────────────────────────────────
 
     #[Route('/operational', methods: ['GET'])]

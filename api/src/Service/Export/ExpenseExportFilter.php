@@ -54,7 +54,7 @@ class ExpenseExportFilter implements ExportFilterInterface
 
     public function formatExport(array $results, string $format = 'csv'): array
     {
-        $headers = ['Id', 'Date', 'Beneficiaire', 'Libelle', 'Total HT', 'TVA', 'Total TTC', 'Mode', 'Montant', 'Justificatif'];
+        $headers = ['Id', 'Date', 'Bénéficiaire', 'Libellé', 'Mode', 'Montant TTC', 'Taux TVA', 'Montant HT', 'Montant TVA', 'Total TTC', 'Total HT', 'Justificatif'];
 
         $rows = [];
 
@@ -63,16 +63,23 @@ class ExpenseExportFilter implements ExportFilterInterface
             $first = true;
 
             foreach ($details as $detail) {
+                $amount = $detail->getAmount() ?? 0;
+                $tauxTva = $detail->getTauxTva();
+                $amountHT = $detail->getAmountHT() ?? $amount;
+                $montantTva = $detail->getMontantTva() ?? 0;
+
                 $rows[] = [
                     $first ? $expense->getId() : '',
                     $first ? $expense->getDate()?->format('Y-m-d H:i') : '',
                     $first ? ($expense->getBeneficiaire() ?? '') : '',
                     $first ? ($expense->getLibelle() ?? '') : '',
-                    $first ? ($expense->getTotalHT() ?? 0) . ' €' : '',
-                    $first ? ($expense->getTva() ?? 0) * 100 . ' %' : '',
-                    $first ? ($expense->getTotalTTC() ?? 0) . ' €' : '',
                     $this->getExpenseDetailName($detail->getMode()) ?? '',
-                    $detail->getAmount() . ' €',
+                    number_format($amount, 2, ',', '') . ' €',
+                    $tauxTva !== null ? number_format($tauxTva * 100, 1, ',', '') . ' %' : '',
+                    number_format($amountHT, 2, ',', '') . ' €',
+                    $montantTva > 0 ? number_format($montantTva, 2, ',', '') . ' €' : '',
+                    $first ? number_format($expense->getTotalTTC() ?? 0, 2, ',', '') . ' €' : '',
+                    $first ? number_format($expense->getTotalHT() ?? 0, 2, ',', '') . ' €' : '',
                     $first ? $this->exportUtils->makeLink($expense->getDocument(), null, $format) ?? '' : '',
                 ];
 

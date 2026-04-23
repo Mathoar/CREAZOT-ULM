@@ -55,7 +55,7 @@ class PaymentExportFilter implements ExportFilterInterface
 
     public function formatExport(array $results, string $format = 'csv'): array
     {
-        $headers = [ 'Id', 'Date', 'Référence', 'Nom', 'Code de réservation', 'Origine', 'Mode', 'Montant', 'Prépaiement'];
+        $headers = ['Id', 'Date', 'Référence', 'Nom', 'Code de réservation', 'Origine', 'Mode', 'Montant TTC', 'Taux TVA', 'Montant HT', 'Montant TVA', 'Prépaiement'];
 
         $rows = [];
 
@@ -64,10 +64,10 @@ class PaymentExportFilter implements ExportFilterInterface
             $first = true;
 
             foreach ($details as $detail) {
-                $date = $first ? $payment->getDate()?->format('Y-m-d H:i') : '';
-                $reference = $first ? ($payment->getReference() ?? '') : '';
-                $name = $first ? ($payment->getReference() ?? '') : '';
-                $reservationCode = $first ? ($payment->getReservationCode() ?? '') : '';
+                $amount = $detail->getAmount() ?? 0;
+                $tauxTva = $detail->getTauxTva();
+                $amountHT = $detail->getAmountHT() ?? $amount;
+                $montantTva = $detail->getMontantTva() ?? 0;
 
                 $rows[] = [
                     $first ? $payment->getId() : '',
@@ -83,7 +83,10 @@ class PaymentExportFilter implements ExportFilterInterface
                         ) : ''
                     ) : '',
                     $this->getPaymentDetailName($detail->getMode()) ?? '',
-                    $detail->getAmount(),
+                    number_format($amount, 2, ',', '') . ' €',
+                    $tauxTva !== null ? number_format($tauxTva * 100, 1, ',', '') . ' %' : '',
+                    number_format($amountHT, 2, ',', '') . ' €',
+                    $montantTva > 0 ? number_format($montantTva, 2, ',', '') . ' €' : '',
                     $this->getPrepaymentInformations($detail->getPrepayment()),
                 ];
 

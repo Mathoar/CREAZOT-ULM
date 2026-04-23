@@ -171,8 +171,8 @@ export const ExpensesEdit = () => {
         <DateInput source="date" defaultValue={new Date()} label="Date" />
         <TextInput source="beneficiaire" label="Bénéficiaire" />
         <TextInput source="libelle" label="Libellé" />
-        <Box display="flex" alignItems="center" justifyContent="space-between" mt={2} mb={1}>
-          <Typography variant="h6">Lignes de dépense</Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" mt={2} mb={1}>
+          <Typography variant="h6" sx={{ flexShrink: 0 }}>Lignes de dépense</Typography>
           <SaisieModeToggle saisieMode={saisieMode} setSaisieMode={setSaisieMode} />
         </Box>
         <ArrayInput source="details" label="" defaultValue={defaultDetails}>

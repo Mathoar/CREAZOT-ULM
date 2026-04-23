@@ -98,13 +98,14 @@ export const ExpensesCreate = () => {
         <DateInput source="date" defaultValue={new Date()} label="Date" validate={required()} />
         <TextInput source="beneficiaire" label="Bénéficiaire" validate={required()} />
         <TextInput source="libelle" label="Libellé" />
-        <Box display="flex" alignItems="center" justifyContent="space-between" mt={2} mb={1}>
-          <Typography variant="h6">Lignes de dépense</Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" mt={2} mb={1}>
+          <Typography variant="h6" sx={{ flexShrink: 0 }}>Lignes de dépense</Typography>
           <ToggleButtonGroup
             value={saisieMode}
             exclusive
             onChange={(_, val) => val && setSaisieMode(val)}
             size="small"
+            sx={{ ml: 'auto' }}
           >
             <ToggleButton value="ttc" sx={{ textTransform: 'none', px: 2 }}>Saisie TTC</ToggleButton>
             <ToggleButton value="ht" sx={{ textTransform: 'none', px: 2 }}>Saisie HT</ToggleButton>
