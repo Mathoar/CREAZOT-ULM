@@ -19,13 +19,13 @@ const chartDefaults = {
   grid: { borderColor: '#f0f0f0' },
 };
 
-interface Props { data: any; loading: boolean; }
+interface Props { data: any; loading: boolean; hasExpenses?: boolean; }
 
-export const FiscalTab = ({ data, loading }: Props) => {
+export const FiscalTab = ({ data, loading, hasExpenses = false }: Props) => {
   if (loading || !data) {
     return (
       <Grid container spacing={2}>
-        {[...Array(6)].map((_, i) => (
+        {[...Array(4)].map((_, i) => (
           <Grid item xs={12} md={6} lg={3} key={i}><Skeleton variant="rounded" height={140} /></Grid>
         ))}
       </Grid>
@@ -37,11 +37,11 @@ export const FiscalTab = ({ data, loading }: Props) => {
   const timelineData = useMemo(() => {
     const allPeriods = new Set<string>();
     tva_collectee?.forEach((r: any) => allPeriods.add(r.period));
-    tva_deductible?.forEach((r: any) => allPeriods.add(r.period));
+    if (hasExpenses) tva_deductible?.forEach((r: any) => allPeriods.add(r.period));
     const periods = Array.from(allPeriods).sort();
 
     const collecteeMap = new Map(tva_collectee?.map((r: any) => [r.period, r]) ?? []);
-    const deductibleMap = new Map(tva_deductible?.map((r: any) => [r.period, r]) ?? []);
+    const deductibleMap = hasExpenses ? new Map(tva_deductible?.map((r: any) => [r.period, r]) ?? []) : new Map();
 
     return {
       periods,
@@ -53,26 +53,30 @@ export const FiscalTab = ({ data, loading }: Props) => {
         return +(c - d).toFixed(2);
       }),
     };
-  }, [tva_collectee, tva_deductible]);
+  }, [tva_collectee, tva_deductible, hasExpenses]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* KPI */}
       <Grid container spacing={2}>
-        <Grid item xs={6} md={3}>
+        <Grid item xs={6} md={hasExpenses ? 3 : 6}>
           <KpiCard title="TVA collectée" value={fmt(synthese?.tva_collectee ?? 0)} subtitle="Sur paiements" icon={<ReceiptLongIcon />} color="#2e7d32" />
         </Grid>
-        <Grid item xs={6} md={3}>
-          <KpiCard title="TVA déductible" value={fmt(synthese?.tva_deductible ?? 0)} subtitle="Sur dépenses" icon={<TrendingDownIcon />} color="#d32f2f" />
-        </Grid>
-        <Grid item xs={6} md={3}>
-          <KpiCard title="TVA nette" value={fmt(synthese?.tva_nette ?? 0)}
-            subtitle={synthese?.tva_nette >= 0 ? 'À reverser' : 'Crédit de TVA'}
-            icon={<BalanceIcon />}
-            color={synthese?.tva_nette >= 0 ? '#ed6c02' : '#0288d1'} />
-        </Grid>
-        <Grid item xs={6} md={3}>
+        {hasExpenses && (
+          <Grid item xs={6} md={3}>
+            <KpiCard title="TVA déductible" value={fmt(synthese?.tva_deductible ?? 0)} subtitle="Sur dépenses" icon={<TrendingDownIcon />} color="#d32f2f" />
+          </Grid>
+        )}
+        {hasExpenses && (
+          <Grid item xs={6} md={3}>
+            <KpiCard title="TVA nette" value={fmt(synthese?.tva_nette ?? 0)}
+              subtitle={synthese?.tva_nette >= 0 ? 'À reverser' : 'Crédit de TVA'}
+              icon={<BalanceIcon />}
+              color={synthese?.tva_nette >= 0 ? '#ed6c02' : '#0288d1'} />
+          </Grid>
+        )}
+        <Grid item xs={6} md={hasExpenses ? 3 : 6}>
           <KpiCard title="Base HT encaissée"
             value={fmt(tva_collectee?.reduce((s: number, r: any) => s + Number(r.total_ht), 0) ?? 0)}
             icon={<AccountBalanceIcon />} color="#1565c0" />
@@ -80,36 +84,40 @@ export const FiscalTab = ({ data, loading }: Props) => {
       </Grid>
 
       {/* Timeline chart */}
-      <ChartCard title="Évolution TVA collectée / déductible / nette">
+      <ChartCard title={hasExpenses ? 'Évolution TVA collectée / déductible / nette' : 'Évolution TVA collectée'}>
         <Chart type="area" height={320} options={{
           ...chartDefaults,
           xaxis: { categories: timelineData.periods },
           yaxis: { labels: { formatter: (v: number) => fmt(v) } },
-          colors: ['#2e7d32', '#d32f2f', '#ed6c02'],
+          colors: hasExpenses ? ['#2e7d32', '#d32f2f', '#ed6c02'] : ['#2e7d32'],
           fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05 } },
           tooltip: { y: { formatter: (v: number) => fmt(v) } },
           legend: { position: 'top' },
         }}
-        series={[
+        series={hasExpenses ? [
           { name: 'TVA collectée', data: timelineData.collectee },
           { name: 'TVA déductible', data: timelineData.deductible },
           { name: 'TVA nette', data: timelineData.nette },
+        ] : [
+          { name: 'TVA collectée', data: timelineData.collectee },
         ]}
         />
       </ChartCard>
 
       {/* Breakdown by rate */}
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={hasExpenses ? 6 : 12}>
           <ChartCard title="TVA collectée par taux">
             <TvaRateTable rows={tva_par_taux?.collectee ?? []} />
           </ChartCard>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <ChartCard title="TVA déductible par taux">
-            <TvaRateTable rows={tva_par_taux?.deductible ?? []} />
-          </ChartCard>
-        </Grid>
+        {hasExpenses && (
+          <Grid item xs={12} md={6}>
+            <ChartCard title="TVA déductible par taux">
+              <TvaRateTable rows={tva_par_taux?.deductible ?? []} />
+            </ChartCard>
+          </Grid>
+        )}
       </Grid>
 
       {/* Detailed timeline table */}
@@ -122,10 +130,10 @@ export const FiscalTab = ({ data, loading }: Props) => {
                 <TableCell align="right"><strong>CA TTC</strong></TableCell>
                 <TableCell align="right"><strong>CA HT</strong></TableCell>
                 <TableCell align="right"><strong>TVA collectée</strong></TableCell>
-                <TableCell align="right"><strong>Dépenses TTC</strong></TableCell>
-                <TableCell align="right"><strong>Dépenses HT</strong></TableCell>
-                <TableCell align="right"><strong>TVA déductible</strong></TableCell>
-                <TableCell align="right"><strong>TVA nette</strong></TableCell>
+                {hasExpenses && <TableCell align="right"><strong>Dépenses TTC</strong></TableCell>}
+                {hasExpenses && <TableCell align="right"><strong>Dépenses HT</strong></TableCell>}
+                {hasExpenses && <TableCell align="right"><strong>TVA déductible</strong></TableCell>}
+                {hasExpenses && <TableCell align="right"><strong>TVA nette</strong></TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -139,12 +147,14 @@ export const FiscalTab = ({ data, loading }: Props) => {
                     <TableCell align="right">{fmt(Number(c?.total_ttc ?? 0))}</TableCell>
                     <TableCell align="right">{fmt(Number(c?.total_ht ?? 0))}</TableCell>
                     <TableCell align="right" sx={{ color: '#2e7d32', fontWeight: 600 }}>{fmt(Number(c?.total_tva ?? 0))}</TableCell>
-                    <TableCell align="right">{fmt(Number(d?.total_ttc ?? 0))}</TableCell>
-                    <TableCell align="right">{fmt(Number(d?.total_ht ?? 0))}</TableCell>
-                    <TableCell align="right" sx={{ color: '#d32f2f', fontWeight: 600 }}>{fmt(Number(d?.total_tva ?? 0))}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700, color: nette >= 0 ? '#ed6c02' : '#0288d1' }}>
-                      {fmt(nette)}
-                    </TableCell>
+                    {hasExpenses && <TableCell align="right">{fmt(Number(d?.total_ttc ?? 0))}</TableCell>}
+                    {hasExpenses && <TableCell align="right">{fmt(Number(d?.total_ht ?? 0))}</TableCell>}
+                    {hasExpenses && <TableCell align="right" sx={{ color: '#d32f2f', fontWeight: 600 }}>{fmt(Number(d?.total_tva ?? 0))}</TableCell>}
+                    {hasExpenses && (
+                      <TableCell align="right" sx={{ fontWeight: 700, color: nette >= 0 ? '#ed6c02' : '#0288d1' }}>
+                        {fmt(nette)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
@@ -154,12 +164,14 @@ export const FiscalTab = ({ data, loading }: Props) => {
                   <TableCell align="right"><strong>{fmt(tva_collectee?.reduce((s: number, r: any) => s + Number(r.total_ttc), 0) ?? 0)}</strong></TableCell>
                   <TableCell align="right"><strong>{fmt(tva_collectee?.reduce((s: number, r: any) => s + Number(r.total_ht), 0) ?? 0)}</strong></TableCell>
                   <TableCell align="right" sx={{ color: '#2e7d32' }}><strong>{fmt(synthese?.tva_collectee ?? 0)}</strong></TableCell>
-                  <TableCell align="right"><strong>{fmt(tva_deductible?.reduce((s: number, r: any) => s + Number(r.total_ttc), 0) ?? 0)}</strong></TableCell>
-                  <TableCell align="right"><strong>{fmt(tva_deductible?.reduce((s: number, r: any) => s + Number(r.total_ht), 0) ?? 0)}</strong></TableCell>
-                  <TableCell align="right" sx={{ color: '#d32f2f' }}><strong>{fmt(synthese?.tva_deductible ?? 0)}</strong></TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: synthese?.tva_nette >= 0 ? '#ed6c02' : '#0288d1' }}>
-                    <strong>{fmt(synthese?.tva_nette ?? 0)}</strong>
-                  </TableCell>
+                  {hasExpenses && <TableCell align="right"><strong>{fmt(tva_deductible?.reduce((s: number, r: any) => s + Number(r.total_ttc), 0) ?? 0)}</strong></TableCell>}
+                  {hasExpenses && <TableCell align="right"><strong>{fmt(tva_deductible?.reduce((s: number, r: any) => s + Number(r.total_ht), 0) ?? 0)}</strong></TableCell>}
+                  {hasExpenses && <TableCell align="right" sx={{ color: '#d32f2f' }}><strong>{fmt(synthese?.tva_deductible ?? 0)}</strong></TableCell>}
+                  {hasExpenses && (
+                    <TableCell align="right" sx={{ fontWeight: 700, color: synthese?.tva_nette >= 0 ? '#ed6c02' : '#0288d1' }}>
+                      <strong>{fmt(synthese?.tva_nette ?? 0)}</strong>
+                    </TableCell>
+                  )}
                 </TableRow>
               )}
             </TableBody>

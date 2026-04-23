@@ -6,6 +6,8 @@ import { CommercialTab } from './CommercialTab';
 import { OperationnelTab } from './OperationnelTab';
 import { TechniqueTab } from './TechniqueTab';
 import { FiscalTab } from './FiscalTab';
+import { useClient } from '../../admin/ClientProvider';
+import { clientWithPaymentManagement, clientWithExpensesManagement } from '../../../app/lib/client';
 
 const granularities = [
   { id: 'day', label: 'Jour' },
@@ -68,6 +70,21 @@ const bestGranularity = (preset: string): string => {
 
 export const AnalyticsPage = () => {
   const { session } = useSessionContext();
+  const { client } = useClient();
+  const hasPayments = clientWithPaymentManagement(client);
+  const hasExpenses = clientWithExpensesManagement(client);
+  const showFiscal = hasPayments;
+
+  const tabs = useMemo(() => {
+    const base = [
+      { label: 'Commercial', endpoint: 'commercial' },
+      { label: 'Opérationnel', endpoint: 'operational' },
+      { label: 'Technique', endpoint: 'technical' },
+    ];
+    if (showFiscal) base.push({ label: 'Fiscal / TVA', endpoint: 'fiscal' });
+    return base;
+  }, [showFiscal]);
+
   const [tab, setTab] = useState(0);
   const [preset, setPreset] = useState('this_year');
   const [granularity, setGranularity] = useState('month');
@@ -99,13 +116,13 @@ export const AnalyticsPage = () => {
       }
     } catch (e) {}
 
-    const endpoint = tab === 0 ? 'commercial' : tab === 1 ? 'operational' : tab === 2 ? 'technical' : 'fiscal';
+    const endpoint = tabs[tab]?.endpoint ?? 'commercial';
 
     fetch(`/admin/stats/${endpoint}?from=${from}&to=${to}&granularity=${granularity}`, { headers })
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [from, to, granularity, tab, session?.accessToken]);
+  }, [from, to, granularity, tab, session?.accessToken, showFiscal]);
 
   return (
     <Box sx={{ p: { xs: 1, md: 2 } }}>
@@ -135,16 +152,13 @@ export const AnalyticsPage = () => {
       <Card>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth"
           sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="Commercial" />
-          <Tab label="Opérationnel" />
-          <Tab label="Technique" />
-          <Tab label="Fiscal / TVA" />
+          {tabs.map(t => <Tab key={t.endpoint} label={t.label} />)}
         </Tabs>
         <CardContent>
-          {tab === 0 && <CommercialTab data={data} loading={loading} />}
-          {tab === 1 && <OperationnelTab data={data} loading={loading} />}
-          {tab === 2 && <TechniqueTab data={data} loading={loading} />}
-          {tab === 3 && <FiscalTab data={data} loading={loading} />}
+          {tabs[tab]?.endpoint === 'commercial' && <CommercialTab data={data} loading={loading} />}
+          {tabs[tab]?.endpoint === 'operational' && <OperationnelTab data={data} loading={loading} />}
+          {tabs[tab]?.endpoint === 'technical' && <TechniqueTab data={data} loading={loading} />}
+          {tabs[tab]?.endpoint === 'fiscal' && <FiscalTab data={data} loading={loading} hasExpenses={hasExpenses} />}
         </CardContent>
       </Card>
     </Box>
