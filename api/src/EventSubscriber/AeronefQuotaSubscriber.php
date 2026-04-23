@@ -45,7 +45,7 @@ class AeronefQuotaSubscriber implements EventSubscriberInterface
         }
 
         $count = (int) $this->em->createQuery(
-            'SELECT COUNT(a.id) FROM App\Entity\Aeronef a WHERE a.client = :client'
+            'SELECT COUNT(a.id) FROM App\Entity\Aeronef a WHERE a.client = :client AND a.archived = false'
         )->setParameter('client', $client)->getSingleScalarResult();
 
         if ($count >= $max) {

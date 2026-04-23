@@ -43,8 +43,8 @@ final class AvailableAeronefFilter extends AbstractFilter
             return;
         }
 
-        // On garde uniquement les aéronefs disponibles
         $queryBuilder->andWhere(sprintf('%s.isAvailable = true', $alias));
+        $queryBuilder->andWhere(sprintf('%s.archived = false', $alias));
 
         // Alias pour le LEFT JOIN
         $resAlias = $queryNameGenerator->generateJoinAlias('r');

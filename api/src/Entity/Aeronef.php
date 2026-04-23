@@ -142,6 +142,14 @@ class Aeronef implements TenantAwareInterface
     #[Groups(groups: ['Aeronef:write', 'Aeronef:read', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Landing:read'])]
     private ?bool $isAvailable = null;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private bool $archived = false;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Aeronef:read'])]
+    private ?\DateTimeImmutable $archivedAt = null;
+
     public function __construct()
     {
         $this->documents = new ArrayCollection();
@@ -364,6 +372,36 @@ class Aeronef implements TenantAwareInterface
     public function setIsAvailable(?bool $isAvailable): static
     {
         $this->isAvailable = $isAvailable;
+
+        return $this;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived;
+    }
+
+    public function setArchived(bool $archived): static
+    {
+        $this->archived = $archived;
+        if ($archived && $this->archivedAt === null) {
+            $this->archivedAt = new \DateTimeImmutable();
+        }
+        if (!$archived) {
+            $this->archivedAt = null;
+        }
+
+        return $this;
+    }
+
+    public function getArchivedAt(): ?\DateTimeImmutable
+    {
+        return $this->archivedAt;
+    }
+
+    public function setArchivedAt(?\DateTimeImmutable $archivedAt): static
+    {
+        $this->archivedAt = $archivedAt;
 
         return $this;
     }

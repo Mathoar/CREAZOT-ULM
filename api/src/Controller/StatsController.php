@@ -371,7 +371,7 @@ class StatsController extends AbstractController
              FROM aeronef a
              LEFT JOIN prestation p ON p.aeronef_id = a.id AND p.date >= :from AND p.date <= :to
              LEFT JOIN vol v ON v.prestation_id = p.id
-             WHERE a.client_id = :cid
+             WHERE a.client_id = :cid AND a.archived = false
              GROUP BY a.id, a.immatriculation ORDER BY heures DESC",
             ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
@@ -398,7 +398,7 @@ class StatsController extends AbstractController
              FROM aeronef a
              JOIN prestation p ON p.aeronef_id = a.id
              JOIN vol v ON v.prestation_id = p.id
-             WHERE p.client_id = :cid AND p.date >= :from AND p.date <= :to
+             WHERE p.client_id = :cid AND p.date >= :from AND p.date <= :to AND a.archived = false
              GROUP BY a.id, a.immatriculation ORDER BY revenue DESC",
             ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
@@ -471,7 +471,7 @@ class StatsController extends AbstractController
                     (a.changement_moteur - a.horametre) AS heures_avant_moteur,
                     a.seuil_alerte_changement_moteur, a.alerte_moteur_envoyee,
                     a.is_available
-             FROM aeronef a WHERE a.client_id = :cid
+             FROM aeronef a WHERE a.client_id = :cid AND a.archived = false
              ORDER BY (a.entretien - a.horametre) ASC",
             ['cid' => $clientId]
         );
@@ -484,7 +484,7 @@ class StatsController extends AbstractController
                     e.changement_moteur, a.immatriculation
              FROM entretien e
              JOIN aeronef a ON e.aeronef_id = a.id
-             WHERE e.client_id = :cid AND e.date >= :from AND e.date <= :to
+             WHERE e.client_id = :cid AND e.date >= :from AND e.date <= :to AND a.archived = false
              ORDER BY e.date DESC",
             ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
@@ -497,7 +497,7 @@ class StatsController extends AbstractController
                     MAX(p.horametre_fin) AS horametre_fin
              FROM prestation p
              JOIN aeronef a ON p.aeronef_id = a.id
-             WHERE p.client_id = :cid AND p.date >= :from AND p.date <= :to
+             WHERE p.client_id = :cid AND p.date >= :from AND p.date <= :to AND a.archived = false
              GROUP BY a.id, a.immatriculation, period
              ORDER BY a.immatriculation, period",
             ['cid' => $clientId, 'from' => $from, 'to' => $to]
@@ -515,7 +515,7 @@ class StatsController extends AbstractController
                          ELSE NULL END AS jours_estimes
              FROM aeronef a
              LEFT JOIN prestation p ON p.aeronef_id = a.id AND p.date >= :from AND p.date <= :to
-             WHERE a.client_id = :cid
+             WHERE a.client_id = :cid AND a.archived = false
              GROUP BY a.id, a.immatriculation, a.horametre, a.entretien
              ORDER BY (a.entretien - a.horametre) ASC",
             ['cid' => $clientId, 'from' => $from, 'to' => $to]
