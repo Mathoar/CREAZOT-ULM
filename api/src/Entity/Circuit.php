@@ -10,6 +10,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
@@ -20,6 +22,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 
 #[ORM\Entity(repositoryClass: CircuitRepository::class)]
+#[ApiFilter(BooleanFilter::class, properties: ['isAvailable'])]
 #[ApiResource(
     uriTemplate: '/circuits{._format}',
     operations: [
@@ -131,6 +134,10 @@ class Circuit implements TenantAwareInterface
     #[ORM\Column(nullable: true)]
     #[Groups(groups: ['Circuit:write', 'Circuit:read', 'Vol:read', 'Prestation:read', 'Reservation:read', 'Cadeau:read', 'PaymentDetail:read', 'Payment:read'])]
     private ?float $tauxTva = null;
+
+    #[ORM\Column(name: 'is_available', type: 'boolean', options: ['default' => true])]
+    #[Groups(groups: ['Circuit:write', 'Circuit:read', 'Prestation:read', 'Reservation:read'])]
+    private bool $isAvailable = true;
 
     public function __construct()
     {
@@ -346,6 +353,17 @@ class Circuit implements TenantAwareInterface
     public function setTauxTva(?float $tauxTva): static
     {
         $this->tauxTva = $tauxTva;
+        return $this;
+    }
+
+    public function getIsAvailable(): bool
+    {
+        return $this->isAvailable;
+    }
+
+    public function setIsAvailable(bool $isAvailable): static
+    {
+        $this->isAvailable = $isAvailable;
         return $this;
     }
 

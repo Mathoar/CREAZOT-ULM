@@ -113,7 +113,35 @@ class Aeronef implements TenantAwareInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private ?string $modele = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private ?string $immatriculationComplete = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
     private ?string $codeBalise = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private ?string $typeBalise = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private ?bool $hasParachute = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private ?\DateTimeInterface $dateReconditionnementParachute = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private ?int $periodiciteParachuteMois = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(groups: ['Aeronef:write', 'Aeronef:read'])]
+    private bool $alerteParachuteEnvoyee = false;
 
     #[ORM\ManyToOne]
     #[Groups(groups: ['Aeronef:read'])]
@@ -274,6 +302,28 @@ class Aeronef implements TenantAwareInterface
         return $this;
     }
 
+    public function getModele(): ?string
+    {
+        return $this->modele;
+    }
+
+    public function setModele(?string $modele): static
+    {
+        $this->modele = $modele;
+        return $this;
+    }
+
+    public function getImmatriculationComplete(): ?string
+    {
+        return $this->immatriculationComplete;
+    }
+
+    public function setImmatriculationComplete(?string $immatriculationComplete): static
+    {
+        $this->immatriculationComplete = $immatriculationComplete;
+        return $this;
+    }
+
     public function getCodeBalise(): ?string
     {
         return $this->codeBalise;
@@ -283,6 +333,61 @@ class Aeronef implements TenantAwareInterface
     {
         $this->codeBalise = $codeBalise;
 
+        return $this;
+    }
+
+    public function getTypeBalise(): ?string
+    {
+        return $this->typeBalise;
+    }
+
+    public function setTypeBalise(?string $typeBalise): static
+    {
+        $this->typeBalise = $typeBalise;
+        return $this;
+    }
+
+    public function getHasParachute(): ?bool
+    {
+        return $this->hasParachute;
+    }
+
+    public function setHasParachute(?bool $hasParachute): static
+    {
+        $this->hasParachute = $hasParachute;
+        return $this;
+    }
+
+    public function getDateReconditionnementParachute(): ?\DateTimeInterface
+    {
+        return $this->dateReconditionnementParachute;
+    }
+
+    public function setDateReconditionnementParachute(?\DateTimeInterface $date): static
+    {
+        $this->dateReconditionnementParachute = $date;
+        return $this;
+    }
+
+    public function getPeriodiciteParachuteMois(): ?int
+    {
+        return $this->periodiciteParachuteMois;
+    }
+
+    public function setPeriodiciteParachuteMois(?int $periodiciteParachuteMois): static
+    {
+        $this->periodiciteParachuteMois = $periodiciteParachuteMois;
+        return $this;
+    }
+
+    public function isAlerteParachuteEnvoyee(): bool
+    {
+        return $this->alerteParachuteEnvoyee;
+    }
+
+    public function setAlerteParachuteEnvoyee(bool $alerteParachuteEnvoyee): static
+    {
+        $this->alerteParachuteEnvoyee = $alerteParachuteEnvoyee;
         return $this;
     }
 

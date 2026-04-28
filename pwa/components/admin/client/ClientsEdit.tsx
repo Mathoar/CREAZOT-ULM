@@ -642,6 +642,9 @@ export const ClientsEdit = () => {
                         hasCams: false,
                         hasSMS: false,
                         hasPlanification: false,
+                        hasTraining: false,
+                        hasManex: false,
+                        hasWeightCollection: false,
                         minHours: "00:00",
                         maxHours: "23:59",
                         ...record,
@@ -708,6 +711,12 @@ export const ClientsEdit = () => {
                             </Box>
                         </Box>
                         <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                            <Box flex={1} />
+                            <Box flex={1}>
+                                <BooleanInput source="hasWeightCollection" label="Collecte du poids passager" fullWidth/>
+                            </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasMicrotrakTag" label="Balise(s) Microtrak" fullWidth/>
                             </Box>
@@ -767,7 +776,15 @@ export const ClientsEdit = () => {
                             <Box flex={1}>
                                 <BooleanInput source="hasPlanification" label="Planification" fullWidth/>
                             </Box>
-                            <Box flex={1}/>
+                            <Box flex={1}>
+                                <BooleanInput source="hasTraining" label="Module Formation" fullWidth/>
+                            </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                            <Box flex={1}>
+                                <BooleanInput source="hasManex" label="Module MANEX" fullWidth/>
+                            </Box>
+                            <Box flex={1} />
                         </Box>
                         <SmsSenderIdInput />
                         <SmsBillingInfo />
@@ -799,6 +816,24 @@ export const ClientsEdit = () => {
                             </Box>
                             <Box flex={1}>
                                 <NumberInput source="seuilQualifications" label="Alerte sur les qualifications" min={ 0 } helperText="Nb de jour(s) avant la fin de validité"/>
+                            </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                            <Box flex={1}>
+                                <NumberInput source="seuilAlerteParachuteJours" label="Alerte parachute de récupération" min={ 0 } defaultValue={180} helperText="Nb de jour(s) avant l'échéance du reconditionnement"/>
+                            </Box>
+                            <Box flex={1} />
+                        </Box>
+                        <Divider sx={{ mt: 2, mb: 2, borderBottomWidth: 2, borderColor: '#666' }} />
+                        <Typography variant="h6" gutterBottom>
+                            Déclaration DGAC
+                        </Typography>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                            <Box flex={1}>
+                                <DateInput source="dateDeclarationDGAC" label="Date de dernière déclaration" fullWidth />
+                            </Box>
+                            <Box flex={1}>
+                                <NumberInput source="periodiciteDeclarationMois" label="Périodicité (mois)" min={1} defaultValue={24} fullWidth helperText="Renouvellement tous les X mois" />
                             </Box>
                         </Box>
                         <Divider sx={{ mt: 2, borderBottomWidth: 2, borderColor: '#666' }} />

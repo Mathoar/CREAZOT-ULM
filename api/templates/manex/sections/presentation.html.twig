@@ -1,0 +1,26 @@
+{% set c = data.client %}
+<p>
+    <strong>{{ c.name }}</strong> est un exploitant d'aéronefs ultralégers motorisés.
+</p>
+{% if c.address or c.city %}
+<p>
+    <strong>Adresse :</strong> {{ c.address }}{% if c.zipcode %} – {{ c.zipcode }}{% endif %}{% if c.city %} {{ c.city }}{% endif %}
+</p>
+{% endif %}
+{% if c.phone %}
+<p><strong>Téléphone :</strong> {{ c.phone }}</p>
+{% endif %}
+{% if c.email %}
+<p><strong>Email :</strong> {{ c.email }}</p>
+{% endif %}
+{% if c.website %}
+<p><strong>Site web :</strong> {{ c.website }}</p>
+{% endif %}
+{% if data.airports|length > 0 %}
+<p><strong>Base(s) d'exploitation :</strong></p>
+<ul>
+    {% for a in data.airports %}
+        <li>{{ a.nom }}{% if a.code %} ({{ a.code }}){% endif %}{% if a.main %} — <em>base principale</em>{% endif %}</li>
+    {% endfor %}
+</ul>
+{% endif %}

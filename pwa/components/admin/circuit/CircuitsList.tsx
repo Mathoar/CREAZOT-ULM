@@ -9,7 +9,8 @@ import {
   NumberField,
   EditButton,
   SimpleList,
-  ShowButton
+  ShowButton,
+  BooleanField
 } from "react-admin";
 import { useMercure } from "../../../utils/mercure";
 import { type Circuit } from "../../../types/Circuit";
@@ -99,6 +100,7 @@ export const CircuitsList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <TextField source="nature.code" label="Nature" sortable={ true }/>
                 <DateField source="duree" label="Durée" sortable={ false } showTime showDate={false} options={{ hour: '2-digit', minute: '2-digit' }}/>
                 <NumberField source="prix" options={{ style: 'currency', currency: 'EUR' }} label="Prix"/>
+                <BooleanField source="isAvailable" label="Disponible" textAlign="center" />
                 <p className="text-right">
                     <ShowButton />
                     <EditButton />

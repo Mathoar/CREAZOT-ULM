@@ -1,0 +1,27 @@
+{% if data.circuits|length > 0 %}
+<h3>Circuits et activités proposés</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Circuit</th>
+            <th>Code</th>
+            <th>Durée</th>
+            <th>Nature</th>
+            <th>Qualifications requises</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in data.circuits %}
+        <tr>
+            <td>{{ c.nom }}</td>
+            <td>{{ c.code }}</td>
+            <td>{{ c.duree ?? '—' }}</td>
+            <td>{{ c.nature ?? '—' }}</td>
+            <td>{{ c.qualifications|join(', ') ?: 'Aucune' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>Aucun circuit configuré.</em></p>
+{% endif %}

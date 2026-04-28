@@ -44,6 +44,7 @@ export const CircuitShow = () => {
                     <BooleanField source="needsEncadrant" label="Encadrant requis"/>
                     { clientWithLandingManagement(client) && <BooleanField source="requireLandingDeclaration" label="Déclaration atterrissages"/> }
                     { clientWithLandingManagement(client) && <BooleanField source="hadDefaultLanding" label="Atterrissage par défaut"/> }
+                    <BooleanField source="isAvailable" label="Disponible (réservable)" />
                 </TabbedShowLayout.Tab>
                 { clientWithPlanification(client) &&
                     <TabbedShowLayout.Tab label="Briefing commercial">

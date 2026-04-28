@@ -1,15 +1,16 @@
 import { type NextPage } from "next";
-import { Datagrid, List, TextField, CreateButton, TopToolbar, DateField, EditButton, ShowButton, SimpleList, EmailField, useListContext, Form, DateInput, BooleanField, FunctionField } from "react-admin";
+import { Datagrid, List, TextField, CreateButton, TopToolbar, DateField, EditButton, ShowButton, SimpleList, EmailField, useListContext, Form, DateInput, BooleanField, FunctionField, useGetList } from "react-admin";
 import { type Circuit } from "../../../types/Circuit";
 import { type PagedCollection } from "../../../types/collection";
 import { isDefined, toLocalDateString } from "../../../app/lib/utils";
-import { useMediaQuery, Theme, Button, Box } from '@mui/material';
+import { useMediaQuery, Theme, Button, Box, Chip } from '@mui/material';
 import { useSessionContext } from "../../admin/SessionContextProvider";
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
 import DoneIcon from '@mui/icons-material/Done';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useEffect, useState, useMemo } from "react";
 import { useClient } from '../../admin/ClientProvider';
 
@@ -228,6 +229,13 @@ export const PassagersList: NextPage<Props> = ({ data, hubURL, page }) => {
   const [filters, setFilters] = useState(defaultFilters);
   const datagridSx = useMemo(() => buildDatagridSx(client?.color), [client?.color]);
 
+  const { data: flightRules } = useGetList('flight_rules', { pagination: { page: 1, perPage: 50 } });
+  const poidsMax = useMemo(() => {
+    if (!flightRules?.length) return null;
+    const limits = flightRules.map(r => r.poidsMaxPassager).filter(Boolean) as number[];
+    return limits.length > 0 ? Math.min(...limits) : null;
+  }, [flightRules]);
+
   const getConsentIcon = ({ consentAccepted }) => {
     return isDefined(consentAccepted) ? 
       consentAccepted ? 
@@ -261,6 +269,16 @@ export const PassagersList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <TextField source="prenom" label="Prénom" sortable={ true }/>
                 <TextField source="telephone" label="Téléphone" sortable={ true }/>
                 <EmailField source="email" label="Adresse email"/>
+                <FunctionField
+                    label="Poids"
+                    render={record => {
+                        if (!record?.poids) return '';
+                        const depasse = poidsMax && record.poids > poidsMax;
+                        return depasse
+                            ? <Chip icon={<WarningAmberIcon />} label={`${record.poids} kg`} color="error" size="small" variant="outlined" />
+                            : `${record.poids} kg`;
+                    }}
+                />
                 <FunctionField 
                     source="consentAccepted"
                     label="Consentement"

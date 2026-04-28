@@ -399,6 +399,30 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?bool $hasPlanification = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasTraining = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasManex = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?bool $hasWeightCollection = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?int $seuilAlerteParachuteJours = 180;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?\DateTimeInterface $dateDeclarationDGAC = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?int $periodiciteDeclarationMois = 24;
+
     #[ORM\Column(length: 11, nullable: true)]
     #[Groups(groups: ['Client:write', 'Client:read'])]
     #[Assert\Length(max: 11, maxMessage: 'Le Sender ID SMS ne peut pas dépasser 11 caractères')]
@@ -919,6 +943,14 @@ class Client
 
     public function setEmailServer(?string $emailServer): static
     {
+        if ($emailServer !== null && str_contains($emailServer, '******')) {
+            return $this;
+        }
+
+        if ($emailServer === null && $this->emailServer !== null) {
+            return $this;
+        }
+
         $this->emailServer = $emailServer;
 
         return $this;
@@ -1526,6 +1558,72 @@ class Client
     public function setHasPlanification(?bool $v): static
     {
         $this->hasPlanification = $v;
+        return $this;
+    }
+
+    public function getHasTraining(): ?bool
+    {
+        return $this->hasTraining;
+    }
+
+    public function setHasTraining(?bool $v): static
+    {
+        $this->hasTraining = $v;
+        return $this;
+    }
+
+    public function getHasManex(): ?bool
+    {
+        return $this->hasManex;
+    }
+
+    public function setHasManex(?bool $v): static
+    {
+        $this->hasManex = $v;
+        return $this;
+    }
+
+    public function getHasWeightCollection(): ?bool
+    {
+        return $this->hasWeightCollection;
+    }
+
+    public function setHasWeightCollection(?bool $hasWeightCollection): static
+    {
+        $this->hasWeightCollection = $hasWeightCollection;
+        return $this;
+    }
+
+    public function getSeuilAlerteParachuteJours(): ?int
+    {
+        return $this->seuilAlerteParachuteJours;
+    }
+
+    public function setSeuilAlerteParachuteJours(?int $seuilAlerteParachuteJours): static
+    {
+        $this->seuilAlerteParachuteJours = $seuilAlerteParachuteJours;
+        return $this;
+    }
+
+    public function getDateDeclarationDGAC(): ?\DateTimeInterface
+    {
+        return $this->dateDeclarationDGAC;
+    }
+
+    public function setDateDeclarationDGAC(?\DateTimeInterface $dateDeclarationDGAC): static
+    {
+        $this->dateDeclarationDGAC = $dateDeclarationDGAC;
+        return $this;
+    }
+
+    public function getPeriodiciteDeclarationMois(): ?int
+    {
+        return $this->periodiciteDeclarationMois;
+    }
+
+    public function setPeriodiciteDeclarationMois(?int $periodiciteDeclarationMois): static
+    {
+        $this->periodiciteDeclarationMois = $periodiciteDeclarationMois;
         return $this;
     }
 

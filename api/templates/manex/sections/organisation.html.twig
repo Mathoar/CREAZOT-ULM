@@ -1,0 +1,26 @@
+{% if data.pilots|length > 0 %}
+<h3>Pilotes d'exploitation</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Qualifications</th>
+            <th>Certificat médical</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in data.pilots %}
+        <tr>
+            <td>{{ p.lastName }}</td>
+            <td>{{ p.firstName }}</td>
+            <td>{{ p.qualifications|join(', ') ?: '—' }}</td>
+            <td>{{ p.certificatOk ? '✓ Valide' : '✗ Non valide' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p><em>{{ data.pilots|length }} pilote(s) actif(s) en exploitation. Seuls les pilotes disponibles par défaut sont listés.</em></p>
+{% else %}
+<p><em>Aucun pilote actif enregistré.</em></p>
+{% endif %}

@@ -1,0 +1,64 @@
+{% set apCircuits = data.circuits|filter(c => c.isParticularActivity) %}
+
+{% if apCircuits|length > 0 %}
+<h3>Grilles d'analyse des risques par activité particulière</h3>
+
+{% for circuit in apCircuits %}
+<h4>{{ circuit.nature }} — {{ circuit.nom }}{% if circuit.code %} ({{ circuit.code }}){% endif %}</h4>
+{% if circuit.qualifications|length > 0 %}
+<p><strong>Qualifications requises :</strong> {{ circuit.qualifications|join(', ') }}</p>
+{% endif %}
+<table>
+    <thead>
+        <tr>
+            <th style="width: 25%">Menace identifiée</th>
+            <th style="width: 14%">Probabilité</th>
+            <th style="width: 13%">Gravité</th>
+            <th style="width: 14%">Niveau de risque</th>
+            <th style="width: 34%">Mesures d'atténuation</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><em>Conditions météo défavorables</em></td>
+            <td><em>Probable</em></td>
+            <td><em>Majeur</em></td>
+            <td><em>Élevé</em></td>
+            <td><em>Consultation METAR/TAF, minima définis, décision GO/NO GO</em></td>
+        </tr>
+        <tr>
+            <td><em>Panne moteur en vol</em></td>
+            <td><em>Rare</em></td>
+            <td><em>Critique</em></td>
+            <td><em>Élevé</em></td>
+            <td><em>Maintien en vol plané, zones d'atterrissage identifiées, suivi maintenance</em></td>
+        </tr>
+        <tr>
+            <td><em>Comportement passager imprévisible</em></td>
+            <td><em>Occasionnel</em></td>
+            <td><em>Modéré</em></td>
+            <td><em>Moyen</em></td>
+            <td><em>Briefing sécurité systématique, harnais vérifiés, intercom</em></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+{% endfor %}
+
+<p><em>Les lignes en italique sont des exemples indicatifs. L'exploitant doit compléter et adapter chaque grille en fonction des risques spécifiques à son activité et à ses conditions locales d'exploitation.</em></p>
+{% else %}
+<p><em>Aucun circuit associé à une activité particulière (AP) n'a été identifié. Les grilles d'analyse seront générées automatiquement lorsque des circuits avec une nature AP seront configurés.</em></p>
+{% endif %}

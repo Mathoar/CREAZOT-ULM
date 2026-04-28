@@ -266,7 +266,7 @@ export const PrestationEdit = () => {
                 <SimpleFormIterator disableReordering>
                   <Box display="flex" gap={ !clientWithOptions(client) ? 2 : 3 } flexWrap="wrap">
                     <Box flex={1}>
-                      <ReferenceInput reference="circuits" source="circuit.@id" label="Circuit" />
+                      <ReferenceInput reference="circuits" source="circuit.@id" label="Circuit" filter={{ isAvailable: true }} />
                     </Box>
                     <OptionInput client={ client }/>
                     <Box flex={1}>

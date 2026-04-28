@@ -307,7 +307,7 @@ export const ReservationsEdit = () => {
           <TextInput source="telephone" label="N° de téléphone"/>
           <TextInput source="email" label="Adresse email"/>
           <GiftInput client={ client }/>
-          <ReferenceInput reference="circuits" source="circuit.@id">
+          <ReferenceInput reference="circuits" source="circuit.@id" filter={{ isAvailable: true }}>
           <AutocompleteInput label="Circuit" validate={required()} />
         </ReferenceInput>
           <OptionInput client={ client }/>

@@ -1,0 +1,48 @@
+{% if data.fleet|length > 0 %}
+<h3>Aéronefs en service</h3>
+{% set hasImmat = data.fleet|filter(a => a.immatriculationComplete)|length > 0 %}
+{% set hasModele = data.fleet|filter(a => a.modele)|length > 0 %}
+{% set hasBalise = data.fleet|filter(a => a.typeBalise or a.codeBalise)|length > 0 %}
+{% set hasParachute = data.fleet|filter(a => a.hasParachute)|length > 0 %}
+<table>
+    <thead>
+        <tr>
+            {% if hasImmat %}<th>Immatriculation</th>{% endif %}
+            <th>Identifiant radio</th>
+            {% if hasModele %}<th>Modèle</th>{% endif %}
+            {% if hasBalise %}<th>Balise / Visibilité</th>{% endif %}
+            {% if hasParachute %}<th>Parachute</th>{% endif %}
+            <th>Statut</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in data.fleet %}
+        <tr>
+            {% if hasImmat %}<td>{{ a.immatriculationComplete ?? '—' }}</td>{% endif %}
+            <td>{{ a.immatriculation }}</td>
+            {% if hasModele %}<td>{{ a.modele ?? '—' }}</td>{% endif %}
+            {% if hasBalise %}
+            <td>
+                {% if a.typeBalise %}{{ a.typeBalise }}{% endif %}
+                {% if a.codeBalise %}{% if a.typeBalise %} — {% endif %}{{ a.codeBalise }}{% endif %}
+                {% if not a.typeBalise and not a.codeBalise %}—{% endif %}
+            </td>
+            {% endif %}
+            {% if hasParachute %}
+            <td>
+                {% if a.hasParachute %}
+                    Oui{% if a.echeanceParachute %} (éch. {{ a.echeanceParachute }}){% endif %}
+                {% else %}
+                    Non
+                {% endif %}
+            </td>
+            {% endif %}
+            <td>{{ a.isAvailable ? 'Disponible' : 'Indisponible' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p><em>{{ data.fleet|length }} aéronef(s) en exploitation (aéronefs archivés exclus).</em></p>
+{% else %}
+<p><em>Aucun aéronef en service.</em></p>
+{% endif %}

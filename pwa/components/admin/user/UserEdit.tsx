@@ -7,11 +7,18 @@ import {
 } from "react-admin";
 import { Typography } from "@mui/material";
 
+const transform = (data: any) => ({
+  ...data,
+  clients: (data.clients || []).map((c: any) =>
+    typeof c === "string" ? c : c["@id"] || c
+  ),
+});
+
 export const UserEdit = () => (
-  <Edit>
+  <Edit mutationMode="pessimistic" transform={transform}>
     <SimpleForm>
-      <TextInput source="firstName" label="Prénom" disabled />
-      <TextInput source="lastName" label="Nom" disabled />
+      <TextInput source="firstName" label="Prénom" />
+      <TextInput source="lastName" label="Nom" />
       <TextInput source="email" label="Email" disabled />
 
       <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>

@@ -1,0 +1,20 @@
+{% if data.briefing %}
+    {% if data.briefing.html %}
+    <h3>Briefing général passagers</h3>
+    <div>{{ data.briefing.html|raw }}</div>
+    {% endif %}
+
+    {% if data.briefing.extraContacts %}
+    <h3>Contacts complémentaires</h3>
+    <div>{{ data.briefing.extraContacts|raw }}</div>
+    {% endif %}
+{% endif %}
+
+{% set circuits_with_briefing = data.circuits|filter(c => c.briefingHtml is not null and c.briefingHtml is not empty) %}
+{% if circuits_with_briefing|length > 0 %}
+<h3>Briefings spécifiques par circuit</h3>
+{% for c in circuits_with_briefing %}
+    <h4>{{ c.nom }}</h4>
+    <div>{{ c.briefingHtml|raw }}</div>
+{% endfor %}
+{% endif %}

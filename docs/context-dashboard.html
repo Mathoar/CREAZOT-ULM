@@ -557,6 +557,27 @@
     </div>
   </div>
 
+  <div class="card billing" onclick="openInCursor('.cursor/rules/context-training.mdc')">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--orange-bg)">🎓</div>
+      <span class="badge badge-ok" id="status-training">✓ À jour</span>
+    </div>
+    <h3>Module Formation pilote</h3>
+    <div class="filename">.cursor/rules/context-training.mdc</div>
+    <p class="desc">Leçons (97), programmes, formations avec suivi de progression (4 niveaux), documents joints, filtre instructeurs, grille interactive.</p>
+    <div class="card-tags">
+      <span class="tag">5 Entités</span>
+      <span class="tag">TrainingCreateSubscriber</span>
+      <span class="tag">EncadrantFilter</span>
+      <span class="tag">ProgressGrid</span>
+      <span class="tag">hasTraining</span>
+    </div>
+    <div class="card-footer">
+      <span>Chargé : fichiers Formation</span>
+      <span>~110 lignes</span>
+    </div>
+  </div>
+
   <div class="card maint" onclick="openInCursor('.cursor/rules/context-maintenance.mdc')">
     <div class="card-top">
       <div class="card-icon">🔧</div>
@@ -597,6 +618,27 @@
     <div class="card-footer">
       <span>Phases 1-4 validées</span>
       <span>Phase 5 UI : à tester</span>
+    </div>
+  </div>
+
+  <div class="card billing" style="cursor:default">
+    <div class="card-top">
+      <div class="card-icon" style="background:var(--green-bg)">🎓</div>
+      <span class="badge badge-ok">✅ Livrée</span>
+    </div>
+    <h3>Module Formation pilote</h3>
+    <div class="filename">.cursor/rules/context-training.mdc</div>
+    <p class="desc">Suivi complet de la formation ULM : 97 leçons (pratique + théorie), programmes ordonnés, grille de progression interactive (4 niveaux), documents joints, filtre instructeurs.</p>
+    <div class="card-tags">
+      <span class="tag">5 entités</span>
+      <span class="tag">3 CRUD React</span>
+      <span class="tag">97 leçons peuplées</span>
+      <span class="tag">04/2026</span>
+      <span class="tag" style="background:#052e16;color:#4ade80">hasTraining</span>
+    </div>
+    <div class="card-footer">
+      <span>Backend + Frontend déployés</span>
+      <span>Données peuplées (client_id=5)</span>
     </div>
   </div>
 </div>
@@ -760,16 +802,17 @@
   }
 
   const dates = {
-    master:  '2026-04-21',
-    vapi:    '2026-04-09',
-    ai:      '2026-04-09',
-    billing: '2026-03-26',
-    deploy:  '2026-04-21',
-    prefs:   '2026-03-26',
-    codemap: '2026-04-21',
-    git:     '2026-03-26',
-    maint:   '2026-03-26',
+    master:   '2026-04-27',
+    vapi:     '2026-04-09',
+    ai:       '2026-04-09',
+    billing:  '2026-03-26',
+    deploy:   '2026-04-21',
+    prefs:    '2026-03-26',
+    codemap:  '2026-04-27',
+    git:      '2026-03-26',
+    maint:    '2026-03-26',
     briefing: '2026-04-21',
+    training: '2026-04-27',
   };
 
   function checkStaleness() {

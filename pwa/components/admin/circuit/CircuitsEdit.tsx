@@ -113,6 +113,7 @@ export const CircuitsEdit = () => {
               <AddDefaultLandingInput/>
             </Box>
         </Box>
+        <BooleanInput source="isAvailable" label="Circuit disponible (réservable)" defaultValue={true} helperText="Décocher pour masquer ce circuit des formulaires de réservation et de prestation" />
       </TabbedForm.Tab>
       { clientWithPlanification(client) &&
         <TabbedForm.Tab label="Briefing commercial">

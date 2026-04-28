@@ -104,6 +104,10 @@ class FlightRule implements TenantAwareInterface
     #[Groups(['FlightRule:read', 'FlightRule:write'])]
     private string $notamStrategy = 'ai';
 
+    #[ORM\Column(nullable: true)]
+    #[Groups(['FlightRule:read', 'FlightRule:write'])]
+    private ?int $poidsMaxPassager = null;
+
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['FlightRule:read', 'FlightRule:write'])]
     private ?string $notes = null;
@@ -158,6 +162,8 @@ class FlightRule implements TenantAwareInterface
     public function setMinFlightDurationMinutes(int $v): static { $this->minFlightDurationMinutes = $v; return $this; }
     public function getNotamStrategy(): string { return $this->notamStrategy; }
     public function setNotamStrategy(string $v): static { $this->notamStrategy = $v; return $this; }
+    public function getPoidsMaxPassager(): ?int { return $this->poidsMaxPassager; }
+    public function setPoidsMaxPassager(?int $v): static { $this->poidsMaxPassager = $v; return $this; }
     public function getNotes(): ?string { return $this->notes; }
     public function setNotes(?string $v): static { $this->notes = $v; return $this; }
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }

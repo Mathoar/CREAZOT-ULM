@@ -1,0 +1,42 @@
+<h3>Gestion des qualifications et aptitudes</h3>
+
+<p>L'application Logic'Ciel intègre des mécanismes automatisés de contrôle de l'aptitude des pilotes avant chaque vol :</p>
+
+<h4>Blocage par qualification</h4>
+<p>Chaque circuit peut être associé à une ou plusieurs qualifications requises. Un pilote ne peut être affecté
+à un vol sur un circuit donné que s'il possède l'ensemble des qualifications exigées et que celles-ci sont en cours de validité.</p>
+
+<h4>Contrôle du certificat médical</h4>
+<p>Le système vérifie automatiquement la validité du certificat médical de chaque pilote.
+Un pilote dont le certificat médical est expiré ou absent ne peut pas être assigné à un vol.
+Les types de certificats gérés incluent : Classe 1, Classe 2, Certificat d'aptitude,
+Certificat de non contre-indication et Certificat exceptionnel.</p>
+
+<h4>Alertes de validité</h4>
+<p>Des alertes automatiques sont générées lorsque les qualifications ou certificats médicaux
+approchent de leur date d'expiration, permettant aux exploitants d'anticiper les renouvellements.</p>
+
+{% if data.circuits|length > 0 %}
+<h4>Matrice circuits / qualifications</h4>
+{% set circuits_with_quals = data.circuits|filter(c => c.qualifications|length > 0) %}
+{% if circuits_with_quals|length > 0 %}
+<table>
+    <thead>
+        <tr>
+            <th>Circuit</th>
+            <th>Qualifications exigées</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in circuits_with_quals %}
+        <tr>
+            <td>{{ c.nom }}</td>
+            <td>{{ c.qualifications|join(', ') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>Aucun circuit ne requiert de qualification spécifique.</em></p>
+{% endif %}
+{% endif %}

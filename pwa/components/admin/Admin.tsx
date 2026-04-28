@@ -61,9 +61,14 @@ import conversationThreadResourceProps from "./conversationThread";
 import integrationPatternResourceProps from "./integrationPattern";
 import messageTemplateResourceProps from "./messageTemplate";
 import briefingResourceProps from "./briefing";
+import lessonResourceProps from "./lesson";
+import programmeResourceProps from "./programme";
+import trainingResourceProps from "./training";
 import { PlanningPage } from "./planning/PlanningPage";
 import { ClientChannels } from "./channel/ClientChannels";
 import { AnalyticsPage } from "./analytics/AnalyticsPage";
+import { ManexPage } from "./manex/ManexPage";
+import securityEventResourceProps from "./securityEvent";
 
 const getClientHeaders = () => {
   try {
@@ -202,6 +207,14 @@ const AdminWithOIDC = () => {
         <ResourceGuesser name="integration_patterns" {...integrationPatternResourceProps}/>
         <ResourceGuesser name="message_templates" {...messageTemplateResourceProps}/>
         <ResourceGuesser name="briefings" {...briefingResourceProps}/>
+        <ResourceGuesser name="lessons" {...lessonResourceProps}/>
+        <ResourceGuesser name="programmes" {...programmeResourceProps}/>
+        <ResourceGuesser name="programme_lessons" />
+        <ResourceGuesser name="trainings" {...trainingResourceProps}/>
+        <ResourceGuesser name="progresses" />
+        <ResourceGuesser name="manex_sections" />
+        <ResourceGuesser name="manex_versions" />
+        <ResourceGuesser name="security_events" {...securityEventResourceProps} />
         <CustomRoutes>
           <Route path="/landings" element={<LandingsList />} />
           <Route path="/convert" element={<ReservationCreate />} />
@@ -212,6 +225,7 @@ const AdminWithOIDC = () => {
           <Route path="/client-channels" element={<ClientChannels />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/manex" element={<ManexPage />} />
         </CustomRoutes>
       </AdminAdapter>
     </UserGuard>

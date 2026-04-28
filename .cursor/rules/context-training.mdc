@@ -1,0 +1,126 @@
+---
+description: Module Formation pilote — entités, progression, programmes, leçons, patterns frontend
+globs:
+  - api/src/Entity/Training.php
+  - api/src/Entity/Lesson.php
+  - api/src/Entity/Programme.php
+  - api/src/Entity/ProgrammeLesson.php
+  - api/src/Entity/Progress.php
+  - api/src/EventSubscriber/TrainingCreateSubscriber.php
+  - api/src/Doctrine/Orm/Filter/EncadrantUserFilter.php
+  - pwa/components/admin/training/**
+  - pwa/components/admin/programme/**
+  - pwa/components/admin/lesson/**
+---
+# Module Formation — Logic'Ciel
+
+> Ce fichier complète `context.mdc` — ne pas lire seul.
+> Activé par `hasTraining` sur `Client`.
+
+---
+
+## Vue d'ensemble
+
+Suivi de la formation des pilotes avec programmes personnalisables, leçons documentées et grille de progression interactive. Conditionné par le module `hasTraining` sur l'entité `Client`.
+
+---
+
+## Entités
+
+### Lesson (`/lessons`)
+- `nom`, `briefing` (RichText), `type` (pratique/théorie/mixte), `categorie` (regroupement thématique)
+- `isAvailable` (flag), `documents` (OneToMany MediaObject)
+- Filtres : `BooleanFilter(isAvailable)`, `SearchFilter(type: exact, categorie: ipartial)`
+- Pagination client désactivable (`paginationClientEnabled: true`)
+- Multi-tenant : **NON** (partagées entre clients)
+
+### Programme (`/programmes`)
+- `nom`, `description`, `type` (brevet par défaut), `isAvailable`
+- `programmeLessons` (OneToMany ProgrammeLesson, ordonné par `position`)
+- `getLessonCount()` : nombre de leçons
+- Multi-tenant : **OUI** (TenantAwareInterface)
+
+### ProgrammeLesson (`/programme_lessons`)
+- Liaison `programme` ↔ `lesson` avec `position` (int)
+- Contrainte d'unicité : `(programme_id, lesson_id)`
+- Multi-tenant : **NON**
+
+### Training (`/trainings`)
+- `eleve` (User), `instructeur` (User), `programme` (Programme)
+- `dateDebut`, `dateFin`, `statut` (en_cours/termine/abandonne)
+- `progresses` (OneToMany Progress, cascade persist+remove)
+- `documents` (OneToMany MediaObject — certificats, attestations)
+- `getProgressionPercent()` : calcul automatique (total niveaux / max × 100)
+- Filtres : `SearchFilter(statut, eleve, instructeur)`
+- Multi-tenant : **OUI** (TenantAwareInterface)
+
+### Progress (`/progresses`)
+- `training`, `lesson`, `niveau` (0–3 : Non abordé / Présenté / En acquisition / Acquis)
+- `commentaire`, `updatedBy` (User), `updatedAt`
+- Opérations : Get, GetCollection, Put, **Patch** (modification niveau + commentaire)
+- Multi-tenant : **OUI** (TenantAwareInterface)
+
+---
+
+## Backend
+
+### TrainingCreateSubscriber
+- Écoute `postPersist` sur `Training`
+- Crée automatiquement un `Progress` par leçon du programme (via `programmeLessons`)
+- Chaque Progress : `niveau = 0` (non abordé), `client` copié depuis le Training
+
+### EncadrantUserFilter
+- Filtre custom sur la ressource `User` : `GET /users?encadrant=true`
+- Joins : `User → ProfilPilote → PilotQualification → Qualification`
+- Condition : `qualification.encadrant = true`
+- Enregistré comme `app.filter.user.encadrant` dans `api_platform.yaml`
+
+---
+
+## Frontend
+
+### Menu (`Menu.tsx`)
+- Conditionné par `clientWithTraining(client)` (`app/lib/client.js`)
+- Sous-menu "Formation" (repliable) avec 3 entrées : Leçons, Programmes, Formations
+
+### Patterns clés
+
+**LessonEdit** :
+- `RichTextInput` pour le briefing pédagogique
+- `FileInput multiple` + `syncMediaDocuments` pour les documents (PDF, images)
+- Filtres custom dans la liste (type + catégorie) via `CustomFilterBar` + `useListContext`
+- `disableSyncWithLocation` obligatoire (conflit Next.js)
+
+**ProgrammeCreate/Edit** :
+- `ArrayInput` + `SimpleFormIterator` pour les `programmeLessons`
+- `AutocompleteInput` custom avec `optionText` (nom + catégorie + type), `inputText`, `matchSuggestion`
+- `LessonCategorieDisplay` via `FormDataConsumer` + `useGetOne` (affiche la catégorie de la leçon sélectionnée)
+- `transform` : extrait l'IRI de chaque `lesson` (pas l'objet complet)
+- `filter={{ pagination: false }}` sur `ReferenceInput` pour charger toutes les leçons
+
+**TrainingEdit** :
+- `ReferenceInput source="eleve.@id"` / `"instructeur.@id"` / `"programme.@id"` (obligatoire en mode édition)
+- `filter={{ encadrant: true }}` sur le ReferenceInput instructeur
+- `transform` : extrait les IRI des relations + `syncMediaDocuments` pour les documents
+- `ProgressGrid` : composant custom avec PATCH direct sur `/progresses/{id}` pour les niveaux et commentaires
+- `ToggleButtonGroup` MUI pour les 4 niveaux de progression
+
+---
+
+## Bugs résolus (patterns à retenir)
+
+| Bug | Cause | Fix |
+|-----|-------|-----|
+| Inputs vides en mode édition | `source="eleve"` au lieu de `source="eleve.@id"` | Utiliser `.@id` pour les ReferenceInput en édition |
+| Objet complet soumis au lieu de l'IRI | Pas de `transform` | Ajouter `transform` qui extrait `val['@id']` |
+| Filtres qui freeze la page | `filters` React Admin + URL sync Next.js | `CustomFilterBar` + `disableSyncWithLocation` |
+| Autocomplete options blanches | `optionText={<Component />}` ne reçoit pas le record | Utiliser `useRecordContext()` dans le composant |
+| User non affiché dans Training:read | `firstName`/`lastName` sans group `Training:read` | Ajouter `Training:read` aux groups de sérialisation User |
+
+---
+
+## Données peuplées (client_id = 5)
+
+- **97 leçons** : 61 pratiques (12 catégories) + 30 théoriques (7 catégories) + 6 mixtes
+- **2 programmes** : "Brevet ULM Multi-axes — PRATIQUE" + "— THÉORIQUE"
+- Leçons ordonnées par catégorie dans chaque programme

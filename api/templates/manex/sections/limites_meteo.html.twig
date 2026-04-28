@@ -1,0 +1,44 @@
+{% if data.flightRules|length > 0 %}
+<h3>Règles météorologiques</h3>
+{% for rule in data.flightRules %}
+<h4>{{ rule.name }}</h4>
+<table>
+    <thead>
+        <tr>
+            <th>Paramètre</th>
+            <th>Limite</th>
+            <th>Maximum / Minimum</th>
+            <th>Décision</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Vent</td>
+            <td>{{ rule.limiteWindKts }} kt</td>
+            <td>{{ rule.maxWindKts }} kt</td>
+            <td>&gt; {{ rule.maxWindKts }} kt → <span class="nogo">NO GO</span></td>
+        </tr>
+        <tr>
+            <td>Rafales</td>
+            <td>{{ rule.limiteGustKts }} kt</td>
+            <td>{{ rule.maxGustKts }} kt</td>
+            <td>&gt; {{ rule.maxGustKts }} kt → <span class="nogo">NO GO</span></td>
+        </tr>
+        <tr>
+            <td>Visibilité</td>
+            <td>{{ rule.limiteVisibilityM }} m</td>
+            <td>{{ rule.minVisibilityM }} m</td>
+            <td>&lt; {{ rule.minVisibilityM }} m → <span class="nogo">NO GO</span></td>
+        </tr>
+        <tr>
+            <td>Plafond</td>
+            <td>{{ rule.limiteCeilingFt }} ft</td>
+            <td>{{ rule.minCeilingFt }} ft</td>
+            <td>&lt; {{ rule.minCeilingFt }} ft → <span class="nogo">NO GO</span></td>
+        </tr>
+    </tbody>
+</table>
+{% endfor %}
+{% else %}
+<p><em>Aucune règle de vol configurée.</em></p>
+{% endif %}

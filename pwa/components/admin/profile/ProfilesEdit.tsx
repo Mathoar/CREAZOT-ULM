@@ -60,10 +60,10 @@ export const ProfilesEdit = () => {
     const clientIris = (clients || []).map(c => getFormattedValueForBackEnd(c));
     try {
       await fetch(userIri, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${session?.accessToken}`,
-          'Content-Type': 'application/ld+json',
+          'Content-Type': 'application/merge-patch+json',
         },
         body: JSON.stringify({ clients: clientIris }),
       });

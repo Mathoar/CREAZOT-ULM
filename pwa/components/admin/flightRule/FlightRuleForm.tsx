@@ -101,6 +101,11 @@ export const FlightRuleForm = ({ onSubmit }: { onSubmit?: any }) => (
         />
 
         <Divider sx={{ width: '100%', my: 2 }} />
+        <SectionTitle title="Masse et centrage" />
+        <NumberInput source="poidsMaxPassager" label="Poids max passager (kg)" fullWidth min={0}
+            helperText="Renseignez le poids passager le plus limitant de votre flotte (en kg)." />
+
+        <Divider sx={{ width: '100%', my: 2 }} />
         <TextInput source="notes" label="Notes / remarques" multiline rows={3} fullWidth
             helperText="Informations complémentaires visibles par les pilotes." />
     </SimpleForm>

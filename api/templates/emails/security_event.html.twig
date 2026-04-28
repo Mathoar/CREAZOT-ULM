@@ -1,0 +1,67 @@
+{% extends 'emails/_base.html.twig' %}
+
+{% block heading %}{% if isNoteInterne %}Note interne{% else %}&Eacute;v&eacute;nement s&eacute;curit&eacute; &middot; {{ typeLabel }}{% endif %}{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">Bonjour,</p>
+
+{% if isNoteInterne %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+<tr><td style="background-color:#e0f2fe; border-left:4px solid #0ea5e9; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.5; color:#0c4a6e;">
+  <strong>&#128221; Une note interne a &eacute;t&eacute; enregistr&eacute;e</strong>
+</td></tr>
+</table>
+{% else %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+<tr><td style="background-color:#fee2e2; border-left:4px solid #ef4444; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.5; color:#991b1b;">
+  <strong>&#9888; Un &eacute;v&eacute;nement de s&eacute;curit&eacute; vient d'&ecirc;tre enregistr&eacute;</strong>
+</td></tr>
+</table>
+{% endif %}
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:40%;">Type</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">
+      {% if isNoteInterne %}
+      <span style="display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background-color:#e0f2fe; color:#0c4a6e;">{{ typeLabel }}</span>
+      {% else %}
+      <span style="display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background-color:#fee2e2; color:#991b1b;">{{ typeLabel }}</span>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:40%;">Date</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">{{ dateEvenement }}</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:40%;">Pilote</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">{{ piloteNom }}</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0; font-size:14px; color:#6b7280; border-bottom:1px solid #f3f4f6; width:40%;">A&eacute;ronef</td>
+    <td style="padding:10px 0; font-size:14px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #f3f4f6;">{{ aeronefImmat }}</td>
+  </tr>
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+<tr><td style="background-color:#f3f4f6; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.6; color:#374151;">
+  <strong>Description :</strong><br>
+  {{ description|nl2br }}
+</td></tr>
+</table>
+
+{% if not isNoteInterne %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+<tr><td style="background-color:#fef3c7; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; font-size:14px; line-height:1.6; color:#92400e;">
+  <strong>Rappel des d&eacute;lais r&eacute;glementaires :</strong><br>
+  &bull; Notification DGAC/DSAC : <strong>{{ delaiDGAC }} heures</strong> apr&egrave;s l'&eacute;v&eacute;nement<br>
+  &bull; Compte rendu de suivi : <strong>{{ delaiCR }} jours</strong> apr&egrave;s la notification
+</td></tr>
+</table>
+{% endif %}
+
+<p style="margin:16px 0 0; font-size:15px; line-height:1.6; color:#374151;">
+  Connectez-vous &agrave; Logic'Ciel pour {% if isNoteInterne %}consulter{% else %}compl&eacute;ter le suivi de{% endif %} cet &eacute;v&eacute;nement.
+</p>
+{% endblock %}

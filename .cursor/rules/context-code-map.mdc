@@ -28,6 +28,11 @@ globs:
 | `MediaObject.php` | Upload fichiers (API Platform) | `Assert\File` strict : JPEG/PNG/PDF |
 | `Briefing.php` | Briefing public général (1 par client) | `ownerClient` (OneToOne), `html`, `headerImage`, `showMap`, `extraContacts` |
 | `Reservation.php` | Réservation passager | + `publicShortcode` (10 chars, base de la page `/r/`) |
+| `Lesson.php` | Leçon pédagogique (pratique/théorie/mixte) | `nom`, `briefing`, `type`, `categorie`, `isAvailable`, `documents` (MediaObject) |
+| `Programme.php` | Parcours de leçons ordonnées | `nom`, `description`, `type`, `isAvailable`, `programmeLessons` |
+| `ProgrammeLesson.php` | Liaison programme ↔ leçon avec ordre | `programme`, `lesson`, `position` (unique programme+lesson) |
+| `Training.php` | Formation d'un élève sur un programme | `eleve`, `instructeur`, `programme`, `statut`, `progresses`, `documents`, `getProgressionPercent()` |
+| `Progress.php` | Progression par leçon (0–3) dans une formation | `training`, `lesson`, `niveau` (constantes `NIVEAU_*`), `commentaire`, `updatedBy` |
 
 ### Contrôleurs (`Controller/`)
 
@@ -42,6 +47,7 @@ globs:
 | `OdooTestController.php` | `POST /admin/odoo/test-connection` | Test connexion Odoo |
 | `PublicReservationController.php` | `GET /r/{shortcode}` | Page passager publique (sans auth, rate-limit IP, exp. 7j). Helper `mediaUrl()` car `MediaObject->contentUrl` vaut `null` hors API Platform. |
 | `NotificationController.php` | `POST /admin/notifications/send` + `POST /webhook/twilio/status` | Envoi groupé SMS/email + ack Twilio |
+| `ShopController.php` | `POST /wix/purchase/{clientId}` | Webhook Wix pour commandes e-commerce |
 
 ### Services (`Service/`)
 
@@ -67,6 +73,10 @@ globs:
 | `ModulePackSyncSubscriber.php` | Changement `PricingCategory` | Synchronise modules du pack → client |
 | `OdooSyncSubscriber.php` | Création/modification `Client` | Crée/met à jour partner Odoo |
 | `MediaObjectImageResizeSubscriber.php` | `postPersist MediaObject` | Resize automatique image > 1920 px via `ImageResizer` |
+| `TrainingCreateSubscriber.php` | `postPersist Training` | Crée un `Progress` par leçon du programme (niveau initial 0, tenant copié) |
+| `ReservationShortcodeSubscriber.php` | `prePersist Reservation` | Génère `publicShortcode` si absent |
+| `HtmlSanitizerSubscriber.php` | `prePersist`/`preUpdate` entités avec HTML | Sanitize HTML (briefing, etc.) |
+| `ClientBriefingSubscriber.php` | `postPersist Client` | Crée automatiquement un `Briefing` vide pour un nouveau client |
 
 ### Commands
 
@@ -75,6 +85,17 @@ globs:
 | `BillingCronCommand.php` | `app:billing-cron` | CRON quotidien — factures |
 | `PollInboundEmailsCommand.php` | `app:poll-emails` | CRON — emails entrants (IMAP) |
 | `TestOdooFlowCommand.php` | `app:test-odoo` | Test manuel connexion Odoo |
+| `BackfillReservationShortcodesCommand.php` | `app:backfill-shortcodes` | Génère les shortcodes manquants sur réservations existantes |
+
+### Filtres Doctrine custom (`Doctrine/Orm/Filter/`)
+
+| Fichier | Propriété filtrée | Action |
+|---------|-------------------|--------|
+| `ClientTenantFilter.php` | (auto) | Filtre global multi-tenant `WHERE client_id = ?` |
+| `EncadrantUserFilter.php` | `encadrant=true` | Filtre Users ayant une qualification avec `encadrant = true` (join ProfilPilote → PilotQualification → Qualification) |
+| `NameFilter.php` | `name` | Recherche `ipartial` sur `firstName` + `lastName` |
+| `AvailablePiloteFilter.php` | — | Pilotes disponibles à une date |
+| `AvailableAeronefFilter.php` | — | Aéronefs disponibles |
 
 ---
 
@@ -107,6 +128,9 @@ SessionProvider (NextAuth)
 | `circuit/` | Circuit | `CircuitsCreate`/`Edit` (`TabbedForm syncWithLocation={false}`, onglet "Briefing commercial" si `hasPlanification`) |
 | `messageTemplate/` | MessageTemplate | `MessageTemplateCreate`/`Edit` (variables incl. `{{lien_briefing}}`) |
 | `planning/` | — | `PlanningPage` (composer SMS/email + calendrier) |
+| `lesson/` | Lesson | List (filtres custom type/catégorie), Create, Edit (RichText + FileInput documents), Show |
+| `programme/` | Programme | List, Create, Edit (ArrayInput leçons ordonnées + AutocompleteInput custom), Show |
+| `training/` | Training | List (barre progression), Create, Edit (ProgressGrid interactive + FileInput documents), Show |
 | `shared/` | — | `BriefingFileField` (FileField custom : résout filename via contentUrl/src/rawFile) |
 
 ### Dashboard météo (`components/dashboard/`)

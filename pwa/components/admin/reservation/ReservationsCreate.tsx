@@ -351,7 +351,7 @@ export const ReservationsCreate = () => {
         <TextInput source="telephone" label="N° de téléphone" validate={required()}/>
         <TextInput source="email" label="Adresse email"/>
         <NumberInput source="quantite" label="Nombre de passager(s)" min={ 1 } defaultValue={ 1 } validate={required()}/>
-        <ReferenceInput reference="circuits" source="circuit">
+        <ReferenceInput reference="circuits" source="circuit" filter={{ isAvailable: true }}>
           <AutocompleteInput label="Circuit" validate={required()} />
         </ReferenceInput>
         <OptionInput client={ client }/>

@@ -1,0 +1,28 @@
+{% extends 'emails/_base.html.twig' %}
+
+{% block heading %}Compte-rendu &middot; {{ typeLabel }}{% endblock %}
+
+{% block content %}
+{% if recipientType == 'autre' %}
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">Bonjour,</p>
+{% else %}
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">Madame, Monsieur,</p>
+{% endif %}
+
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">
+  Veuillez trouver ci-joint le compte-rendu d'&eacute;v&eacute;nement de s&eacute;curit&eacute;
+  de type <strong>{{ typeLabel }}</strong> survenu le <strong>{{ dateEvenement }}</strong>,
+  &eacute;tabli par <strong>{{ client.name }}</strong>.
+</p>
+
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">
+  Ce document d&eacute;taille les circonstances de l'&eacute;v&eacute;nement, l'analyse des causes
+  et les mesures correctives mises en &oelig;uvre.
+</p>
+
+<p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">
+  Nous restons &agrave; votre disposition pour tout compl&eacute;ment d'information.
+</p>
+
+<p style="margin:0; font-size:15px; line-height:1.6; color:#374151;">Cordialement,</p>
+{% endblock %}

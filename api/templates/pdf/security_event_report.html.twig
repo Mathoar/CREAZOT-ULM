@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 12px; color: #1a1a2e; line-height: 1.5; margin: 40px; }
+  h1 { font-size: 18px; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 8px; margin-bottom: 20px; }
+  h2 { font-size: 14px; color: #1e3a5f; margin-top: 24px; margin-bottom: 8px; }
+  h3 { font-size: 13px; color: #374151; margin-top: 18px; margin-bottom: 6px; }
+  table.info { width: 100%; border-collapse: collapse; margin: 12px 0 20px; }
+  table.info td { padding: 6px 10px; border: 1px solid #d1d5db; font-size: 11px; }
+  table.info td:first-child { background-color: #f3f4f6; font-weight: bold; width: 35%; }
+  .header-bar { background-color: #1e3a5f; color: white; padding: 16px 24px; margin: -40px -40px 30px; }
+  .header-bar h1 { color: white; border: none; margin: 0; padding: 0; font-size: 16px; }
+  .header-bar p { margin: 4px 0 0; font-size: 11px; opacity: 0.85; }
+  .content { margin-top: 10px; }
+  .content h2, .content h3 { color: #1e3a5f; }
+  .content table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  .content table td, .content table th { padding: 5px 8px; border: 1px solid #d1d5db; font-size: 11px; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #d1d5db; font-size: 10px; color: #6b7280; text-align: center; }
+  em { color: #6b7280; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <h1>Compte-rendu d'événement de sécurité</h1>
+  <p>{{ client.name }} — {{ typeLabel }} du {{ dateEvenement }}</p>
+</div>
+
+<table class="info">
+  <tr><td>Exploitant</td><td>{{ client.name }}</td></tr>
+  <tr><td>Type d'événement</td><td>{{ typeLabel }}</td></tr>
+  <tr><td>Date et heure</td><td>{{ dateEvenement }}</td></tr>
+  <tr><td>Pilote</td><td>{{ piloteNom }}</td></tr>
+  <tr><td>Aéronef</td><td>{{ aeronefImmat }}</td></tr>
+  <tr><td>Statut</td><td>{{ event.status == 'clos' ? 'Clôturé' : (event.status == 'en_cours' ? 'En cours de traitement' : 'Ouvert') }}</td></tr>
+  {% if event.dateNotificationExploitant %}
+  <tr><td>Notification exploitant</td><td>{{ event.dateNotificationExploitant|date('d/m/Y H:i') }}</td></tr>
+  {% endif %}
+  {% if event.dateNotificationDGAC %}
+  <tr><td>Notification DGAC</td><td>{{ event.dateNotificationDGAC|date('d/m/Y H:i') }}</td></tr>
+  {% endif %}
+  {% if event.dateNotificationBEA %}
+  <tr><td>Notification BEA</td><td>{{ event.dateNotificationBEA|date('d/m/Y H:i') }}</td></tr>
+  {% endif %}
+  {% if event.dateCloture %}
+  <tr><td>Date de clôture</td><td>{{ event.dateCloture|date('d/m/Y H:i') }}</td></tr>
+  {% endif %}
+</table>
+
+<div class="content">
+  {{ compteRendu|raw }}
+</div>
+
+<div class="footer">
+  Document généré le {{ "now"|date('d/m/Y à H\\hi') }} — {{ client.name }}<br>
+  Ce document est confidentiel et destiné aux autorités compétentes.
+</div>
+
+</body>
+</html>

@@ -77,7 +77,7 @@ docker exec creazot-ulm-php-1 bin/console doctrine:schema:update --force
 
 | Dossier | Contenu |
 |---------|---------|
-| `pwa/components/admin/` | Composants React-Admin (client, modulePack, siteSettings, layout, planning, messageTemplate) |
+| `pwa/components/admin/` | Composants React-Admin (client, modulePack, siteSettings, layout, planning, messageTemplate, training, programme, lesson) |
 | `pwa/components/dashboard/components/Dashboard/` | Dashboard météo (MetarView, NotamView, ScoreOps, Cameras) |
 | `api/src/Entity/` | Entités Doctrine |
 | `api/src/Service/` | Services métier (VapiService, KimiAiService, ScoreOpsService, NotificationService, etc.) |
@@ -97,7 +97,7 @@ docker exec creazot-ulm-php-1 bin/console doctrine:schema:update --force
 
 ---
 
-## Modules Client (21 booleans sur `Client`)
+## Modules Client (22 booleans sur `Client`)
 
 Synchronisés via `ModulePackSyncSubscriber` (introspection dynamique des champs boolean `has*`).
 
@@ -107,7 +107,7 @@ hasPartners, hasPassengerRegistration, hasOriginContact, hasPaymentManagement,
 hasExpensesManagement, hasMicrotrakTag, hasLandingManagement,
 hasIndividualFlightLogs, hasGroupUpdate, hasNotam,
 hasAI, hasAiReservationAssistant, hasVoiceAssistant, hasCams,
-hasSMS, hasPlanification
+hasSMS, hasPlanification, hasTraining
 ```
 
 **Conditions d'affichage frontend :**
@@ -121,6 +121,7 @@ hasSMS, hasPlanification
 | `hasAiReservationAssistant` | Menu "Assistant IA" |
 | `hasPlanification` | Menu "Planification" + "Modèles messages" + menu "Briefing" + variable `{{lien_briefing}}` + page publique `/r/{shortcode}` |
 | `hasSMS` | Option SMS dans le select méthode d'envoi (page Planification) |
+| `hasTraining` | Menu "Formation" (Leçons, Programmes, Formations) |
 
 **Formulaires :** `ClientsEdit.tsx` (onglet Options), `ModulePacksCreate.tsx`, `ModulePacksEdit.tsx`
 
@@ -155,6 +156,13 @@ hasSMS, hasPlanification
 - Route publique `GET /r/{shortcode}` (sans auth, rate-limit IP, expiration 7j)
 - Page Next.js `pwa/app/r/[shortcode]/` (SSR, mobile-first, dégradé `client.color`)
 - Resizer auto images > 1920 px (`ImageResizer` + listener `MediaObjectImageResizeSubscriber`)
+
+### Formation pilote (Training)
+→ Voir `context-training.mdc` pour les détails
+- Entités : `Lesson`, `Programme`, `ProgrammeLesson`, `Training`, `Progress`
+- `TrainingCreateSubscriber` : crée un `Progress` par leçon à la création d'un Training
+- `EncadrantUserFilter` : filtre API `/users?encadrant=true` (instructeurs uniquement)
+- Frontend : 3 CRUD (leçons, programmes, formations), grille de progression interactive
 
 ### Facturation Odoo
 → Voir `context-billing.mdc` pour les détails
@@ -198,7 +206,7 @@ Scripts : `docs/generate_migration.py`, `docs/migration_planetair_to_logicciel.s
 
 ## Entités Doctrine principales
 
-**Client** (central), User, UserClientRole, ProfilPilote, Reservation, Circuit, Aeronef, Vol, CarnetVol, FlightRule, NotamCache, PreFlightAnalysis, ConversationThread, ModulePack, ModulePackPrice, PricingCategory, PricingTier, SiteSettings, ClientAccessRequest, Camera, Landing, Payment, PaymentDetail, Expense, CountryCode, Cadeau, Contact, Origine, Combinaison, Passager, CertificatMedical, PilotQualification, Disponibilite, Entretien, Rappel, MediaObject, MessageTemplate, **Briefing**.
+**Client** (central), User, UserClientRole, ProfilPilote, Reservation, Circuit, Aeronef, Vol, CarnetVol, FlightRule, NotamCache, PreFlightAnalysis, ConversationThread, ModulePack, ModulePackPrice, PricingCategory, PricingTier, SiteSettings, ClientAccessRequest, Camera, Landing, Payment, PaymentDetail, Expense, CountryCode, Cadeau, Contact, Origine, Combinaison, Passager, CertificatMedical, PilotQualification, Disponibilite, Entretien, Rappel, MediaObject, MessageTemplate, **Briefing**, **Lesson**, **Programme**, **ProgrammeLesson**, **Training**, **Progress**.
 
 ### Champs Client notables
 

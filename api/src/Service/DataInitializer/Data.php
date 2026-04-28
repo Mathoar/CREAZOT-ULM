@@ -44,12 +44,16 @@ class Data
     ];
 
     private $natures = [
-        ['code' => 'VLO',   'label' => 'Vol Local à titre Onéreux'],
-        ['code' => 'VSO',   'label' => 'Vol à Sensation à titre Onéreux'],
-        ['code' => 'VEF',   'label' => 'Vol d\'Entraînement ou de Formation'],
-        ['code' => 'VAPO',  'label' => 'Vol pour Activité Particulière à titre Onéreux'],
-        ['code' => 'AUTRE', 'label' => 'Autre Activité'],
-        ['code' => 'N/A',   'label' => 'Non Applicable']
+        ['code' => 'VLP', 'label' => 'Vol Local à titre Privé', 'isParticularActivity' => false],
+        ['code' => 'VLO', 'label' => 'Vol Local à titre Onéreux', 'isParticularActivity' => false],
+        ['code' => 'VLD', 'label' => 'Vol Local de Découverte', 'isParticularActivity' => false],
+        ['code' => 'FI',  'label' => 'Formation Initiale', 'isParticularActivity' => false],
+        ['code' => 'FC',  'label' => 'Formation Continue', 'isParticularActivity' => false],
+        ['code' => 'BAH', 'label' => 'Vol Basse Hauteur', 'isParticularActivity' => true],
+        ['code' => 'PVA', 'label' => 'Prise de Vues Aériennes', 'isParticularActivity' => true],
+        ['code' => 'VOG', 'label' => 'Voltige', 'isParticularActivity' => true],
+        ['code' => 'LAR', 'label' => 'Largage', 'isParticularActivity' => true],
+        ['code' => 'TRA', 'label' => 'Tractage / Remorquage', 'isParticularActivity' => true],
     ];
 
     private $options = [

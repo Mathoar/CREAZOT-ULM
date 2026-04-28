@@ -63,6 +63,7 @@ final class PrestationCreateSubscriber implements EventSubscriberInterface
 
             $this->setFlightsCost($prestation, $aeronef);
             $this->checkDeadlines($aeronef);
+            $this->checkParachuteDeadline($aeronef);
             $this->addFlightTimeToUser($prestation->getDuree(), $prestation->getPilote(), $aeronef);
             $this->pilotValidityChecker->checkAndNotify($user);
 
@@ -187,6 +188,68 @@ final class PrestationCreateSubscriber implements EventSubscriberInterface
         } catch (\Throwable $e) {
             $this->logger->error('Échec envoi email alerte {type} pour {immat}: {error}', [
                 'type' => $type,
+                'immat' => $aeronef->getImmatriculation(),
+                'error' => $e->getMessage(),
+                'clientId' => $client->getId(),
+            ]);
+        }
+    }
+
+    private function checkParachuteDeadline(Aeronef $aeronef): void
+    {
+        if (!$aeronef->getHasParachute()
+            || !$aeronef->getDateReconditionnementParachute()
+            || !$aeronef->getPeriodiciteParachuteMois()
+            || $aeronef->isAlerteParachuteEnvoyee()
+        ) {
+            return;
+        }
+
+        $client = $this->clientGetter->get();
+        if (!$client?->getEmailServer() || !$client->getEmailAddressSender()) {
+            return;
+        }
+
+        $seuilJours = $client->getSeuilAlerteParachuteJours() ?? 180;
+        $dateReconditionnement = $aeronef->getDateReconditionnementParachute();
+        $periodicite = $aeronef->getPeriodiciteParachuteMois();
+
+        $echeance = (clone $dateReconditionnement)->modify("+{$periodicite} months");
+        $now = new \DateTime();
+        $joursRestants = (int) $now->diff($echeance)->format('%r%a');
+
+        if ($joursRestants >= $seuilJours) {
+            return;
+        }
+
+        $mailer = $this->dynamicMailerFactory->getMailerForClient();
+        $depassee = $joursRestants < 0;
+
+        try {
+            $message = (new TemplatedEmail())
+                ->from($client->getEmailAddressSender())
+                ->to($client->getEmail())
+                ->subject('Parachute de récupération — ' . $aeronef->getImmatriculation())
+                ->htmlTemplate('emails/parachute.html.twig')
+                ->context([
+                    'immatriculation' => $aeronef->getImmatriculation(),
+                    'dateReconditionnement' => $dateReconditionnement->format('d/m/Y'),
+                    'echeance' => $echeance->format('d/m/Y'),
+                    'joursRestants' => abs($joursRestants),
+                    'depassee' => $depassee,
+                    'client' => $client,
+                ]);
+
+            $this->dynamicMailerFactory->renderAndSend($mailer, $message);
+            $aeronef->setAlerteParachuteEnvoyee(true);
+
+            $this->logger->info('Email alerte parachute envoyé pour {immat}', [
+                'immat' => $aeronef->getImmatriculation(),
+                'to' => $client->getEmail(),
+                'clientId' => $client->getId(),
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->error('Échec envoi email alerte parachute pour {immat}: {error}', [
                 'immat' => $aeronef->getImmatriculation(),
                 'error' => $e->getMessage(),
                 'clientId' => $client->getId(),

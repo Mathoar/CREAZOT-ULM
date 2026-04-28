@@ -268,6 +268,43 @@ export const syncOdooDocuments = async (documents, entityType, entityId, session
     return results;
 };
 
+export const createMediaDocument = async (file, description, session) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (description) formData.append('description', description);
+
+    try {
+        const response = await fetch('/media_objects', {
+            method: 'POST',
+            body: formData,
+            headers: { Authorization: `Bearer ${session?.accessToken}` },
+        });
+        if (!response.ok) {
+            console.error(`Erreur upload document: ${await response.text()}`);
+            return null;
+        }
+        return await response.json();
+    } catch (err) {
+        console.error('Erreur upload document:', err);
+        return null;
+    }
+};
+
+export const syncMediaDocuments = async (documents, session) => {
+    if (!documents || documents.length === 0) return [];
+
+    const results = [];
+    for (const doc of documents) {
+        if (doc?.rawFile) {
+            const created = await createMediaDocument(doc.rawFile, doc.title || doc.rawFile.name, session);
+            if (created) results.push(created['@id']);
+        } else if (doc?.['@id']) {
+            results.push(doc['@id']);
+        }
+    }
+    return results;
+};
+
 export const uploadImages = async (data, session, clientId = null) => {
     const uploadPromises = images.map(async (image) => {
         const value = data[image.name];
@@ -410,6 +447,14 @@ export const clientWithSMS = client => {
 
 export const clientWithPlanification = client => {
     return isDefined(client) && isDefined(client.hasPlanification) && client.hasPlanification;
+};
+
+export const clientWithTraining = client => {
+    return isDefined(client) && isDefined(client.hasTraining) && client.hasTraining;
+};
+
+export const clientWithManex = client => {
+    return isDefined(client) && isDefined(client.hasManex) && client.hasManex;
 };
 
 export const getDefaultLanding = client => {

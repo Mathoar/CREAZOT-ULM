@@ -1,6 +1,7 @@
 import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, FunctionField, DateField, FileField } from 'react-admin';
 import { isDefined } from '../../../app/lib/utils';
 import { DocumentListField } from "../shared/OdooDocumentField";
+import { Divider, Typography } from '@mui/material';
 
 export const AeronefShow = () => {
 
@@ -28,12 +29,27 @@ export const AeronefShow = () => {
         );
     };
 
+    const formatParachuteEcheance = (record: any) => {
+        if (!record?.hasParachute) return null;
+        if (!record.dateReconditionnementParachute || !record.periodiciteParachuteMois) return 'Dates non renseignées';
+        const date = new Date(record.dateReconditionnementParachute);
+        date.setMonth(date.getMonth() + record.periodiciteParachuteMois);
+        const now = new Date();
+        const diff = Math.floor((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const echeance = date.toLocaleDateString('fr-FR');
+        if (diff < 0) return <span className="text-red-500 font-bold">Dépassée ({echeance}, {Math.abs(diff)}j de retard)</span>;
+        if (diff < 180) return <span className="text-orange-500 font-bold">{echeance} ({diff}j restants)</span>;
+        return <span className="text-green-500">{echeance} ({diff}j restants)</span>;
+    };
+
     return (
         <Show>
             <SimpleShowLayout>
-                <TextField source="immatriculation" label="Immatriculation" sortable={ true }/>
+                <TextField source="immatriculationComplete" label="Immatriculation" />
+                <TextField source="immatriculation" label="Identifiant radio" />
+                <TextField source="modele" label="Modèle" />
                 <NumberField source="horametre" options={{ style: 'unit', unit: 'hour' }} label="Horamètre"/>
-                <NumberField source="entretien" options={{ style: 'unit', unit: 'hour' }} label="Horamètre"/>
+                <NumberField source="entretien" options={{ style: 'unit', unit: 'hour' }} label="Prochain entretien"/>
                 <FunctionField
                     source="entretien"
                     label="Temps de vol avant le prochain entretien"
@@ -41,12 +57,31 @@ export const AeronefShow = () => {
                 />
                 <FunctionField
                     source="changementMoteur"
-                    label="Temps de vol avant le prochain Changement moteur"
+                    label="Temps de vol avant le prochain changement moteur"
                     render={ record => <>{ getRemainingMotorTime(record) }</> }
                 />   
                 <NumberField source="seuilAlerte" options={{ style: 'unit', unit: 'hour' }} label="Seuil d'alerte (en h) avant entretien"/>
                 <NumberField source="seuilAlerteChangementMoteur" options={{ style: 'unit', unit: 'hour' }} label="Seuil d'alerte (en h) avant changement du moteur"/>
-                <TextField source="codeBalise" label="Code Microtrak"/>
+                <TextField source="codeBalise" label="Code balise"/>
+                <TextField source="typeBalise" label="Type de balise / dispositif" />
+                <Divider sx={{ width: '100%' }} />
+                <Typography variant="subtitle2">Parachute de récupération</Typography>
+                <BooleanField source="hasParachute" label="Équipé d'un parachute"/>
+                <FunctionField
+                    label="Échéance reconditionnement"
+                    render={record => record?.hasParachute ? formatParachuteEcheance(record) : '—'}
+                />
+                <FunctionField
+                    label="Dernier reconditionnement"
+                    render={record => record?.dateReconditionnementParachute
+                        ? new Date(record.dateReconditionnementParachute).toLocaleDateString('fr-FR')
+                        : '—'}
+                />
+                <FunctionField
+                    label="Périodicité"
+                    render={record => record?.periodiciteParachuteMois ? `${record.periodiciteParachuteMois} mois` : '—'}
+                />
+                <Divider sx={{ width: '100%' }} />
                 <BooleanField source="decimal" label="Horamètre décimal"/>
                 <BooleanField source="isAvailable" label="Disponible"/>
                 <DocumentListField source="documents" label="Documents associés"/>

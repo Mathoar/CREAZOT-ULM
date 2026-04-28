@@ -1,4 +1,4 @@
-import { SimpleForm, TextInput, NumberInput, Edit, required } from "react-admin"; 
+import { SimpleForm, TextInput, BooleanInput, Edit, required } from "react-admin"; 
 
 export const NaturesEdit = () => {
 
@@ -7,6 +7,7 @@ export const NaturesEdit = () => {
         <SimpleForm>
           <TextInput source="code" label="Code" validate={required()}/>
           <TextInput source="label" label="Label" validate={required()}/>
+          <BooleanInput source="isParticularActivity" label="Activité Particulière (AP)" />
         </SimpleForm>
     </Edit>
   )

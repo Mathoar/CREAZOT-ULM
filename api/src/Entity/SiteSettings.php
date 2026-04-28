@@ -161,6 +161,14 @@ class SiteSettings
     #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
     private ?string $smsCostPerUnit = null;
 
+    #[ORM\Column(name: 'delai_notification_dgac_heures', options: ['default' => 72])]
+    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    private int $delaiNotificationDGACHeures = 72;
+
+    #[ORM\Column(name: 'delai_compte_rendu_suivi_jours', options: ['default' => 30])]
+    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    private int $delaiCompteRenduSuiviJours = 30;
+
     #[ORM\Column(nullable: true)]
     #[Groups(groups: ['SiteSettings:read'])]
     private ?\DateTimeImmutable $createdAt = null;
@@ -593,6 +601,12 @@ class SiteSettings
         $this->messageBirdOriginator = $messageBirdOriginator;
         return $this;
     }
+
+    public function getDelaiNotificationDGACHeures(): int { return $this->delaiNotificationDGACHeures; }
+    public function setDelaiNotificationDGACHeures(int $v): static { $this->delaiNotificationDGACHeures = $v; return $this; }
+
+    public function getDelaiCompteRenduSuiviJours(): int { return $this->delaiCompteRenduSuiviJours; }
+    public function setDelaiCompteRenduSuiviJours(int $v): static { $this->delaiCompteRenduSuiviJours = $v; return $this; }
 
     public function getSmsCostPerUnit(): ?string
     {

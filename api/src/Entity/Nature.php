@@ -65,6 +65,10 @@ class Nature
     #[Groups(groups: ['Nature:write', 'Nature:read', 'Circuit:read', 'Vol:read', 'Prestation:read', 'Reservation:read', 'CarnetVol:read'])]
     private ?string $label = null;
 
+    #[ORM\Column(name: 'is_particular_activity', type: 'boolean', options: ['default' => false])]
+    #[Groups(groups: ['Nature:write', 'Nature:read', 'Circuit:read'])]
+    private bool $isParticularActivity = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -90,6 +94,18 @@ class Nature
     public function setLabel(?string $label): static
     {
         $this->label = $label;
+
+        return $this;
+    }
+
+    public function getIsParticularActivity(): bool
+    {
+        return $this->isParticularActivity;
+    }
+
+    public function setIsParticularActivity(bool $isParticularActivity): static
+    {
+        $this->isParticularActivity = $isParticularActivity;
 
         return $this;
     }

@@ -41,7 +41,7 @@ export const FlightForm = ({ selectedCircuits, setSelectedCircuits, selectedAirc
 
   const getCircuits = () => {
     dataProvider
-        .getList('circuits', {})
+        .getList('circuits', { filter: { isAvailable: true } })
         .then(({ data }) => setCircuits(data));
   };
 

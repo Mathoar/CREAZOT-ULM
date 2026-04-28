@@ -19,6 +19,7 @@ export const PassagersCreate = () => (
     <TextInput source="prenom" label="Prénom" validate={required()}/>
     <TextInput source="telephone" label="N° de téléphone" validate={required()}/>
     <TextInput source="email" label="Adresse email" validate={required()}/>
+    <NumberInput source="poids" label="Poids (kg)" min={20} max={200} />
   </SimpleForm>
 </Create>
 );

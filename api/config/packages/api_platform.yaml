@@ -244,6 +244,15 @@ services:
         arguments: [{ profilPilote: ~ }]
         tags: [ 'api_platform.filter' ]
 
+    app.filter.user.encadrant:
+        class: 'App\Doctrine\Orm\Filter\EncadrantUserFilter'
+        arguments:
+            $managerRegistry: '@doctrine'
+            $logger: '@logger'
+            $nameConverter: '@?api_platform.name_converter'
+            $properties: { encadrant: ~ }
+        tags: [ 'api_platform.filter' ]
+
     app.filter.profile.certificat_medical:
         parent: 'api_platform.doctrine.orm.exists_filter'
         arguments: [{ certificatMedical: ~ }]

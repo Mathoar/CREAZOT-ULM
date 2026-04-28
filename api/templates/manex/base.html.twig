@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>MANEX – {{ client.name }}</title>
+    <style>
+        @page {
+            margin: 20mm 15mm 25mm 15mm;
+        }
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .cover {
+            text-align: center;
+            padding-top: 120px;
+        }
+        .cover h1 {
+            font-size: 28px;
+            color: #1a365d;
+            margin-bottom: 8px;
+        }
+        .cover h2 {
+            font-size: 18px;
+            color: #4a5568;
+            font-weight: normal;
+            margin-bottom: 40px;
+        }
+        .cover .meta {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 60px;
+        }
+        .toc {
+            page-break-before: always;
+        }
+        .toc h2 {
+            font-size: 18px;
+            color: #1a365d;
+            border-bottom: 2px solid #1a365d;
+            padding-bottom: 6px;
+            margin-bottom: 16px;
+        }
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+        .toc li {
+            padding: 6px 0;
+            border-bottom: 1px dotted #cbd5e0;
+            font-size: 12px;
+        }
+        .toc li span.num {
+            display: inline-block;
+            width: 30px;
+            font-weight: bold;
+            color: #1a365d;
+        }
+        .section {
+            page-break-before: always;
+        }
+        .section h2 {
+            font-size: 16px;
+            color: #1a365d;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+            margin-bottom: 14px;
+        }
+        .section h2 span.num {
+            color: #4299e1;
+            margin-right: 8px;
+        }
+        .section .intro {
+            font-style: italic;
+            color: #4a5568;
+            margin-bottom: 14px;
+            padding: 8px 12px;
+            background: #f7fafc;
+            border-left: 3px solid #4299e1;
+        }
+        .section .auto-content {
+            margin-bottom: 14px;
+        }
+        .section .custom-content {
+            margin-top: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 10px;
+        }
+        table th {
+            background: #edf2f7;
+            color: #1a365d;
+            text-align: left;
+            padding: 6px 8px;
+            border: 1px solid #e2e8f0;
+            font-weight: bold;
+        }
+        table td {
+            padding: 5px 8px;
+            border: 1px solid #e2e8f0;
+        }
+        table tr:nth-child(even) td {
+            background: #f7fafc;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 9px;
+            color: #a0aec0;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 4px;
+        }
+        .go { color: #38a169; font-weight: bold; }
+        .nogo { color: #e53e3e; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="footer">
+    MANEX – {{ client.name }} {% if versionNumber %}| v{{ versionNumber }}{% endif %} | {{ generationDate|date('d/m/Y') }}
+</div>
+
+{# ===== PAGE DE COUVERTURE ===== #}
+<div class="cover">
+    {% if encodedLogo %}
+        <div style="margin-bottom: 30px;">
+            <img src="{{ encodedLogo }}" alt="Logo {{ client.name }}" style="max-width: 200px; max-height: 120px;">
+        </div>
+    {% endif %}
+    <h1>Manuel d'Exploitation</h1>
+    <h2>{{ client.name }}</h2>
+    <div class="meta">
+        {% if versionNumber %}Version {{ versionNumber }}<br>{% endif %}
+        Date de génération : {{ generationDate|date('d/m/Y à H:i') }}<br>
+        {% if client.address %}{{ client.address }}{% if client.zipcode %} – {{ client.zipcode }}{% endif %}{% if client.city %} {{ client.city }}{% endif %}<br>{% endif %}
+        {% if client.phone %}Tél. : {{ client.phone }}<br>{% endif %}
+        {% if client.email %}{{ client.email }}{% endif %}
+    </div>
+</div>
+
+{# ===== TABLE DES MATIÈRES ===== #}
+<div class="toc">
+    <h2>Table des matières</h2>
+    <ul>
+        {% for s in sections %}
+            <li><span class="num">{{ s.position }}.</span> {{ s.title }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+{# ===== SECTIONS ===== #}
+{% for s in sections %}
+<div class="section">
+    <h2><span class="num">{{ s.position }}.</span> {{ s.title }}</h2>
+    {% if s.introHtml %}
+        <div class="intro">{{ s.introHtml|raw }}</div>
+    {% endif %}
+    {% if s.customHtml %}
+        <div class="custom-content">{{ s.customHtml|raw }}</div>
+    {% endif %}
+    {% if s.autoHtml %}
+        <div class="auto-content">{{ s.autoHtml|raw }}</div>
+    {% endif %}
+</div>
+{% endfor %}
+
+</body>
+</html>

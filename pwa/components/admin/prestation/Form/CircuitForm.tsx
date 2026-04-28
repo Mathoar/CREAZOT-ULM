@@ -16,7 +16,7 @@ export const CircuitForm: React.FC = ({ selectedCircuit, setSelectedCircuit, isU
 
   useEffect(() => {
     dataProvider
-        .getList('circuits', {})
+        .getList('circuits', { filter: { isAvailable: true } })
         .then(({ data }) => {
             setCircuits(data);
             if (!isUpdate && selectedCircuit === "")

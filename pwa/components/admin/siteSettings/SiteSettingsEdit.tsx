@@ -1,4 +1,4 @@
-import { TextInput, SimpleForm, Edit, FileInput, FileField, useRecordContext } from "react-admin";
+import { TextInput, SimpleForm, Edit, FileInput, FileField, NumberInput, useRecordContext } from "react-admin";
 import { Typography, Divider, Box, Accordion, AccordionSummary, AccordionDetails, Link, Button, Alert, CircularProgress } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CloudIcon from "@mui/icons-material/Cloud";
@@ -316,6 +316,22 @@ export const SiteSettingsEdit = () => {
                     </Typography>
                     <ApiKeyInput source="emailParams" label="Serveur d'email (DSN: smtp://user:pass@host:port)" fullWidth />
                     <TextInput source="emailAddressSender" label="Adresse email d'envoi" fullWidth />
+
+                    <Divider sx={{ mt: 2, mb: 2, width: "100%" }} />
+
+                    <Typography variant="h6" gutterBottom>
+                        Délais réglementaires (sécurité)
+                    </Typography>
+                    <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                        <Box flex={1}>
+                            <NumberInput source="delaiNotificationDGACHeures" label="Délai notification DGAC (heures)" fullWidth min={1} defaultValue={72}
+                                helperText="Délai maximal pour notifier un événement de sécurité à la DGAC" />
+                        </Box>
+                        <Box flex={1}>
+                            <NumberInput source="delaiCompteRenduSuiviJours" label="Délai compte-rendu de suivi (jours)" fullWidth min={1} defaultValue={30}
+                                helperText="Délai maximal pour produire le CR de suivi après notification" />
+                        </Box>
+                    </Box>
 
                     <Accordion sx={{ mt: 3, width: "100%" }} defaultExpanded={false}>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

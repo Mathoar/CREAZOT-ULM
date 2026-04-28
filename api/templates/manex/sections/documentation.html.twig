@@ -1,0 +1,12 @@
+<p>Les documents terrain suivants sont disponibles et consultables auprès de l'exploitant :</p>
+
+{% if data.airports|length > 0 %}
+<h3>Fiches terrain</h3>
+<ul>
+    {% for a in data.airports %}
+        <li>{{ a.nom }}{% if a.code %} ({{ a.code }}){% endif %}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<p><em>Se référer aux annexes pour les documents complémentaires.</em></p>

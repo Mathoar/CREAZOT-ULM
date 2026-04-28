@@ -52,14 +52,21 @@ export async function createPassenger(prevState: State, formData: FormData) {
     const clientId = formData.get('clientId') as string;
     const slug = formData.get('slug') as string;
     const date = new Date().toISOString().split('T')[0];
+    const rawPoids = formData.get('poids');
+    const poids = rawPoids ? parseFloat(rawPoids as string) : undefined;
 
     const headers: Record<string, string> = {};
     if (clientId) {
         headers['X-Client-Id'] = clientId;
     }
 
+    const payload: any = { nom, prenom, email, telephone, date };
+    if (poids && !isNaN(poids)) {
+        payload.poids = poids;
+    }
+
     try {
-        await post('/passagers', {nom, prenom, email, telephone, date}, headers)
+        await post('/passagers', payload, headers)
         toast.success(`Merci ${prenom}. Bon vol à vous !`, {duration: 3000})
     } catch (error) {
         const violations = error.response?.data?.violations || [];

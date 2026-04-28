@@ -91,6 +91,10 @@ class Passager implements TenantAwareInterface
 
     #[ORM\Column(nullable: true)]
     #[Groups(groups: ['Passager:write', 'Passager:read'])]
+    private ?float $poids = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['Passager:write', 'Passager:read'])]
     private ?bool $consentAccepted = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -163,6 +167,17 @@ class Passager implements TenantAwareInterface
     {
         $this->date = $date;
 
+        return $this;
+    }
+
+    public function getPoids(): ?float
+    {
+        return $this->poids;
+    }
+
+    public function setPoids(?float $poids): static
+    {
+        $this->poids = $poids;
         return $this;
     }
 

@@ -52,6 +52,13 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import { Badge } from '@mui/material';
 import { useAiReservationStats } from '../../../app/lib/mercure';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import SchoolIcon from '@mui/icons-material/School';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import { clientWithTraining, clientWithManex } from "../../../app/lib/client";
+import DescriptionIcon from "@mui/icons-material/Description";
+import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 
 const CustomMenu = () => {
 
@@ -62,6 +69,7 @@ const CustomMenu = () => {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [tarificationOpen, setTarificationOpen] = useState(false);
   const [parametresOpen, setParametresOpen] = useState(false);
+  const [formationOpen, setFormationOpen] = useState(false);
   const [openSidebar] = useSidebarState();
 
   // Live badge powered by Mercure: replaces the previous 30s polling loop.
@@ -210,6 +218,58 @@ const CustomMenu = () => {
           to="/profil_pilotes"
           primaryText="Pilotes"
           leftIcon={<BadgeIcon />}
+        />
+      }
+
+      {/* Formation */}
+      { isAdmin && clientWithTraining(client) &&
+        <>
+          <MenuItemLink
+            to="#"
+            onClick={e => { e.preventDefault(); setFormationOpen(!formationOpen); }}
+            primaryText="Formation"
+            leftIcon={<SchoolIcon className="h-[24px] w-[24px]"/>}
+            dense={ !openSidebar }
+            sx={{ cursor: 'pointer', backgroundColor: formationOpen ? '#EFF2F5' : '#F9FAFB' }}
+          />
+          <Collapse in={formationOpen} timeout="auto" unmountOnExit>
+            <Menu.Item
+              to="/lessons"
+              primaryText="Leçons"
+              leftIcon={<AutoStoriesIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+            <Menu.Item
+              to="/programmes"
+              primaryText="Programmes"
+              leftIcon={<AccountTreeIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+            <Menu.Item
+              to="/trainings"
+              primaryText="Formations"
+              leftIcon={<HowToRegIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+          </Collapse>
+        </>
+      }
+
+      {/* MANEX */}
+      { isAdmin && clientWithManex(client) &&
+        <Menu.Item
+          to="/manex"
+          primaryText="MANEX"
+          leftIcon={<DescriptionIcon />}
+        />
+      }
+
+      {/* Événements de sécurité */}
+      { isAdmin &&
+        <Menu.Item
+          to="/security_events"
+          primaryText="Événements sécurité"
+          leftIcon={<ReportProblemIcon />}
         />
       }
 
