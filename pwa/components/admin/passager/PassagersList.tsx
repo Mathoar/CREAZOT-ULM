@@ -1,5 +1,6 @@
 import { type NextPage } from "next";
-import { Datagrid, List, TextField, CreateButton, TopToolbar, DateField, EditButton, ShowButton, SimpleList, EmailField, useListContext, Form, DateInput, BooleanField, FunctionField, useGetList } from "react-admin";
+import { Datagrid, List, TextField, TopToolbar, DateField, ShowButton, SimpleList, EmailField, useListContext, Form, DateInput, BooleanField, FunctionField, useGetList } from "react-admin";
+import { ProtectedCreateButton, ProtectedEditButton } from "../../admin/PermissionGuards";
 import { type Circuit } from "../../../types/Circuit";
 import { type PagedCollection } from "../../../types/collection";
 import { isDefined, toLocalDateString } from "../../../app/lib/utils";
@@ -73,7 +74,7 @@ const ListActions = ({ showMore, setShowMore, resource, isAdmin, isSmall }) => {
     return (
       <TopToolbar>
           <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-          <CreateButton/>
+          <ProtectedCreateButton/>
           {/* @ts-ignore */}
           { isAdmin && <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/> }
           {/* @ts-ignore */}
@@ -287,7 +288,7 @@ export const PassagersList: NextPage<Props> = ({ data, hubURL, page }) => {
                 />
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </Box>
             </Datagrid>
         }

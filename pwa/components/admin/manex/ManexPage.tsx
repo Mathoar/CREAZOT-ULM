@@ -11,6 +11,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { Title, useDataProvider, useNotify } from "react-admin";
 import { useClient } from "../ClientProvider";
 import { useSessionContext } from "../SessionContextProvider";
+import { usePermissions } from "../PermissionProvider";
 import { ManexSectionEditor } from "./ManexSectionEditor";
 import { ManexPreview } from "./ManexPreview";
 import { ManexHistory } from "./ManexHistory";
@@ -35,8 +36,10 @@ export const ManexPage = () => {
   const { session } = useSessionContext();
   const dataProvider = useDataProvider();
   const notify = useNotify();
+  const { canWrite } = usePermissions();
+  const hasWriteAccess = canWrite("manex");
 
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(hasWriteAccess ? 0 : 1);
   const [sections, setSections] = useState<ManexSectionRecord[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -51,6 +54,10 @@ export const ManexPage = () => {
 
   const loadSections = useCallback(async () => {
     if (!client?.id) return;
+    if (!hasWriteAccess) {
+      setInitialLoading(false);
+      return;
+    }
     try {
       await fetch(`${API_DOMAIN}/admin/manex/ensure-sections`, {
         method: "POST",
@@ -68,7 +75,7 @@ export const ManexPage = () => {
     } finally {
       setInitialLoading(false);
     }
-  }, [client?.id, dataProvider, notify]);
+  }, [client?.id, dataProvider, notify, hasWriteAccess]);
 
   useEffect(() => {
     loadSections();
@@ -111,26 +118,34 @@ export const ManexPage = () => {
         <Typography variant="h5" fontWeight="bold" color="primary">
           Manuel d&apos;Exploitation (MANEX)
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<PictureAsPdfIcon />}
-          onClick={() => setGenerateDialogOpen(true)}
-          size="large"
-        >
-          Générer le MANEX
-        </Button>
+        {hasWriteAccess && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={() => setGenerateDialogOpen(true)}
+            size="large"
+          >
+            Générer le MANEX
+          </Button>
+        )}
       </Box>
 
       <Paper>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab icon={<EditIcon />} label="Sections" iconPosition="start" />
-          <Tab icon={<VisibilityIcon />} label="Aperçu" iconPosition="start" />
-          <Tab icon={<HistoryIcon />} label="Historique" iconPosition="start" />
-        </Tabs>
+        {hasWriteAccess ? (
+          <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+            <Tab icon={<EditIcon />} label="Sections" iconPosition="start" />
+            <Tab icon={<VisibilityIcon />} label="Aperçu" iconPosition="start" />
+            <Tab icon={<HistoryIcon />} label="Historique" iconPosition="start" />
+          </Tabs>
+        ) : (
+          <Tabs value={1}>
+            <Tab icon={<VisibilityIcon />} label="Aperçu" iconPosition="start" value={1} />
+          </Tabs>
+        )}
 
         <Box p={2}>
-          {tab === 0 && (
+          {tab === 0 && hasWriteAccess && (
             <ManexSectionEditor
               sections={sections}
               onSectionsChange={setSections}
@@ -139,7 +154,7 @@ export const ManexPage = () => {
           {tab === 1 && (
             <ManexPreview />
           )}
-          {tab === 2 && (
+          {tab === 2 && hasWriteAccess && (
             <ManexHistory key={refreshKey} />
           )}
         </Box>

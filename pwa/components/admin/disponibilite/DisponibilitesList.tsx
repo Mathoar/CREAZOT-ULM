@@ -1,5 +1,6 @@
 import { type NextPage } from "next";
-import { Datagrid, List, TextField, CreateButton, TopToolbar, EditButton, SimpleList, FunctionField, Form, DateInput, useListContext } from "react-admin";
+import { Datagrid, List, TextField, TopToolbar, SimpleList, FunctionField, Form, DateInput, useListContext } from "react-admin";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 import { type Contact } from "../../../types/Contact";
 import { useMediaQuery, Theme, Button, Box } from '@mui/material';
 import { type PagedCollection } from "../../../types/collection";
@@ -75,7 +76,7 @@ const ListActions = ({ session, isSmall, resource, showMore, setShowMore }) => {
   return (
     <TopToolbar>
       <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-      <CreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
+      <ProtectedCreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
       <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
       <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -177,7 +178,7 @@ export const DisponibilitesList: NextPage<Props> = ({ data, hubURL, page }) => {
                     render={record => <>{ getAvailability(record) }</> }
                 />
                 <p className="text-right">
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

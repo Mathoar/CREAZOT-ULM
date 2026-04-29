@@ -93,7 +93,10 @@ export const ClientProvider = ({ children }) => {
                 const cId = typeof ucr.client === 'string'
                     ? ucr.client.split('/').pop()
                     : (ucr.client?.id || ucr.client?.['@id']?.split('/').pop());
-                if (cId) newRoleMap[String(cId)] = ucr.role;
+                const roleCode = typeof ucr.role === 'object'
+                    ? ucr.role?.code
+                    : ucr.role;
+                if (cId) newRoleMap[String(cId)] = roleCode || 'pilote';
             });
             setRoleMap(newRoleMap);
 
@@ -154,7 +157,7 @@ export const ClientProvider = ({ children }) => {
 
         const resolvedRole = isSuperAdmin
             ? 'super_admin'
-            : (roleMap[String(newClient.id)] || 'pilot');
+            : (roleMap[String(newClient.id)] || 'pilote');
         setClientRole(resolvedRole);
         sessionStorage.setItem('clientRole', resolvedRole);
     };

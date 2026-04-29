@@ -10,6 +10,7 @@ import {
   NumberField,
   ReferenceField,
 } from "react-admin";
+import { ProtectedShowActions } from "../PermissionGuards";
 import { Chip, Typography } from "@mui/material";
 
 const programmeTypeLabels: Record<string, string> = {
@@ -20,7 +21,7 @@ const programmeTypeLabels: Record<string, string> = {
 };
 
 export const ProgrammeShow = () => (
-  <Show>
+  <Show actions={<ProtectedShowActions />}>
     <SimpleShowLayout>
       <TextField source="nom" label="Nom du programme" />
       <FunctionField

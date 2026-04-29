@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, NumberField, DateField, FunctionField, ArrayField, Datagrid } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { getFirstCharToUpperCase, getShipStyle, isDefined, isDefinedAndNotVoid, isNotBlank } from '../../../app/lib/utils';
 import { clientWithOriginContact, clientWithPartners, paymentMode } from '../../../app/lib/client';
 import Chip from '@mui/material/Chip';
@@ -34,7 +35,7 @@ export const PaymentShow = () => {
     };
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <TextField source="reference" label="Code du paiement"/>
                 <DateField source="date" label="Date" sortable={ true } />

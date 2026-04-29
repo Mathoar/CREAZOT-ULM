@@ -1,8 +1,9 @@
 import { Show, SimpleShowLayout, TextField, BooleanField, FileField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { DocumentListField } from "../shared/OdooDocumentField";
 
 export const AirportShow = () => (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <TextField source="code" label="Code de l'aéroport" sortable={ true }/>
             <TextField source="name" label="Nom" sortable={ true }/>

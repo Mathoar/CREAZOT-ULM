@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, BooleanField, RichTextField, FunctionField, DateField } from "react-admin";
+import { ProtectedShowActions } from "../PermissionGuards";
 import { Chip } from "@mui/material";
 import { DocumentListField } from "../shared/OdooDocumentField";
 
@@ -9,7 +10,7 @@ const lessonTypeLabels: Record<string, { label: string; color: 'primary' | 'seco
 };
 
 export const LessonShow = () => (
-  <Show>
+  <Show actions={<ProtectedShowActions />}>
     <SimpleShowLayout>
       <TextField source="categorie" label="Catégorie / Thème" />
       <TextField source="nom" label="Nom de la leçon" />

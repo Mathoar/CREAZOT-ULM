@@ -51,55 +51,34 @@ class UserClientRole
     #[Groups(['UserClientRole:read', 'UserClientRole:write'])]
     private ?User $user = null;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\ManyToOne(targetEntity: Role::class)]
+    #[ORM\JoinColumn(name: 'role_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['UserClientRole:read', 'UserClientRole:write'])]
-    private string $role = 'pilot';
+    private ?Role $role = null;
 
     #[ORM\ManyToOne(targetEntity: Client::class)]
     #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['UserClientRole:read', 'UserClientRole:write'])]
     private ?Client $client = null;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
 
-    public function setUser(?User $user): static
-    {
-        $this->user = $user;
-        return $this;
-    }
+    public function getRole(): ?Role { return $this->role; }
+    public function setRole(?Role $role): static { $this->role = $role; return $this; }
 
-    public function getRole(): string
+    public function getRoleCode(): string
     {
-        return $this->role;
-    }
-
-    public function setRole(string $role): static
-    {
-        $this->role = $role;
-        return $this;
+        return $this->role?->getCode() ?? 'pilote';
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->getRoleCode() === 'admin';
     }
 
-    public function getClient(): ?Client
-    {
-        return $this->client;
-    }
-
-    public function setClient(?Client $client): static
-    {
-        $this->client = $client;
-        return $this;
-    }
+    public function getClient(): ?Client { return $this->client; }
+    public function setClient(?Client $client): static { $this->client = $client; return $this; }
 }

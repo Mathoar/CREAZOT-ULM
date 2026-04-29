@@ -3,10 +3,8 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
-  EditButton,
   SimpleList,
   ShowButton,
   DateField,
@@ -28,6 +26,7 @@ import { Fragment, useEffect, useState } from "react";
 import { useSessionContext } from "../SessionContextProvider";
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 export interface Props {
   data: PagedCollection<Contact> | null;
@@ -98,7 +97,7 @@ const ListActions = ({ showMore, setShowMore, isSmall, resource }) => {
   return (
     <TopToolbar>
         <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-        <CreateButton/>
+        <ProtectedCreateButton/>
         <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
         <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -282,7 +281,7 @@ export const CarnetVolsList: NextPage<Props> = ({ data, hubURL, page }) => {
                 />
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

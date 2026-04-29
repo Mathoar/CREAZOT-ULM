@@ -11,19 +11,17 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * Résout OIDC_ADMIN / OIDC_USER en se basant sur la table user_client_role
- * plutôt que sur les rôles globaux Keycloak du user.
+ * Résout OIDC_ADMIN / OIDC_USER en se basant sur la table user_client_role + role.
  *
  * Logique :
- *  - ROLE_SUPER_ADMIN → bypass total (rôle global)
- *  - OIDC_ADMIN → l'utilisateur a role='admin' dans user_client_role pour le client courant
- *  - OIDC_USER  → l'utilisateur a une entrée (admin ou pilot) pour le client courant
+ *  - ROLE_SUPER_ADMIN → bypass total
+ *  - OIDC_ADMIN → l'utilisateur a un rôle avec code='admin' pour le client courant
+ *  - OIDC_USER  → l'utilisateur a une entrée pour le client courant
  */
 class TenantRoleVoter extends Voter
 {
     private const SUPPORTED = ['OIDC_ADMIN', 'OIDC_USER'];
 
-    /** Cache par requête : "userId:clientId" → role|null */
     private array $cache = [];
 
     public function __construct(
@@ -57,20 +55,20 @@ class TenantRoleVoter extends Voter
             return false;
         }
 
-        $role = $this->resolveRole($user, (int) $clientId);
+        $roleCode = $this->resolveRoleCode($user, (int) $clientId);
 
-        if ($role === null) {
+        if ($roleCode === null) {
             return false;
         }
 
         return match ($attribute) {
             'OIDC_USER' => true,
-            'OIDC_ADMIN' => $role === 'admin',
+            'OIDC_ADMIN' => $roleCode === 'admin',
             default => false,
         };
     }
 
-    private function resolveRole(User $user, int $clientId): ?string
+    private function resolveRoleCode(User $user, int $clientId): ?string
     {
         $userId = (string) $user->getId();
         $cacheKey = $userId . ':' . $clientId;
@@ -79,12 +77,12 @@ class TenantRoleVoter extends Voter
             return $this->cache[$cacheKey];
         }
 
-        $role = $this->connection->fetchOne(
-            'SELECT role FROM user_client_role WHERE user_id = :uid AND client_id = :cid LIMIT 1',
+        $roleCode = $this->connection->fetchOne(
+            'SELECT r.code FROM user_client_role ucr JOIN role r ON r.id = ucr.role_id WHERE ucr.user_id = :uid AND ucr.client_id = :cid LIMIT 1',
             ['uid' => $userId, 'cid' => $clientId]
         );
 
-        $this->cache[$cacheKey] = $role ?: null;
+        $this->cache[$cacheKey] = $roleCode ?: null;
 
         return $this->cache[$cacheKey];
     }

@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, DateField, BooleanField, FunctionField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 
 export const RappelShow = () => {
 
@@ -8,7 +9,7 @@ export const RappelShow = () => {
   };
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <DateField source="date" label="Date" />
                 <TextField source="titre" label="Titre"/>

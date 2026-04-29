@@ -1,11 +1,12 @@
 import { Show, SimpleShowLayout, BooleanField, TextField, FunctionField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { isDefined } from '../../../app/lib/utils';
 import { getColor } from '../../../app/lib/colors';
 
 export const QualificationShow = () => {
     
     return (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <TextField source="nom" label="Qualification"/>
             <FunctionField

@@ -46,7 +46,7 @@ use App\Entity\ProfilPilote;
         ),
         new Get(
             uriTemplate: '/users/{id}{._format}',
-            security: 'is_granted("OIDC_ADMIN") or object === user'
+            security: 'is_granted("OIDC_USER")'
         ),
         new Put(
             uriTemplate: '/users/{id}{._format}',

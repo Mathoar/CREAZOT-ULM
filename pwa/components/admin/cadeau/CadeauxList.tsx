@@ -4,12 +4,10 @@ import { Datagrid,
   List,
   TextInput,
   BooleanInput,
-  CreateButton,
   ExportButton,
   TopToolbar,
   DateField,
   DateInput,
-  EditButton,
   ShowButton,
   BooleanField,
   SimpleList,
@@ -28,6 +26,7 @@ import { isDefined, isDefinedAndNotVoid, toLocalDateString } from "../../../app/
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useSessionContext } from "../SessionContextProvider";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 export interface Props {
   data: PagedCollection<Circuit> | null;
@@ -98,7 +97,7 @@ const CustomListActions = ({ showMore, setShowMore, isSmall, resource }) => {
   return (
     <TopToolbar>
       <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-      <CreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
+      <ProtectedCreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
       <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
       <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -251,7 +250,7 @@ export const CadeauxList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <ConversionLink/>
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

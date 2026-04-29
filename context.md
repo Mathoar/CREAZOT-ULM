@@ -359,7 +359,7 @@ Le formulaire passager est accessible via `/{slug}` (ex: `/aix-ulm`, `/skyquest`
 
 **Flux complet** :
 ```
-c6l.creazot.com/{slug}
+logic-ciel.com/{slug}
   → [slug]/page.tsx (route dynamique Next.js)
   → GET /clients?slug={slug} → résolution client-side (filtrage par slug)
   → Si pas trouvé → page 404 personnalisée
@@ -479,7 +479,7 @@ Routage intelligent entre PHP API et Next.js PWA :
 - **Swap** : 2 Go (`/swapfile`) — garde de sécurité mémoire
 - **Nginx externe** : reverse proxy HTTPS → Docker (port 8081)
 - **SSL** : Let's Encrypt (Certbot)
-- **Domaine** : `c6l.creazot.com`
+- **Domaine** : `logic-ciel.com`
 
 ---
 

@@ -1,4 +1,5 @@
-import { Datagrid, List, CreateButton, ExportButton, TopToolbar, EditButton, ShowButton, SimpleList, FunctionField, useRecordContext } from "react-admin";
+import { Datagrid, List, ExportButton, TopToolbar, ShowButton, SimpleList, FunctionField, useRecordContext } from "react-admin";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 import { decimalToTimeFormatted, getFirstCharToUpperCase, getShipStyle, isDefined, isDefinedAndNotVoid } from "../../../app/lib/utils";
 import { type PagedCollection } from "../../../types/collection";
 import { type Circuit } from "../../../types/Circuit";
@@ -64,7 +65,7 @@ const ListActions = ({ isSmall, resource }) => {
 
   return (
     <TopToolbar>
-      <CreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
+      <ProtectedCreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
       <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
       <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -139,7 +140,7 @@ export const ProfilesList: NextPage<Props> = ({ data, hubURL, page }) => {
                 />           
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

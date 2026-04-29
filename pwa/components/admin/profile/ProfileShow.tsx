@@ -1,4 +1,5 @@
 import { Show, FunctionField, ArrayField, Datagrid, DateField, TabbedShowLayout, TextField, NumberField, FileField, BooleanField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { decimalToTimeFormatted, getShipStyle, isDefined } from '../../../app/lib/utils';
 import { certificatMedicalTypes } from '../../../app/lib/client';
 import Chip from '@mui/material/Chip';
@@ -12,7 +13,7 @@ export const ProfileShow = () => {
     };
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <TabbedShowLayout>
                 <TabbedShowLayout.Tab label="Général">
                     <FunctionField

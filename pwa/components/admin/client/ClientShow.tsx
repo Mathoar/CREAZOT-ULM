@@ -1,4 +1,5 @@
 import { Show, TabbedShowLayout, TextField, DateField, BooleanField, FunctionField, RichTextField, NumberField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { getColor } from '../../../app/lib/client';
 import { isDefined } from '../../../app/lib/utils';
 import { useClient } from '../ClientProvider';
@@ -14,7 +15,7 @@ export const ClientShow = () => {
     const getFilename = path => isDefined(path) ? path.split('/').pop() : '';
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <TabbedShowLayout>
                 <TabbedShowLayout.Tab label="Informations">
                     <TextField source="name" label="Nom"/>

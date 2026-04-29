@@ -1,24 +1,12 @@
 import { Show, SimpleShowLayout, TextField, DateField, NumberField, FunctionField, Datagrid, ArrayField } from 'react-admin';
-import { TopToolbar, ListButton, EditButton } from 'react-admin';
+import { ProtectedShowActions } from '../PermissionGuards';
 import { isDefined } from '../../../app/lib/utils';
 import { useClient } from '../../admin/ClientProvider';
 import { clientWithOptions } from "../../../app/lib/client";
-import { useSessionContext } from '../SessionContextProvider';
-
-const CustomShowActions = ({ hasAdminAccess }) => (
-    <TopToolbar>
-        <ListButton />
-        { hasAdminAccess && <EditButton />}
-    </TopToolbar>
-);
 
 export const VolShow = () => {
 
     const { client } = useClient();
-    const { session } = useSessionContext();
-    const user = session?.user;
-
-    const hasAdminAccess = user => isDefined(session) && isDefined(user) &&  user.roles.find(r => r === "admin");
 
     const OptionField = () => {
         return !clientWithOptions(client) ? null :
@@ -26,7 +14,7 @@ export const VolShow = () => {
     };
 
     return (
-        <Show actions={<CustomShowActions hasAdminAccess={ hasAdminAccess(user) }/>}>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <DateField source="prestation.date" label="Date"/>
                 <TextField source="prestation.aeronef.immatriculation" label="Aéronef"/>

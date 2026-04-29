@@ -1,8 +1,9 @@
 import { Show, SimpleShowLayout, TextField, NumberField, DateField, FunctionField, ArrayField, Datagrid } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { decimalToTimeFormatted, isDefined } from '../../../app/lib/utils';
 
 export const CarnetVolShow = () => (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <DateField source="date" showTime={ false }/>
             <FunctionField

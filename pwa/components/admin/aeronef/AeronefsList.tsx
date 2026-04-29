@@ -3,10 +3,8 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   TopToolbar,
   NumberField,
-  EditButton,
   ShowButton,
   SimpleList,
   FunctionField,
@@ -31,6 +29,7 @@ import ToggleAvailabilityButton from "./ToggleAvailabilityButton";
 import { useState } from "react";
 import { getFormattedValueForBackEnd } from "../../../app/lib/utils";
 import { syncOdooDocuments } from "../../../app/lib/client";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 export interface Props {
   data: PagedCollection<Circuit> | null;
@@ -86,7 +85,7 @@ const ListActions = ({ resource, isSmall, showArchived, setShowArchived }) => {
             <ToggleButton value="archived">Archivés</ToggleButton>
           </ToggleButtonGroup>
         )}
-        {isSuperAdmin && <CreateButton/>}
+        {isSuperAdmin && <ProtectedCreateButton/>}
         <CustomCSVButton onClick={() => handleExport('csv')} isSmall={isSmall}/>
         <CustomPDFButton onClick={() => handleExport('pdf')} isSmall={isSmall}/>
     </TopToolbar>
@@ -267,7 +266,7 @@ export const AeronefsList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <ArchiveButton />
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

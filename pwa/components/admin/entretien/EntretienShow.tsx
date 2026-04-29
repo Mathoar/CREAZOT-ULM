@@ -1,9 +1,10 @@
 import { Show, SimpleShowLayout, TextField, DateField, NumberField, BooleanField, ArrayField, Datagrid, FunctionField, FileField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { isDefined } from '../../../app/lib/utils';
 import { DocumentListField } from "../shared/OdooDocumentField";
 
 export const EntretienShow = () => (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <DateField source="date" label="Date"/>
             <TextField source="aeronef.immatriculation" />

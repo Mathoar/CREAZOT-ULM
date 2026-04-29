@@ -6,20 +6,24 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Entity\Client;
+use App\Entity\Role;
 use App\Entity\UserClientRole;
 use App\Service\KeycloakAdminService;
+use App\Service\PermissionChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class UserManagementController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $em,
         private KeycloakAdminService $keycloakAdmin,
+        private PermissionChecker $permissionChecker,
     ) {}
 
     #[Route('/api/users/{id}/role', name: 'user_change_role', methods: ['PATCH'])]
@@ -32,10 +36,15 @@ class UserManagementController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-        $newRole = $data['role'] ?? null;
+        $roleCode = $data['role'] ?? null;
 
-        if (!in_array($newRole, ['admin', 'pilot'], true)) {
-            return new JsonResponse(['error' => 'Role invalide (admin ou pilot)'], 400);
+        if (!$roleCode) {
+            return new JsonResponse(['error' => 'Code rôle requis'], 400);
+        }
+
+        $role = $this->em->getRepository(Role::class)->findOneBy(['code' => $roleCode]);
+        if (!$role) {
+            return new JsonResponse(['error' => "Rôle '{$roleCode}' introuvable"], 400);
         }
 
         $clientId = $request->headers->get('X-Client-Id');
@@ -57,12 +66,15 @@ class UserManagementController extends AbstractController
             return new JsonResponse(['error' => 'Utilisateur non rattaché à ce client'], 400);
         }
 
-        $ucr->setRole($newRole);
+        $ucr->setRole($role);
         $this->em->flush();
+
+        $this->permissionChecker->invalidateCache((string) $user->getId(), (int) $clientId);
 
         return new JsonResponse([
             'success' => true,
-            'role' => $ucr->getRole(),
+            'role' => $role->getCode(),
+            'roleLabel' => $role->getLabel(),
         ]);
     }
 

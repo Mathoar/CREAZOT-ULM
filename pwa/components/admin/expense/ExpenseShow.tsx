@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, NumberField, DateField, FunctionField, ArrayField, Datagrid, FileField, BooleanField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { getShipStyle, isDefined, isNotBlank } from '../../../app/lib/utils';
 import { paymentMode } from '../../../app/lib/client';
 import Chip from '@mui/material/Chip';
@@ -13,7 +14,7 @@ export const ExpenseShow = () => {
     };
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <DateField source="date" label="Date" sortable={ true } />
                 <FunctionField

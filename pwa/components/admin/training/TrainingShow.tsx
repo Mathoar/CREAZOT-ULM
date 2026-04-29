@@ -5,6 +5,7 @@ import {
   DateField,
   FunctionField,
 } from "react-admin";
+import { ProtectedShowActions } from "../PermissionGuards";
 import {
   Box,
   Typography,
@@ -33,7 +34,7 @@ const niveauConfig = [
 ];
 
 export const TrainingShow = () => (
-  <Show>
+  <Show actions={<ProtectedShowActions />}>
     <SimpleShowLayout>
       <FunctionField
         label="Élève"

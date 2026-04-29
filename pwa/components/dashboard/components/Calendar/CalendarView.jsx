@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, CalendarMonth, ViewWeek, Today } from '@mui/
 import { getRandomColor, isDefined, isDefinedAndNotVoid, getDaysArray, groupRappelsByDate, getDefaultDatesFromDate } from "../../../../app/lib/utils";
 import { useSessionContext } from "../../../admin/SessionContextProvider";
 import { useClient } from "../../../admin/ClientProvider";
+import { usePermissions } from "../../../admin/PermissionProvider";
 
 const DOW = 1;
 const DragAndDropCalendar = withDragAndDrop(Calendar);
@@ -258,7 +259,7 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
   }, []);
     
   const moveEvent = useCallback(({ event, start, end, isAllDay: droppedOnAllDaySlot = false }) => {
-      if (!isClientAdmin) return;
+      if (!canEditAgenda) return;
       const { allDay } = event;
       if (!allDay) {
         if (!allDay && droppedOnAllDaySlot)
@@ -354,10 +355,11 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
     event.type === 'event-reservation'? setSelection(selected) : setRappelSelection(selected);
   };
 
-  const { isAdmin: isClientAdmin } = useClient();
+  const { canWrite: canWriteResource } = usePermissions();
+  const canEditAgenda = canWriteResource('agenda');
 
   const onSelecting = useCallback((slotInfo) => { 
-    if (isDefined(session) && isDefined(user) && isClientAdmin) {
+    if (isDefined(session) && isDefined(user) && canEditAgenda) {
       if (!isSmall) {
         setSlot({ start: new Date(slotInfo.start), end: new Date(slotInfo.end)});
         slotInfo.slots.length === 2 ? setVisible(true) : setRappelVisible(true);
@@ -369,7 +371,7 @@ export const CalendarView = ({ events, setEvents, setSelection, setSlot, setVisi
         }, 0);
       }
     }
-  }, [isSmall, isClientAdmin]);
+  }, [isSmall, canEditAgenda]);
 
   const isAuthorized = profile => {
       if (isDefined(profile)) {

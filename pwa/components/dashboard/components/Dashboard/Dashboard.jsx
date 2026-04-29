@@ -7,6 +7,7 @@ import { Cameras } from "./Cameras";
 import { CalendarWidget } from "./CalendarWidget";
 import dynamic from 'next/dynamic';
 import { useClient } from '../../../admin/ClientProvider';
+import { usePermissions } from '../../../admin/PermissionProvider';
 import GlobalLoader from "../../../admin/layout/GlobalLoader";
 import { isDefined } from "../../../../app/lib/utils";
 import { AppBar, Dialog, IconButton, Toolbar, Typography } from "@mui/material";
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const tabletSize = 768;
   const desktopSize = 800;
   const { client, loading } = useClient();
+  const { canRead } = usePermissions();
   const [isSmall, setIsSmall] = useState(() => isDefined(window) ? window.innerWidth < tabletSize : true);
   const [isTabletOrMobile, setIsTabletOrMobile]  = useState(() => isDefined(window) ? window.innerWidth < desktopSize : true);
   const [showGraphic, setShowGraphic] = useState(true);
@@ -93,7 +95,7 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-          { isDefined(client.hasReservation) && client.hasReservation &&  <CalendarWidget isSmall={ isTabletOrMobile } client={ client }/> }
+          { isDefined(client.hasReservation) && client.hasReservation && canRead('agenda') && <CalendarWidget isSmall={ isTabletOrMobile } client={ client }/> }
       </div>
       <Dialog fullScreen open={showFullMap} onClose={() => setShowFullMap(false)}>
         <AppBar position="static" style={{ backgroundColor: client.color || 'primary' }}>

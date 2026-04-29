@@ -38,6 +38,7 @@ import rappelResourceProps from "./rappel";
 import { ReservationCreate } from "./cadeau/ReservationCreate";
 import { useSessionContext, SessionContextProvider } from "../admin/SessionContextProvider";
 import { useClient } from "../admin/ClientProvider";
+import { PermissionProvider } from "../admin/PermissionProvider";
 import carnetVolResourceProps from "./carnetVol";
 import disponibiliteResourceProps from "./disponibilite";
 import airportResourceProps from "./airport";
@@ -69,6 +70,7 @@ import { ClientChannels } from "./channel/ClientChannels";
 import { AnalyticsPage } from "./analytics/AnalyticsPage";
 import { ManexPage } from "./manex/ManexPage";
 import securityEventResourceProps from "./securityEvent";
+import roleResourceProps from "./role";
 
 const getClientHeaders = () => {
   try {
@@ -167,6 +169,7 @@ const AdminWithOIDC = () => {
 
   return (
     <UserGuard>
+      <PermissionProvider>
       {/* @ts-ignore */}
       <AdminAdapter session={session}>
         <ResourceGuesser name="clients" {...clientResourceProps}/>
@@ -215,6 +218,8 @@ const AdminWithOIDC = () => {
         <ResourceGuesser name="manex_sections" />
         <ResourceGuesser name="manex_versions" />
         <ResourceGuesser name="security_events" {...securityEventResourceProps} />
+        <ResourceGuesser name="roles" {...roleResourceProps} />
+        <ResourceGuesser name="permissions" />
         <CustomRoutes>
           <Route path="/landings" element={<LandingsList />} />
           <Route path="/convert" element={<ReservationCreate />} />
@@ -228,6 +233,7 @@ const AdminWithOIDC = () => {
           <Route path="/manex" element={<ManexPage />} />
         </CustomRoutes>
       </AdminAdapter>
+      </PermissionProvider>
     </UserGuard>
   );
 };

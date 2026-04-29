@@ -106,6 +106,9 @@ services:
         arguments:
             $uploadDir: '%kernel.project_dir%/public/media'
 
+    App\Service\RbacInitializer:
+        public: true
+
 when@test:
     services:
         App\Tests\Api\Security\:

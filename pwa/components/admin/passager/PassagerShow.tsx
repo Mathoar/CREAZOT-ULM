@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, DateField, EmailField, FunctionField, NumberField, useGetList } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import ClearIcon from '@mui/icons-material/Clear';
 import DoneIcon from '@mui/icons-material/Done';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -24,7 +25,7 @@ export const PassagerShow = () => {
     };
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <DateField source="date" label="Date" sortable={ true } />
                 <TextField source="nom" label="Nom" sortable={ true }/>

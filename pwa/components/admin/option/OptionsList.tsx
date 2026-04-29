@@ -3,10 +3,8 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
-  EditButton,
   SimpleList,
   NumberField,
   ShowButton,
@@ -17,6 +15,7 @@ import { type Contact } from "../../../types/Contact";
 import { useMediaQuery, Theme } from '@mui/material';
 import { type PagedCollection } from "../../../types/collection";
 import { isDefined } from "../../../app/lib/utils";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 
 export interface Props {
@@ -27,7 +26,7 @@ export interface Props {
 
 const ListActions = () => (
   <TopToolbar>
-      <CreateButton/>
+      <ProtectedCreateButton/>
       <ExportButton/>
   </TopToolbar>
 );
@@ -51,7 +50,7 @@ export const OptionsList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <BooleanField source="isAvailable" label="Disponible" />
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

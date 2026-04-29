@@ -6,6 +6,7 @@ import {
   useNotify,
   useRefresh,
 } from "react-admin";
+import { ProtectedShowActions } from "../PermissionGuards";
 import {
   Box,
   Typography,
@@ -420,7 +421,7 @@ const ThreadDetail = () => {
 };
 
 export const ConversationThreadShow = () => (
-  <Show title="Détail de la demande">
+  <Show title="Détail de la demande" actions={<ProtectedShowActions />}>
     <SimpleShowLayout>
       <ThreadDetail />
     </SimpleShowLayout>

@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, DateField, NumberField, BooleanField, FunctionField, ArrayField, Datagrid } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { clientWithOptions, clientWithGifts, clientWithOriginContact, clientWithPartners, clientWithPatrolFlight } from "../../../app/lib/client";
 import { isDefined } from '../../../app/lib/utils';
 import { status } from "../../../app/lib/reservation";
@@ -34,7 +35,7 @@ export const ReservationShow = () => {
         </ArrayField>
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <DateField source="debut" label="Date" sortable={ true } />
                 <DateField source="debut" label="Heure" showTime showDate={false} options={{ hour: '2-digit', minute: '2-digit' }}/>

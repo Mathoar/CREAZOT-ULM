@@ -1,7 +1,8 @@
 import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, FunctionField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 
 export const OptionShow = () => (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <TextField source="nom" label="Nom de l'option"/>
             <NumberField source="prix" label="Prix TTC" options={{ style: 'currency', currency: 'EUR' }}/>

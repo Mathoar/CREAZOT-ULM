@@ -2,10 +2,8 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
-  EditButton,
   SimpleList,
   ShowButton,
   FunctionField,
@@ -13,6 +11,7 @@ import {
   DateField,
 } from "react-admin";
 import { useMediaQuery, Theme, Chip, LinearProgress, Box, Typography } from '@mui/material';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 const statutLabels: Record<string, { label: string; color: 'success' | 'warning' | 'default' | 'error' }> = {
   en_cours: { label: 'En cours', color: 'warning' },
@@ -33,7 +32,7 @@ const ProgressBar = ({ record }: { record?: any }) => {
 
 const ListActions = () => (
   <TopToolbar>
-    <CreateButton />
+    <ProtectedCreateButton />
     <ExportButton />
   </TopToolbar>
 );
@@ -51,7 +50,7 @@ export const TrainingList = () => {
           }}
           secondaryText={record => record?.programme?.nom ?? '—'}
           tertiaryText={record => `${record?.progressionPercent ?? 0}%`}
-          linkType="edit"
+          linkType="show"
         />
       ) : (
         <Datagrid sx={{ '& .RaDatagrid-headerCell': { backgroundColor: '#ededed', fontWeight: 'lighter' } }}>
@@ -88,7 +87,7 @@ export const TrainingList = () => {
           <DateField source="dateDebut" label="Début" />
           <p className="text-right">
             <ShowButton />
-            <EditButton />
+            <ProtectedEditButton />
           </p>
         </Datagrid>
       )}

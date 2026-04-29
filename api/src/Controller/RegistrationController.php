@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\CountryCode;
+use App\Entity\Role;
 use App\Entity\User;
 use App\Entity\UserClientRole;
 use App\Repository\ModulePackRepository;
@@ -138,10 +139,11 @@ class RegistrationController extends AbstractController
             $user->addClient($client);
 
             // --- g2) Créer le rôle contextuel admin pour ce client ---
+            $adminRole = $em->getRepository(Role::class)->findOneBy(['code' => 'admin']);
             $ucr = new UserClientRole();
             $ucr->setUser($user);
             $ucr->setClient($client);
-            $ucr->setRole(UserClientRole::ROLE_ADMIN);
+            $ucr->setRole($adminRole);
 
             // --- h) Persister ---
             $em->persist($client);

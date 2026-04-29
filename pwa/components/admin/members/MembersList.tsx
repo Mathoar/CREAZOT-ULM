@@ -10,25 +10,30 @@ import { useSessionContext } from '../SessionContextProvider';
 import { useClient } from '../ClientProvider';
 import { useNotify } from 'react-admin';
 
+interface RoleDef {
+  id: number;
+  code: string;
+  label: string;
+}
+
 interface Member {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  clientRole: string;
+  roleCode: string;
+  roleLabel: string;
   isSuperAdmin: boolean;
 }
 
-const getRoleLabel = (member: Member): string => {
-  if (member.isSuperAdmin) return 'Super Admin';
-  if (member.clientRole === 'admin') return 'Admin';
-  return 'Pilote';
-};
-
-const getRoleColor = (member: Member): 'error' | 'warning' | 'default' => {
-  if (member.isSuperAdmin) return 'error';
-  if (member.clientRole === 'admin') return 'warning';
-  return 'default';
+const ROLE_COLORS: Record<string, 'error' | 'warning' | 'primary' | 'success' | 'info' | 'secondary' | 'default'> = {
+  super_admin: 'error',
+  admin: 'warning',
+  exploitation: 'primary',
+  secretariat: 'info',
+  pilote: 'default',
+  securite: 'secondary',
+  lecture: 'default',
 };
 
 export const MembersList = () => {
@@ -38,12 +43,13 @@ export const MembersList = () => {
   const isSmall = useMediaQuery<Theme>((theme) => theme.breakpoints.down('sm'));
 
   const [members, setMembers] = useState<Member[]>([]);
+  const [roles, setRoles] = useState<RoleDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const clientId = client?.id;
 
-  const fetchMembers = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!session?.accessToken || !clientId) return;
     setLoading(true);
     try {
@@ -53,20 +59,37 @@ export const MembersList = () => {
         'X-Client-Id': String(clientId),
       };
 
-      const [usersRes, ucrRes] = await Promise.all([
+      const [usersRes, ucrRes, rolesRes] = await Promise.all([
         fetch(`/users?pagination=false`, { headers }),
         fetch(`/user_client_roles?client=/clients/${clientId}&pagination=false`, { headers }),
+        fetch(`/roles?pagination=false`, { headers }),
       ]);
 
       const usersData = await usersRes.json();
       const ucrData = await ucrRes.json();
+      const rolesData = await rolesRes.json();
 
-      const ucrMap: Record<string, string> = {};
+      const rolesList: RoleDef[] = (rolesData['hydra:member'] || []).map((r: any) => ({
+        id: r.id,
+        code: r.code,
+        label: r.label,
+      }));
+      setRoles(rolesList);
+
+      const ucrMap: Record<string, { code: string; label: string }> = {};
       (ucrData['hydra:member'] || []).forEach((ucr: any) => {
         const userId = typeof ucr.user === 'string'
           ? ucr.user.split('/').pop()
           : (ucr.user?.id || ucr.user?.['@id']?.split('/').pop());
-        if (userId) ucrMap[String(userId)] = ucr.role;
+        const roleCode = typeof ucr.role === 'object'
+          ? ucr.role?.code
+          : ucr.role;
+        const roleLabel = typeof ucr.role === 'object'
+          ? ucr.role?.label
+          : roleCode;
+        if (userId) {
+          ucrMap[String(userId)] = { code: roleCode || 'pilote', label: roleLabel || 'Pilote' };
+        }
       });
 
       const allUsers = (usersData['hydra:member'] || []);
@@ -82,12 +105,14 @@ export const MembersList = () => {
           const globalRoles = u.roles || [];
           const isSuperAdmin = globalRoles.includes('ROLE_SUPER_ADMIN')
             || globalRoles.includes('super_admin');
+          const ucRole = ucrMap[String(userId)] || { code: 'pilote', label: 'Pilote' };
           return {
             id: userId,
             email: u.email,
             firstName: u.firstName || '',
             lastName: u.lastName || '',
-            clientRole: isSuperAdmin ? 'super_admin' : (ucrMap[String(userId)] || 'pilot'),
+            roleCode: isSuperAdmin ? 'super_admin' : ucRole.code,
+            roleLabel: isSuperAdmin ? 'Super Admin' : ucRole.label,
             isSuperAdmin,
           };
         });
@@ -101,9 +126,9 @@ export const MembersList = () => {
     }
   }, [session, clientId]);
 
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleRoleChange = async (member: Member, newRole: string) => {
+  const handleRoleChange = async (member: Member, newRoleCode: string) => {
     try {
       const res = await fetch(`/api/users/${member.id}/role`, {
         method: 'PATCH',
@@ -112,14 +137,14 @@ export const MembersList = () => {
           'Content-Type': 'application/json',
           'X-Client-Id': String(clientId),
         },
-        body: JSON.stringify({ role: newRole }),
+        body: JSON.stringify({ role: newRoleCode }),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || 'Erreur');
       }
       notify(`Rôle mis à jour pour ${member.firstName} ${member.lastName}`, { type: 'success' });
-      fetchMembers();
+      fetchData();
     } catch (e: any) {
       notify(e.message || 'Erreur lors du changement de rôle', { type: 'error' });
     }
@@ -137,7 +162,7 @@ export const MembersList = () => {
         throw new Error(err.error || 'Erreur');
       }
       notify(`${member.firstName} ${member.lastName} a été retiré du client`, { type: 'success' });
-      fetchMembers();
+      fetchData();
     } catch (e: any) {
       notify(e.message || 'Erreur lors du retrait', { type: 'error' });
     }
@@ -174,9 +199,9 @@ export const MembersList = () => {
                 </Typography>
                 <Typography variant="body2" color="text.secondary">{m.email}</Typography>
                 <Chip
-                  label={getRoleLabel(m)}
+                  label={m.roleLabel}
                   size="small"
-                  color={getRoleColor(m)}
+                  color={ROLE_COLORS[m.roleCode] || 'default'}
                   sx={{ mt: 1 }}
                 />
               </CardContent>
@@ -184,12 +209,13 @@ export const MembersList = () => {
                 <CardActions>
                   <Select
                     size="small"
-                    value={m.clientRole === 'admin' ? 'admin' : 'pilot'}
+                    value={m.roleCode}
                     onChange={(e) => handleRoleChange(m, e.target.value)}
-                    sx={{ minWidth: 100 }}
+                    sx={{ minWidth: 140 }}
                   >
-                    <MenuItem value="admin">Admin</MenuItem>
-                    <MenuItem value="pilot">Pilote</MenuItem>
+                    {roles.map((r) => (
+                      <MenuItem key={r.code} value={r.code}>{r.label}</MenuItem>
+                    ))}
                   </Select>
                   <Tooltip title="Retirer du client">
                     <IconButton color="error" onClick={() => handleDetach(m)} size="small">
@@ -227,18 +253,19 @@ export const MembersList = () => {
                       {canManage ? (
                         <Select
                           size="small"
-                          value={m.clientRole === 'admin' ? 'admin' : 'pilot'}
+                          value={m.roleCode}
                           onChange={(e) => handleRoleChange(m, e.target.value)}
-                          sx={{ minWidth: 100 }}
+                          sx={{ minWidth: 140 }}
                         >
-                          <MenuItem value="admin">Admin</MenuItem>
-                          <MenuItem value="pilot">Pilote</MenuItem>
+                          {roles.map((r) => (
+                            <MenuItem key={r.code} value={r.code}>{r.label}</MenuItem>
+                          ))}
                         </Select>
                       ) : (
                         <Chip
-                          label={getRoleLabel(m)}
+                          label={m.roleLabel}
                           size="small"
-                          color={getRoleColor(m)}
+                          color={ROLE_COLORS[m.roleCode] || 'default'}
                         />
                       )}
                     </TableCell>

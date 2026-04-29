@@ -1,4 +1,5 @@
 import { Show, TabbedShowLayout, TextField, DateField, NumberField, BooleanField, FunctionField, RichTextField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import Chip from '@mui/material/Chip';
 import { Box, Typography } from '@mui/material';
 import { useClient } from '../../admin/ClientProvider';
@@ -19,7 +20,7 @@ export const CircuitShow = () => {
     });
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <TabbedShowLayout>
                 <TabbedShowLayout.Tab label="Paramètres">
                     <TextField source="nom" />

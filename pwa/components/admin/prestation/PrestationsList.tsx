@@ -7,8 +7,6 @@ import {
   DatagridBody,
   List,
   TextField,
-  EditButton,
-  CreateButton,
   ExportButton,
   TopToolbar,
   DateField,
@@ -34,6 +32,7 @@ import { type PagedCollection } from "../../../types/collection";
 import { useSessionContext } from "../../admin/SessionContextProvider";
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 export interface Props {
   data: PagedCollection<Prestation> | null;
@@ -105,7 +104,7 @@ const CustomListActions = ({ showMore, setShowMore, isSmall, resource }) => {
   return (
     <TopToolbar>
       <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-      <CreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
+      <ProtectedCreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
       <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
       <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -329,7 +328,7 @@ const CustomDatagrid = ({isAdmin, client}) => {
       {isAdmin &&
         <p className="text-right">
           <ShowButton />
-          <EditButton />
+          <ProtectedEditButton />
         </p>
       }
     </Datagrid>

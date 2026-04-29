@@ -3,15 +3,14 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
   NumberField,
-  EditButton,
   ShowButton,
   SimpleList,
 } from "react-admin";
 import { useMediaQuery, Theme } from '@mui/material';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 import { type Circuit } from "../../../types/Circuit";
 import { type PagedCollection } from "../../../types/collection";
 
@@ -23,7 +22,7 @@ export interface Props {
 
 const ListActions = () => (
   <TopToolbar>
-      <CreateButton/>
+      <ProtectedCreateButton/>
       <ExportButton/>
   </TopToolbar>
 );
@@ -49,7 +48,7 @@ export const CombinaisonsList: NextPage<Props> = ({ data, hubURL, page }) => {
               <NumberField source="prix" label="Prix" options={{ style: 'currency', currency: 'EUR' }}/>
               <p className="text-right">
                   <ShowButton />
-                  <EditButton />
+                  <ProtectedEditButton />
               </p>
             </Datagrid>
         }

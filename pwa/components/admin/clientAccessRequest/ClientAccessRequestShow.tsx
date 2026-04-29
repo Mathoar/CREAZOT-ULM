@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, DateField, FunctionField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { Chip } from '@mui/material';
 
 const statusColors: Record<string, 'warning' | 'success' | 'error'> = {
@@ -14,7 +15,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export const ClientAccessRequestShow = () => (
-  <Show>
+  <Show actions={<ProtectedShowActions />}>
     <SimpleShowLayout>
       <FunctionField
         label="Demandeur"

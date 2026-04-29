@@ -2,16 +2,16 @@ import {
   List,
   Datagrid,
   TextField,
-  EditButton,
   DeleteButton,
 } from "react-admin";
+import { ProtectedEditButton } from "../PermissionGuards";
 
 export const MessageTemplateList = () => (
   <List sort={{ field: "title", order: "ASC" }} perPage={25}>
     <Datagrid rowClick="edit">
       <TextField source="title" label="Titre" />
       <TextField source="body" label="Message" />
-      <EditButton />
+      <ProtectedEditButton />
       <DeleteButton />
     </Datagrid>
   </List>

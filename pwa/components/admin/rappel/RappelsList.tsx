@@ -5,11 +5,9 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
   DateField,
-  EditButton,
   ShowButton,
   TextInput,
   DateInput,
@@ -29,6 +27,7 @@ import { TextFieldProps, Box, useMediaQuery, Theme } from "@mui/material";
 import { status } from "../../../app/lib/reservation";
 import { useClient } from '../ClientProvider';
 import { clientWithOptions } from "../../../app/lib/client";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 export interface Props {
   data: PagedCollection<Circuit> | null;
@@ -39,7 +38,7 @@ export interface Props {
 const CustomListActions = ({ showMore, setShowMore, isSmall }) => (
   <TopToolbar>
     <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-    <CreateButton />
+    <ProtectedCreateButton />
     <ExportButton />
   </TopToolbar>
 );
@@ -155,7 +154,7 @@ export const RappelsList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <BooleanField source="finished" label="Clôturé"/>
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
           }

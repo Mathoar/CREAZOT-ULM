@@ -1,16 +1,10 @@
-import { Show, SimpleShowLayout, TextField, DateField, NumberField, Datagrid, ArrayField, FunctionField, EditButton, TopToolbar } from 'react-admin';
+import { Show, SimpleShowLayout, TextField, DateField, NumberField, Datagrid, ArrayField, FunctionField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { isDefined } from '../../../app/lib/utils';
 import { useClient } from '../ClientProvider';
 import { clientWithOptions } from "../../../app/lib/client";
 import { FC } from 'react';
 import { useRecordContext } from 'react-admin';
-import { useSessionContext } from "../../admin/SessionContextProvider";
-
-const ListActions = () => (
-    <TopToolbar>
-        <EditButton/>
-    </TopToolbar>
-  );
 
 const LandingDetails: FC = () => {
     const record = useRecordContext();
@@ -38,8 +32,6 @@ const LandingDetails: FC = () => {
 
 export const PrestationShow = () => {
 
-    const { session } = useSessionContext();
-    const user = session?.user;
     const { client } = useClient();
 
     const getFormattedDuration = ({ aeronef, duree }) => {
@@ -60,8 +52,7 @@ export const PrestationShow = () => {
     };
 
     return (
-        // @ts-ignore
-        <Show actions={isDefined(session) && isDefined(user) && user.roles.find(r => r === "admin") ? <ListActions/> : null} >
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <DateField source="date" label="Date"/>
                 <TextField source="aeronef.immatriculation" label="Aéronef"/>

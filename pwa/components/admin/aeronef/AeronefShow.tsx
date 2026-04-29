@@ -1,4 +1,5 @@
 import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, FunctionField, DateField, FileField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 import { isDefined } from '../../../app/lib/utils';
 import { DocumentListField } from "../shared/OdooDocumentField";
 import { Divider, Typography } from '@mui/material';
@@ -43,7 +44,7 @@ export const AeronefShow = () => {
     };
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <TextField source="immatriculationComplete" label="Immatriculation" />
                 <TextField source="immatriculation" label="Identifiant radio" />

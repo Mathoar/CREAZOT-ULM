@@ -3,10 +3,8 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
-  EditButton,
   SimpleList,
   ShowButton,
   BooleanField,
@@ -17,6 +15,7 @@ import {
   useListContext,
 } from "react-admin";
 import { useMediaQuery, Theme, Chip, Box } from '@mui/material';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 const lessonTypeLabels: Record<string, { label: string; color: 'primary' | 'secondary' | 'default' }> = {
   pratique: { label: 'Pratique', color: 'primary' },
@@ -26,7 +25,7 @@ const lessonTypeLabels: Record<string, { label: string; color: 'primary' | 'seco
 
 const ListActions = () => (
   <TopToolbar>
-    <CreateButton />
+    <ProtectedCreateButton />
     <ExportButton />
   </TopToolbar>
 );
@@ -112,7 +111,7 @@ export const LessonList = () => {
           <BooleanField source="isAvailable" label="Disponible" />
           <p className="text-right">
             <ShowButton />
-            <EditButton />
+            <ProtectedEditButton />
           </p>
         </Datagrid>
       )}

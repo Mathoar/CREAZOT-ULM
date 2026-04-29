@@ -1,9 +1,10 @@
 import { Show, SimpleShowLayout, TextField, NumberField, ArrayField, Datagrid } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 
 export const CombinaisonShow = () => {
 
     return (
-        <Show>
+        <Show actions={<ProtectedShowActions />}>
             <SimpleShowLayout>
                 <TextField source="nom" label="Passager" sortable={ true }/>
                 <NumberField source="minPassager" label="Nombre de passager minimal"/>

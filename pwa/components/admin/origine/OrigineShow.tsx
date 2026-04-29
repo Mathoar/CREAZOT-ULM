@@ -1,7 +1,8 @@
 import { Show, SimpleShowLayout, TextField, NumberField, BooleanField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 
 export const OrigineShow = () => (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <TextField source="name" label="Nom"/>
             <NumberField source="discount" label="Remise" options={{ style: 'percent' }}/>

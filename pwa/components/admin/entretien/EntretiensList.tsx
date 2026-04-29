@@ -7,11 +7,9 @@ import {
   TextInput,
   TextField,
   BooleanInput,
-  CreateButton,
   TopToolbar,
   DateField,
   NumberField,
-  EditButton,
   ShowButton,
   BooleanField,
   SimpleList,
@@ -28,6 +26,7 @@ import { isDefined, isNotBlank } from "../../../app/lib/utils";
 import { useSessionContext } from "../SessionContextProvider";
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 export interface Props {
   data: PagedCollection<Circuit> | null;
@@ -99,7 +98,7 @@ const CustomListActions = ({ showMore, setShowMore, isSmall, resource }) => {
   return (
     <TopToolbar>
       <CustomFilterButton showMore={showMore} setShowMore={setShowMore} isSmall={isSmall}/>
-      <CreateButton/>
+      <ProtectedCreateButton/>
       <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
       <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -214,7 +213,7 @@ export const EntretiensList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <BooleanField source="changementMoteur" label="Changement moteur" textAlign="center"/>
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }

@@ -1,7 +1,8 @@
 import { Show, SimpleShowLayout, TextField, NumberField, FunctionField, DateField } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 
 export const DisponibiliteShow = () => (
-    <Show>
+    <Show actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <FunctionField
                 source="pilote"

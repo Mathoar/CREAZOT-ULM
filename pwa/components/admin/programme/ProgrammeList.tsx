@@ -2,10 +2,8 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   ExportButton,
   TopToolbar,
-  EditButton,
   SimpleList,
   ShowButton,
   BooleanField,
@@ -13,6 +11,7 @@ import {
   NumberField,
 } from "react-admin";
 import { useMediaQuery, Theme, Chip } from '@mui/material';
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 
 const programmeTypeLabels: Record<string, string> = {
   brevet: 'Brevet',
@@ -23,7 +22,7 @@ const programmeTypeLabels: Record<string, string> = {
 
 const ListActions = () => (
   <TopToolbar>
-    <CreateButton />
+    <ProtectedCreateButton />
     <ExportButton />
   </TopToolbar>
 );
@@ -57,7 +56,7 @@ export const ProgrammeList = () => {
           <BooleanField source="isAvailable" label="Disponible" />
           <p className="text-right">
             <ShowButton />
-            <EditButton />
+            <ProtectedEditButton />
           </p>
         </Datagrid>
       )}

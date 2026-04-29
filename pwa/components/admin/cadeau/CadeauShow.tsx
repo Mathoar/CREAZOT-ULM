@@ -1,7 +1,8 @@
 import { Show, SimpleShowLayout, TextField, DateField, FunctionField, BooleanField, NumberField, ArrayField, Datagrid } from 'react-admin';
+import { ProtectedShowActions } from "../PermissionGuards";
 
 export const CadeauShow = () => (
-    <Show title="Détail du prépaiement">
+    <Show title="Détail du prépaiement" actions={<ProtectedShowActions />}>
         <SimpleShowLayout>
             <TextField source="code" label="N° de bon"/>
             <DateField source="date" label="Date d'achat"/>

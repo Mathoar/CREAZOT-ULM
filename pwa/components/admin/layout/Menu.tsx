@@ -12,6 +12,7 @@ import EditCalendarIcon from '@mui/icons-material/EditCalendar';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CropOriginalIcon from '@mui/icons-material/CropOriginal';
 import { useClient } from '../../admin/ClientProvider';
+import { usePermissions } from '../../admin/PermissionProvider';
 import { isDefined } from "../../../app/lib/utils";
 import PermPhoneMsgIcon from '@mui/icons-material/PermPhoneMsg';
 import { useState } from 'react';
@@ -59,12 +60,14 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import { clientWithTraining, clientWithManex } from "../../../app/lib/client";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import SecurityIcon from "@mui/icons-material/Security";
 
 const CustomMenu = () => {
 
   const { session } = useSessionContext();
   const user = session?.user;
   const { client, isAdmin, isSuperAdmin } = useClient();
+  const { canRead, canWrite } = usePermissions();
   const [superAdminOpen, setSuperAdminOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [tarificationOpen, setTarificationOpen] = useState(false);
@@ -72,8 +75,6 @@ const CustomMenu = () => {
   const [formationOpen, setFormationOpen] = useState(false);
   const [openSidebar] = useSidebarState();
 
-  // Live badge powered by Mercure: replaces the previous 30s polling loop.
-  // The hook performs an initial REST fetch then subscribes to per-client updates.
   const aiAssistantEnabled = !!(client && (client.hasAiReservationAssistant || client.hasVoiceAssistant));
   const stats = useAiReservationStats(client?.id, session?.accessToken, aiAssistantEnabled);
   const awaitingCount = stats.awaiting_club ?? 0;
@@ -101,31 +102,36 @@ const CustomMenu = () => {
   return (
     <Menu>
       <Menu.DashboardItem />
-      { isAdmin &&
+
+      {/* Statistiques */}
+      { canRead('statistiques') &&
         <Menu.Item
           to="/analytics"
           primaryText="Statistiques"
           leftIcon={<BarChartIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { (isDefined(client) && isDefined(client.hasReservation) && client.hasReservation) && isAdmin &&
+
+      {/* Réservations */}
+      { canRead('reservations') && isDefined(client) && client.hasReservation &&
         <Menu.Item
           to="/reservations"
           primaryText="Réservations"
           leftIcon={<EditCalendarIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { (isDefined(client) && isDefined(client.hasReservation) && client.hasReservation && isDefined(client.hasPlanification) && client.hasPlanification) && isAdmin &&
+
+      {/* Planification — écriture requise (envoi de notifications) */}
+      { canWrite('reservations') && isDefined(client) && client.hasReservation && client.hasPlanification &&
         <Menu.Item
           to="/planning"
           primaryText="Planification"
           leftIcon={<SmsIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { (isDefined(client) && (client.hasAiReservationAssistant || client.hasVoiceAssistant)) && isAdmin &&
+
+      {/* Assistant IA */}
+      { canRead('reservations') && isDefined(client) && (client.hasAiReservationAssistant || client.hasVoiceAssistant) &&
         <Menu.Item
           to="/conversation_threads"
           primaryText={awaitingCount > 0 ? `Assistant IA (${awaitingCount})` : "Assistant IA"}
@@ -137,42 +143,54 @@ const CustomMenu = () => {
           sx={awaitingCount > 0 ? { fontWeight: 700, backgroundColor: '#fff8e1' } : {}}
         />
       }
-      {/* @ts-ignore */}
-      { (isDefined(client) && isDefined(client.hasGifts) && client.hasGifts) && isAdmin &&
+
+      {/* Prépaiements */}
+      { canRead('commercial') && isDefined(client) && client.hasGifts &&
         <Menu.Item
           to="/cadeaux"
           primaryText="Prépaiements"
           leftIcon={<CreditScoreIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { isAdmin && clientWithExpensesManagement(client) &&
+
+      {/* Dépenses */}
+      { canRead('commercial') && clientWithExpensesManagement(client) &&
         <Menu.Item
           to="/expenses"
           primaryText="Dépenses"
           leftIcon={<ShoppingCartIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { isAdmin && isDefined(client) && isDefined(client.hasPaymentManagement) && client.hasPaymentManagement &&
+
+      {/* Paiements */}
+      { canRead('commercial') && isDefined(client) && client.hasPaymentManagement &&
         <Menu.Item
           to="/payments"
           primaryText="Paiements"
           leftIcon={<PointOfSaleIcon />}
         />
       }
-      <Menu.Item
-        to="/prestations"
-        primaryText="Carnets de vols"
-        leftIcon={<AirplaneTicketIcon />}
-      />
-      <Menu.Item
-        to="/vols"
-        primaryText="Vols"
-        leftIcon={<FlightTakeoffIcon />}
-      />
-      {/* @ts-ignore */}
-      { (isDefined(client) && isDefined(client.hasLandingManagement) && client.hasLandingManagement) && isAdmin &&
+
+      {/* Carnets de vols */}
+      { canRead('prestations') &&
+        <Menu.Item
+          to="/prestations"
+          primaryText="Carnets de vols"
+          leftIcon={<AirplaneTicketIcon />}
+        />
+      }
+
+      {/* Vols */}
+      { canRead('vols') &&
+        <Menu.Item
+          to="/vols"
+          primaryText="Vols"
+          leftIcon={<FlightTakeoffIcon />}
+        />
+      }
+
+      {/* Atterrissages */}
+      { canRead('vols') && isDefined(client) && client.hasLandingManagement &&
         <Menu.Item
           to="/landings"
           primaryText="Atterrissages"
@@ -180,7 +198,8 @@ const CustomMenu = () => {
         />
       }
       
-      { isDefined(client) && isDefined(client.hasPassengerRegistration) && client.hasPassengerRegistration && 
+      {/* Passagers */}
+      { canRead('passagers') && isDefined(client) && client.hasPassengerRegistration && 
         <Menu.Item
           to="/passagers"
           primaryText="Passagers"
@@ -188,32 +207,35 @@ const CustomMenu = () => {
         />
       }
       
-      {/* @ts-ignore */}
-      { isAdmin &&
+      {/* Maintenance */}
+      { canRead('aeronefs') &&
         <Menu.Item
           to="/entretiens"
           primaryText="Maintenance"
           leftIcon={<BuildIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { isAdmin &&
+
+      {/* Aéronefs */}
+      { canRead('aeronefs') &&
         <Menu.Item
           to="/aeronefs"
           primaryText="Aéronefs"
           leftIcon={<FlightIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { isAdmin && clientUsingAvailabilityFilter(client) &&
+
+      {/* Disponibilités */}
+      { canRead('pilotes') && clientUsingAvailabilityFilter(client) &&
         <Menu.Item
           to="/disponibilites"
           primaryText="Disponibilités"
           leftIcon={<InsertInvitationIcon />}
         />
       }
-      {/* @ts-ignore */}
-      { isAdmin &&
+
+      {/* Pilotes */}
+      { canRead('pilotes') &&
         <Menu.Item
           to="/profil_pilotes"
           primaryText="Pilotes"
@@ -222,7 +244,7 @@ const CustomMenu = () => {
       }
 
       {/* Formation */}
-      { isAdmin && clientWithTraining(client) &&
+      { canRead('formations') && clientWithTraining(client) &&
         <>
           <MenuItemLink
             to="#"
@@ -256,7 +278,7 @@ const CustomMenu = () => {
       }
 
       {/* MANEX */}
-      { isAdmin && clientWithManex(client) &&
+      { canRead('manex') && clientWithManex(client) &&
         <Menu.Item
           to="/manex"
           primaryText="MANEX"
@@ -265,7 +287,7 @@ const CustomMenu = () => {
       }
 
       {/* Événements de sécurité */}
-      { isAdmin &&
+      { canRead('evenements_securite') &&
         <Menu.Item
           to="/security_events"
           primaryText="Événements sécurité"
@@ -273,8 +295,8 @@ const CustomMenu = () => {
         />
       }
 
-      {/* @ts-ignore */}
-      { isAdmin &&
+      {/* Administration (configuration) */}
+      { canRead('configuration') &&
           <MenuItemLink
               to="#"
               onClick={ handleSuperAdminClick }
@@ -285,19 +307,15 @@ const CustomMenu = () => {
           >
           </MenuItemLink>
       }
-      {/* @ts-ignore */}
-      { isAdmin &&
+      { canRead('configuration') &&
         <Collapse in={ superAdminOpen } timeout="auto" unmountOnExit>
-            { isAdmin &&
-              <Menu.Item
-                to="/circuits"
-                primaryText="Circuits"
-                leftIcon={<PublicIcon />}
-                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
-              />
-            }  
-            {/* @ts-ignore */}
-            { isAdmin && isDefined(client) && isDefined(client.hasOptions) && client.hasOptions && 
+            <Menu.Item
+              to="/circuits"
+              primaryText="Circuits"
+              leftIcon={<PublicIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+            { isDefined(client) && client.hasOptions && 
               <Menu.Item
                 to="/options"
                 primaryText="Options"
@@ -305,15 +323,13 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin &&
-              <Menu.Item
-                to="/airports"
-                primaryText="Aéroports"
-                leftIcon={<ConnectingAirportsIcon />}
-                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
-              />
-            }
-            { isAdmin && isDefined(client) && client.hasOriginContact &&
+            <Menu.Item
+              to="/airports"
+              primaryText="Aéroports"
+              leftIcon={<ConnectingAirportsIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+            { isDefined(client) && client.hasOriginContact &&
               <Menu.Item
                 to="/client-channels"
                 primaryText="Canaux"
@@ -321,7 +337,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin && isDefined(client) && client.hasCams &&
+            { isDefined(client) && client.hasCams &&
               <Menu.Item
                 to="/cameras"
                 primaryText="Caméras"
@@ -329,7 +345,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin && isDefined(client) && client.hasAI &&
+            { isDefined(client) && client.hasAI &&
               <Menu.Item
                 to="/flight_rules"
                 primaryText="Règles de vol"
@@ -337,7 +353,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin && isDefined(client) && client.hasPlanification &&
+            { isDefined(client) && client.hasPlanification &&
               <Menu.Item
                 to="/message_templates"
                 primaryText="Modèles messages"
@@ -345,8 +361,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            {/* @ts-ignore */}
-            { (isDefined(client) && isDefined(client.hasPartners) && client.hasPartners) && isAdmin &&
+            { isDefined(client) && client.hasPartners &&
               <Menu.Item
                 to="/origines"
                 primaryText="Partenaires"
@@ -354,7 +369,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin && !isSuperAdmin && isDefined(client) &&
+            { !isSuperAdmin && isDefined(client) &&
               <Menu.Item
                 to={`/clients/${encodeURIComponent(client['@id'] || '/clients/' + client.id)}`}
                 primaryText="Mon établissement"
@@ -362,7 +377,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin && isDefined(client) && client.hasPlanification && client.briefing &&
+            { isDefined(client) && client.hasPlanification && client.briefing &&
               <Menu.Item
                 to={`/briefings/${encodeURIComponent(client.briefing['@id'] || '/briefings/' + client.briefing.id)}`}
                 primaryText="Briefing"
@@ -378,23 +393,20 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isAdmin &&
-              <Menu.Item
-                to="/members"
-                primaryText="Membres"
-                leftIcon={<PeopleIcon />}
-                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
-              />
-            }
-            { isAdmin &&
-              <Menu.Item
-                to="/client_access_requests"
-                primaryText="Demandes d'accès"
-                leftIcon={<AssignmentIndIcon />}
-                sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
-              />
-            }
-            {/* @ts-ignore */}
+            <Menu.Item
+              to="/members"
+              primaryText="Membres"
+              leftIcon={<PeopleIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+            <Menu.Item
+              to="/client_access_requests"
+              primaryText="Demandes d'accès"
+              leftIcon={<AssignmentIndIcon />}
+              sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
+            />
+
+            {/* Super Admin: Paramètres */}
             { isSuperAdmin &&
               <>
                 <MenuItemLink
@@ -419,7 +431,6 @@ const CustomMenu = () => {
                       leftIcon={<PermPhoneMsgIcon />}
                       sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
                     />
-
                     <Menu.Item
                       to="/qualifications"
                       primaryText="Qualifications"
@@ -454,6 +465,12 @@ const CustomMenu = () => {
                       to="/integration_patterns"
                       primaryText="Intégrations API"
                       leftIcon={<ExtensionIcon />}
+                      sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
+                    />
+                    <Menu.Item
+                      to="/roles"
+                      primaryText="Rôles & Permissions"
+                      leftIcon={<SecurityIcon />}
                       sx={{ pl: 2, backgroundColor: '#E4E7EB' }}
                     />
                 </Collapse>

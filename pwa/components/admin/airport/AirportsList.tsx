@@ -3,9 +3,7 @@ import {
   Datagrid,
   List,
   TextField,
-  CreateButton,
   TopToolbar,
-  EditButton,
   SimpleList,
   ShowButton,
   BooleanField
@@ -17,6 +15,7 @@ import { useMediaQuery, Theme, Button } from '@mui/material';
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useSessionContext } from "../SessionContextProvider";
+import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 
@@ -72,7 +71,7 @@ const ListActions = ({ isSmall, resource }) => {
 
   return (
     <TopToolbar>
-      <CreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
+      <ProtectedCreateButton className={`${!isSmall && 'mb-[2px]'}`}/>
       <CustomCSVButton onClick={ () => handleExport('csv') } isSmall={isSmall}/>
       <CustomPDFButton onClick={ () => handleExport('pdf') } isSmall={isSmall}/>
     </TopToolbar>
@@ -98,7 +97,7 @@ export const AirportsList: NextPage<Props> = ({ data, hubURL, page }) => {
                 <BooleanField source="meteo" label="Données météo" textAlign="center"/>
                 <p className="text-right">
                     <ShowButton />
-                    <EditButton />
+                    <ProtectedEditButton />
                 </p>
             </Datagrid>
         }
