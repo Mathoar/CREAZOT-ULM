@@ -39,7 +39,12 @@ class PaymentSubscriber implements EventSubscriberInterface
         $reservations = [];
 
         if ($reservationCode) {
-            $reservations = $this->reservationRepository->findBy(['code' => $reservationCode]);
+            $date = $payment->getDate();
+            if ($date) {
+                $reservations = $this->reservationRepository->findByCodeAndDate($reservationCode, $date);
+            } else {
+                $reservations = $this->reservationRepository->findBy(['code' => $reservationCode]);
+            }
         } else {
             $name = $payment->getName();
             $date = $payment->getDate();

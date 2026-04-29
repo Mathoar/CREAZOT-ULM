@@ -36,6 +36,24 @@ class ReservationRepository extends ServiceEntityRepository
                 ->getResult();
         }
 
+        /**
+         * @return Reservation[]
+         */
+        public function findByCodeAndDate(string $code, \DateTimeInterface $date): array
+        {
+            $startOfDay = (clone $date)->setTime(0, 0, 0);
+            $endOfDay = (clone $date)->setTime(23, 59, 59);
+
+            return $this->createQueryBuilder('r')
+                ->where('r.code = :code')
+                ->andWhere('r.debut BETWEEN :start AND :end')
+                ->setParameter('code', $code)
+                ->setParameter('start', $startOfDay)
+                ->setParameter('end', $endOfDay)
+                ->getQuery()
+                ->getResult();
+        }
+
     //    public function findOneBySomeField($value): ?Reservation
     //    {
     //        return $this->createQueryBuilder('r')
