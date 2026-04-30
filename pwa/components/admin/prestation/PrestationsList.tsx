@@ -18,7 +18,8 @@ import {
   FunctionField,
   useListContext,
   Form,
-  Button as ReactAdminButton
+  Button as ReactAdminButton,
+  BulkDeleteButton,
 } from "react-admin";
 import Button from '@mui/material/Button';
 import { Fragment } from 'react';
@@ -33,6 +34,13 @@ import { useSessionContext } from "../../admin/SessionContextProvider";
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { ProtectedCreateButton, ProtectedEditButton } from "../PermissionGuards";
+import { usePermissions } from "../PermissionProvider";
+import { useSession } from "next-auth/react";
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField as MuiTextField, Typography, Alert } from '@mui/material';
+import BuildIcon from '@mui/icons-material/Build';
+import { useNotify, useRefresh } from 'react-admin';
+
+const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || '';
 
 export interface Props {
   data: PagedCollection<Prestation> | null;
@@ -290,48 +298,141 @@ const MobileFooter = (props) => {
     );
 };
 
+const InlineCorrectTrigger = ({ record, onOpen }: { record: any, onOpen: (record: any) => void }) => {
+  if (!record) return null;
+  const handleClick = (e) => {
+    e.stopPropagation();
+    onOpen(record);
+  };
+  return (
+    <Button size="small" onClick={handleClick} sx={{ minWidth: 'auto', p: 0.5 }} title="Corriger l'horamètre">
+      <BuildIcon fontSize="small" />
+    </Button>
+  );
+};
+
+const CorrectHorametreDialog = ({ open, record, onClose }: { open: boolean, record: any, onClose: () => void }) => {
+  const notify = useNotify();
+  const refresh = useRefresh();
+  const { client } = useClient();
+  const { data: session } = useSession() as any;
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (open && record) setValue(String(record.horametreFin));
+  }, [open, record]);
+
+  if (!record) return null;
+
+  const isDecimal = record.aeronef?.decimal;
+  const formatH = (val: number) => {
+    const hours = Math.trunc(val);
+    const minutes = Math.round((val - Math.trunc(val)) * (isDecimal ? 10 : 100));
+    return `${hours}${isDecimal ? ',' : ':'}${!isDecimal && minutes < 10 ? '0' : ''}${minutes}`;
+  };
+
+  const handleSubmit = async () => {
+    const parsed = parseFloat(value.replace(',', '.').replace(':', '.'));
+    if (isNaN(parsed) || parsed <= record.horametreDepart) {
+      notify("L'horamètre de fin doit être supérieur à l'horamètre de départ", { type: 'error' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.accessToken}`,
+      };
+      if (client?.id) headers['X-Client-Id'] = String(client.id);
+      const prestationId = typeof record.id === 'string' && record.id.includes('/') ? record.id.split('/').pop() : record.id;
+      const res = await fetch(`${API_DOMAIN}/admin/prestation/${prestationId}/correct-horametre`, { method: 'POST', headers, body: JSON.stringify({ horametreFin: parsed }) });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Erreur serveur'); }
+      notify('Horamètre corrigé', { type: 'success' });
+      onClose();
+      refresh();
+    } catch (e: any) {
+      notify(e.message || 'Erreur', { type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+      <DialogTitle>Correction de l'horamètre de fin</DialogTitle>
+      <DialogContent>
+        <Alert severity="info" sx={{ mb: 2 }}>Met à jour la durée de la prestation et l'horamètre de l'aéronef.</Alert>
+        <Typography variant="body2" sx={{ mb: 1 }}>Horamètre de départ : <strong>{formatH(record.horametreDepart)}</strong></Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>Horamètre de fin actuel : <strong>{formatH(record.horametreFin)}</strong></Typography>
+        <MuiTextField label="Nouvel horamètre de fin" value={value} onChange={(e) => setValue(e.target.value)} fullWidth autoFocus helperText={isDecimal ? "Format décimal (ex: 1234,5)" : "Format conventionnel (ex: 1234.30)"} />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={loading}>Annuler</Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={loading}>{loading ? 'Correction...' : 'Corriger'}</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const PrestationBulkActions = () => (
+  <BulkDeleteButton
+    mutationMode="pessimistic"
+    confirmTitle="Supprimer les prestations sélectionnées ?"
+    confirmContent="L'horamètre des aéronefs et les heures de vol des pilotes concernés seront automatiquement corrigés."
+  />
+);
+
 const CustomDatagrid = ({isAdmin, client}) => {
+  const { canWrite } = usePermissions();
+  const [correctRecord, setCorrectRecord] = useState<any>(null);
 
   return (  
-    <Datagrid body={(props) => <CustomBody {...props} isAdmin={isAdmin}/>} bulkActionButtons={ isAdmin } expand={<VolsExpansion client={client}/>} sx={{ '& .RaDatagrid-expandedPanel': { backgroundColor: '#ededed' }, '& .RaDatagrid-tbody': { backgroundColor: '#FFFFFF' }, '& .RaDatagrid-headerCell': { backgroundColor: '#ededed' } }}>
-      <DateField source="date" sortable={true} />
-      <TextField source="aeronef.immatriculation" label="Aéronef" sortable={true} />
-      <FunctionField
-        label="Pilote(s)"
-        source="pilote.firstName"
-        sortable={true}
-        render={(record) => <span>
-          {isDefined(record?.pilotName) && record?.pilotName !== '' ? record?.pilotName : ''}
-          {isDefined(record?.encadrantName) && record?.encadrantName !== '' ?
-            <span className="text-gray-500 italic text-xs"><br />{record?.encadrantName}</span> : ''}
-        </span>}
-      />
-      <FunctionField
-        source="horametreDepart"
-        label="Horamètre au Départ"
-        render={record => getFormattedHorametre(record, "horametreDepart")}
-        textAlign="right"
-      />
-      <FunctionField
-        source="duree"
-        label="Durée"
-        render={record => getFormattedDuration(record)}
-        textAlign="right"
-      />
-      <FunctionField
-        source="horametreFin"
-        label="Horamètre à l'arrivée"
-        render={record => getFormattedHorametre(record, "horametreFin")}
-        textAlign="right"
-      />
-      <TextField source="remarques" label="Remarques" />
-      {isAdmin &&
-        <p className="text-right">
-          <ShowButton />
-          <ProtectedEditButton />
-        </p>
-      }
-    </Datagrid>
+    <>
+      <Datagrid body={(props) => <CustomBody {...props} isAdmin={isAdmin}/>} bulkActionButtons={ isAdmin ? <PrestationBulkActions /> : false } expand={<VolsExpansion client={client}/>} sx={{ '& .RaDatagrid-expandedPanel': { backgroundColor: '#ededed' }, '& .RaDatagrid-tbody': { backgroundColor: '#FFFFFF' }, '& .RaDatagrid-headerCell': { backgroundColor: '#ededed' } }}>
+        <DateField source="date" sortable={true} />
+        <TextField source="aeronef.immatriculation" label="Aéronef" sortable={true} />
+        <FunctionField
+          label="Pilote(s)"
+          source="pilote.firstName"
+          sortable={true}
+          render={(record) => <span>
+            {isDefined(record?.pilotName) && record?.pilotName !== '' ? record?.pilotName : ''}
+            {isDefined(record?.encadrantName) && record?.encadrantName !== '' ?
+              <span className="text-gray-500 italic text-xs"><br />{record?.encadrantName}</span> : ''}
+          </span>}
+        />
+        <FunctionField
+          source="horametreDepart"
+          label="Horamètre au Départ"
+          render={record => getFormattedHorametre(record, "horametreDepart")}
+          textAlign="right"
+        />
+        <FunctionField
+          source="duree"
+          label="Durée"
+          render={record => getFormattedDuration(record)}
+          textAlign="right"
+        />
+        <FunctionField
+          source="horametreFin"
+          label="Horamètre à l'arrivée"
+          render={record => getFormattedHorametre(record, "horametreFin")}
+          textAlign="right"
+        />
+        <TextField source="remarques" label="Remarques" />
+        {isAdmin &&
+          <FunctionField render={(record) => (
+            <p className="text-right" style={{ whiteSpace: 'nowrap' }}>
+              <ShowButton label="" />
+              <ProtectedEditButton label="" />
+              {canWrite('vols') && <InlineCorrectTrigger record={record} onOpen={setCorrectRecord} />}
+            </p>
+          )} />
+        }
+      </Datagrid>
+      <CorrectHorametreDialog open={!!correctRecord} record={correctRecord} onClose={() => setCorrectRecord(null)} />
+    </>
   );
 };
 

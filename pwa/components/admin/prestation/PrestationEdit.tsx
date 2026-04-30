@@ -1,11 +1,14 @@
 import React from "react";
-import { ArrayInput, DateInput, Edit, NumberInput, ReferenceInput, SimpleForm, SimpleFormIterator, TextInput, SelectInput, useDataProvider } from "react-admin";
+import { ArrayInput, DateInput, Edit, NumberInput, ReferenceInput, SimpleForm, SimpleFormIterator, TextInput, SelectInput, useDataProvider, TopToolbar, ShowButton, useRecordContext, useNotify, useRefresh, Button as ReactAdminButton } from "react-admin";
 import { getFormattedValueForBackEnd, isDefined, isDefinedAndNotVoid, isValid } from "../../../app/lib/utils";
 import { useClient } from '../../admin/ClientProvider';
 import { clientWithLandingManagement, clientWithOptions, getAirportCode, getAirportName, getDefaultLanding } from "../../../app/lib/client";
 import { useWatch, useFormContext } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField as MuiTextField, Typography, Button as MuiButton } from "@mui/material";
+import BuildIcon from '@mui/icons-material/Build';
+import { usePermissions } from "../PermissionProvider";
+import { useSession } from "next-auth/react";
 
 const FilteredPiloteInput = ({ pilotes, circuits }) => {
   const vols = useWatch({ name: "vols" });
@@ -19,7 +22,7 @@ const FilteredPiloteInput = ({ pilotes, circuits }) => {
     vols.forEach(({ circuit }) => {
       const selectedCircuit = circuits.find(c => c['@id'] === circuit['@id']);
       qualificationsRequises = [...qualificationsRequises, ...selectedCircuit?.qualifications?.map(q => q['@id']) || []];
-      needsEncadrant = selectedCircuit?.needsEncadrant === true ? true : needsEncadrant;
+      needsEncadrant = selectedCircuit?.nature?.needsEncadrant === true ? true : needsEncadrant;
     });
   }
 
@@ -65,7 +68,7 @@ const EncadrantInput = ({ pilotes, circuits }) => {
   if (isDefinedAndNotVoid(vols) && isDefinedAndNotVoid(circuits)) {
     vols.forEach(({ circuit }) => {
       const selectedCircuit = circuits.find(c => c['@id'] === circuit['@id']);
-      needsEncadrant = selectedCircuit?.needsEncadrant === true ? true : needsEncadrant;
+      needsEncadrant = selectedCircuit?.nature?.needsEncadrant === true ? true : needsEncadrant;
     });
   }
 
@@ -162,6 +165,82 @@ const OptionInput = ({ client }) => {
       </Box>
 };
 
+const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || '';
+
+const EditCorrectHorametreButton = () => {
+    const record = useRecordContext();
+    const notify = useNotify();
+    const refresh = useRefresh();
+    const { client } = useClient();
+    const { data: session } = useSession() as any;
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    if (!record) return null;
+
+    const isDecimal = record.aeronef?.decimal;
+    const formatH = (val: number) => {
+        const hours = Math.trunc(val);
+        const minutes = Math.round((val - Math.trunc(val)) * (isDecimal ? 10 : 100));
+        return `${hours}${isDecimal ? ',' : ':'}${!isDecimal && minutes < 10 ? '0' : ''}${minutes}`;
+    };
+
+    const handleSubmit = async () => {
+        const parsed = parseFloat(value.replace(',', '.').replace(':', '.'));
+        if (isNaN(parsed) || parsed <= record.horametreDepart) {
+            notify("L'horamètre de fin doit être supérieur à l'horamètre de départ", { type: 'error' });
+            return;
+        }
+        setLoading(true);
+        try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.accessToken}` };
+            if (client?.id) headers['X-Client-Id'] = String(client.id);
+            const id = typeof record.id === 'string' && record.id.includes('/') ? record.id.split('/').pop() : record.id;
+            const res = await fetch(`${API_DOMAIN}/admin/prestation/${id}/correct-horametre`, { method: 'POST', headers, body: JSON.stringify({ horametreFin: parsed }) });
+            if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Erreur serveur'); }
+            notify('Horamètre corrigé avec succès', { type: 'success' });
+            setOpen(false);
+            refresh();
+        } catch (e: any) {
+            notify(e.message || 'Erreur', { type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <>
+            <ReactAdminButton label="Corriger l'horamètre" onClick={() => { setValue(String(record.horametreFin)); setOpen(true); }}>
+                <BuildIcon />
+            </ReactAdminButton>
+            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Correction de l'horamètre de fin</DialogTitle>
+                <DialogContent>
+                    <Alert severity="info" sx={{ mb: 2 }}>Cette action met à jour la durée, l'horamètre de l'aéronef et les heures de vol du pilote.</Alert>
+                    <Typography variant="body2" sx={{ mb: 1 }}>Horamètre de départ : <strong>{formatH(record.horametreDepart)}</strong></Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>Horamètre de fin actuel : <strong>{formatH(record.horametreFin)}</strong></Typography>
+                    <MuiTextField label="Nouvel horamètre de fin" value={value} onChange={(e) => setValue(e.target.value)} fullWidth autoFocus helperText={isDecimal ? "Format décimal (ex: 1234,5)" : "Format conventionnel (ex: 1234.30)"} />
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setOpen(false)} disabled={loading}>Annuler</MuiButton>
+                    <MuiButton onClick={handleSubmit} variant="contained" disabled={loading}>{loading ? 'Correction...' : 'Corriger'}</MuiButton>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
+};
+
+const PrestationEditActions = () => {
+    const { canWrite } = usePermissions();
+    return (
+        <TopToolbar>
+            <ShowButton />
+            {canWrite('vols') && <EditCorrectHorametreButton />}
+        </TopToolbar>
+    );
+};
+
 export const PrestationEdit = () => {
 
     const { client } = useClient();
@@ -256,10 +335,15 @@ export const PrestationEdit = () => {
 
     return (
       // @ts-ignore
-      <Edit transform={transform}>  
+      <Edit transform={transform} actions={<PrestationEditActions />}>  
         <SimpleForm>
+            <Alert severity="info" icon={<BuildIcon fontSize="small" />} sx={{ mb: 2, width: '100%' }}>
+              <strong>Aéronef, horamètres et durée</strong> sont en lecture seule.
+              Pour corriger l'horamètre, utilisez le bouton <em>"Corriger l'horamètre"</em> sur la fiche de la prestation.
+              Pour changer d'aéronef, supprimez cette prestation et recréez-la avec le bon aéronef.
+            </Alert>
             <DateInput source="date" />
-            <ReferenceInput reference="aeronefs" source="aeronef.@id" label="Aéronef" />
+            <TextInput source="aeronef.immatriculation" label="Aéronef" disabled />
             <FilteredPiloteInput pilotes={ pilotes } circuits={ circuits }/>
             <EncadrantInput pilotes={ pilotes } circuits={ circuits }/>
             <ArrayInput source="vols">
@@ -278,9 +362,9 @@ export const PrestationEdit = () => {
                   </Box>
                 </SimpleFormIterator>
             </ArrayInput>
-            <NumberInput source="horametreDepart" />
-            <NumberInput source="duree" />
-            <NumberInput source="horametreFin" />
+            <NumberInput source="horametreDepart" disabled />
+            <NumberInput source="duree" disabled />
+            <NumberInput source="horametreFin" disabled />
             <TextInput source="remarques" />
         </SimpleForm>
       </Edit>

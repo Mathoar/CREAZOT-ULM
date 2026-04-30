@@ -15,7 +15,7 @@ export const QualificationShow = () => {
                 render={({ color }) =>  <span style={{ color: getColor(color).id }}>{ isDefined(color) ? getColor(color).name : 'Couleur par défaut' }</span>
                 }
             />
-            <BooleanField source="encadrant" label="Qualification d'encadrant"/>
+            <BooleanField source="encadrant" label="Qualification d'encadrement"/>
         </SimpleShowLayout>
     </Show>
     )

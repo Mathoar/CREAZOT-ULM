@@ -44,7 +44,16 @@ final class PrestationCreateSubscriber implements EventSubscriberInterface
         $prestation = $event->getControllerResult();
         $method = $event->getRequest()->getMethod();
 
-        if (!$prestation instanceof Prestation || !in_array($method, [Request::METHOD_POST, Request::METHOD_PUT, Request::METHOD_PATCH])) {
+        if (!$prestation instanceof Prestation) {
+            return;
+        }
+
+        if ($method === Request::METHOD_DELETE) {
+            $this->handleDelete($prestation);
+            return;
+        }
+
+        if (!in_array($method, [Request::METHOD_POST, Request::METHOD_PUT, Request::METHOD_PATCH])) {
             return;
         }
 
@@ -74,6 +83,39 @@ final class PrestationCreateSubscriber implements EventSubscriberInterface
                 }
             }
         }
+    }
+
+    private function handleDelete(Prestation $prestation): void
+    {
+        $aeronef = $prestation->getAeronef();
+        if (!$aeronef) return;
+
+        $duree = $prestation->getDuree() ?? 0;
+        $decimal = $aeronef->isDecimal();
+        $dureeDecimal = $decimal ? $duree : $this->getDecimalTimeFromLocale($duree);
+
+        $currentHorametre = $aeronef->getHorametre() ?? 0;
+        $currentDecimal = $decimal ? $currentHorametre : $this->getDecimalTimeFromLocale($currentHorametre);
+
+        $newDecimal = max(0, $currentDecimal - $dureeDecimal);
+        $newHorametre = $decimal ? round($newDecimal, 2) : $this->decimalToConventional($newDecimal);
+        $aeronef->setHorametre($newHorametre);
+
+        $pilote = $prestation->getPilote();
+        if ($pilote) {
+            $profil = $pilote->getProfilPilote();
+            if ($profil) {
+                $current = $profil->getTotalFlightHours() ?? 0;
+                $profil->setTotalFlightHours(max(0, round($current - $dureeDecimal, 2)));
+            }
+        }
+    }
+
+    private function decimalToConventional(float $decimalHours): float
+    {
+        $hours = floor($decimalHours);
+        $minutes = round(($decimalHours - $hours) * 60);
+        return round($hours + ($minutes / 100), 2);
     }
 
     private function setEditionMetas(Prestation $prestation, ?User $user, string $method): void

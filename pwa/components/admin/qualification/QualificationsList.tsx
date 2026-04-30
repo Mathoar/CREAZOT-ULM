@@ -52,7 +52,7 @@ export const QualificationsList: NextPage<Props> = ({ data, hubURL, page }) => {
                     render={({ color, nom }) =>  <span style={{ color: getColor(color).id }}>{ nom }</span>
                     }
                 />
-                <BooleanField source="encadrant" label="Encadrant" textAlign="center"/>
+                <BooleanField source="encadrant" label="Encadrement" textAlign="center"/>
                 <p className="text-right">
                     <ShowButton />
                     <EditButton />

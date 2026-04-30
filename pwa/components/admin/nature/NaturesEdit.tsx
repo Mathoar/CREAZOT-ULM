@@ -8,6 +8,7 @@ export const NaturesEdit = () => {
           <TextInput source="code" label="Code" validate={required()}/>
           <TextInput source="label" label="Label" validate={required()}/>
           <BooleanInput source="isParticularActivity" label="Activité Particulière (AP)" />
+          <BooleanInput source="needsEncadrant" label="Encadrant requis" />
         </SimpleForm>
     </Edit>
   )

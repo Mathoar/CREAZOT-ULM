@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Security\Core;
 
+use App\Entity\Client;
 use App\Entity\User;
 use App\Entity\ProfilPilote;
 use App\Entity\CertificatMedical;
 use App\Repository\UserRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\AttributesBasedUserProviderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -18,8 +20,11 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 final readonly class UserProvider implements AttributesBasedUserProviderInterface
 {
-    public function __construct(private ManagerRegistry $registry, private UserRepository $repository)
-    {
+    public function __construct(
+        private ManagerRegistry $registry,
+        private UserRepository $repository,
+        private RequestStack $requestStack,
+    ) {
     }
 
     public function refreshUser(UserInterface $user): UserInterface
@@ -48,6 +53,9 @@ final readonly class UserProvider implements AttributesBasedUserProviderInterfac
      */
     public function loadUserByIdentifier(string $identifier, array $attributes = []): UserInterface
     {
+        $em = $this->registry->getManagerForClass(User::class);
+        $em->clear();
+
         $user = null;
 
         if (!empty($attributes['sub'])) {
@@ -83,9 +91,26 @@ final readonly class UserProvider implements AttributesBasedUserProviderInterfac
             $user->setProfilPilote($profile);
         }
 
+        $this->associateClient($user);
+
         $this->repository->save($user, true);
 
         return $user;
+    }
+
+    private function associateClient(User $user): void
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        $clientId = $request?->headers->get('X-Client-Id');
+        if (!$clientId) {
+            return;
+        }
+
+        $em = $this->registry->getManagerForClass(Client::class);
+        $client = $em?->getRepository(Client::class)->find((int) $clientId);
+        if ($client && !$user->hasClient($client)) {
+            $user->addClient($client);
+        }
     }
 
     private function createProfile(User $user) :ProfilPilote 

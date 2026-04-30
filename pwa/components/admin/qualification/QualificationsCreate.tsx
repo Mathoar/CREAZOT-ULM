@@ -30,7 +30,7 @@ export const QualificationsCreate = () => {
         <TextInput source="nom" label="Qualification"/>
         <TextInput source="slug" label="Alias"/>
         <ColorPreview />
-        <BooleanInput source="encadrant" label="Qualification d'encadrant" defaultValue={ false }/>
+        <BooleanInput source="encadrant" label="Qualification d'encadrement" defaultValue={ false }/>
       </SimpleForm>
     </Create>
   );

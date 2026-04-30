@@ -1,10 +1,14 @@
-import { Show, SimpleShowLayout, TextField, DateField, NumberField, Datagrid, ArrayField, FunctionField } from 'react-admin';
-import { ProtectedShowActions } from "../PermissionGuards";
+import { Show, SimpleShowLayout, TextField, DateField, NumberField, Datagrid, ArrayField, FunctionField, useNotify, useRefresh, useRecordContext, TopToolbar, EditButton, DeleteButton, Button as ReactAdminButton } from 'react-admin';
+import { usePermissions } from "../PermissionProvider";
 import { isDefined } from '../../../app/lib/utils';
 import { useClient } from '../ClientProvider';
 import { clientWithOptions } from "../../../app/lib/client";
-import { FC } from 'react';
-import { useRecordContext } from 'react-admin';
+import { FC, useState } from 'react';
+import { Button as MuiButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField as MuiTextField, Typography, Alert } from '@mui/material';
+import BuildIcon from '@mui/icons-material/Build';
+import { useSession } from "next-auth/react";
+
+const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || '';
 
 const LandingDetails: FC = () => {
     const record = useRecordContext();
@@ -30,6 +34,125 @@ const LandingDetails: FC = () => {
     );
 };
 
+const CorrectHorametreButton = () => {
+    const record = useRecordContext();
+    const notify = useNotify();
+    const refresh = useRefresh();
+    const { client } = useClient();
+    const { data: session } = useSession() as any;
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    if (!record) return null;
+
+    const isDecimal = record.aeronef?.decimal;
+
+    const formatHorametre = (val: number) => {
+        const hours = Math.trunc(val);
+        const minutes = Math.round((val - Math.trunc(val)) * (isDecimal ? 10 : 100));
+        return `${hours}${isDecimal ? ',' : ':'}${!isDecimal && minutes < 10 ? '0' : ''}${minutes}`;
+    };
+
+    const handleOpen = () => {
+        setValue(String(record.horametreFin));
+        setOpen(true);
+    };
+
+    const handleSubmit = async () => {
+        const parsed = parseFloat(value.replace(',', '.').replace(':', '.'));
+        if (isNaN(parsed) || parsed <= record.horametreDepart) {
+            notify("L'horamètre de fin doit être supérieur à l'horamètre de départ", { type: 'error' });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session?.accessToken}`,
+            };
+            if (client?.id) headers['X-Client-Id'] = String(client.id);
+
+            const prestationId = typeof record.id === 'string' && record.id.includes('/')
+                ? record.id.split('/').pop()
+                : record.id;
+
+            const response = await fetch(`${API_DOMAIN}/admin/prestation/${prestationId}/correct-horametre`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ horametreFin: parsed }),
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Erreur serveur');
+            }
+
+            notify('Horamètre corrigé avec succès (prestation, durée et aéronef mis à jour)', { type: 'success' });
+            setOpen(false);
+            refresh();
+        } catch (e: any) {
+            notify(e.message || 'Erreur lors de la correction', { type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <>
+            <ReactAdminButton label="Corriger l'horamètre" onClick={handleOpen}>
+                <BuildIcon />
+            </ReactAdminButton>
+            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Correction de l'horamètre de fin</DialogTitle>
+                <DialogContent>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Cette action met à jour automatiquement la durée de la prestation et l'horamètre de l'aéronef.
+                    </Alert>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        Horamètre de départ : <strong>{formatHorametre(record.horametreDepart)}</strong>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        Horamètre de fin actuel : <strong>{formatHorametre(record.horametreFin)}</strong>
+                    </Typography>
+                    <MuiTextField
+                        label="Nouvel horamètre de fin"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        fullWidth
+                        autoFocus
+                        helperText={isDecimal ? "Format décimal (ex: 1234,5)" : "Format conventionnel (ex: 1234.30)"}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <MuiButton onClick={() => setOpen(false)} disabled={loading}>Annuler</MuiButton>
+                    <MuiButton onClick={handleSubmit} variant="contained" disabled={loading}>
+                        {loading ? 'Correction...' : 'Corriger'}
+                    </MuiButton>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
+};
+
+const PrestationShowActions = () => {
+    const { canWrite } = usePermissions();
+    return (
+        <TopToolbar>
+            {canWrite('vols') && <EditButton />}
+            {canWrite('vols') && <CorrectHorametreButton />}
+            {canWrite('vols') && (
+                <DeleteButton
+                    mutationMode="pessimistic"
+                    confirmTitle="Supprimer cette prestation ?"
+                    confirmContent="L'horamètre de l'aéronef et les heures de vol du pilote seront automatiquement corrigés."
+                />
+            )}
+        </TopToolbar>
+    );
+};
+
 export const PrestationShow = () => {
 
     const { client } = useClient();
@@ -52,7 +175,7 @@ export const PrestationShow = () => {
     };
 
     return (
-        <Show actions={<ProtectedShowActions />}>
+        <Show actions={<PrestationShowActions />}>
             <SimpleShowLayout>
                 <DateField source="date" label="Date"/>
                 <TextField source="aeronef.immatriculation" label="Aéronef"/>

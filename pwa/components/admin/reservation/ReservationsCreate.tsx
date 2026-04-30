@@ -112,7 +112,7 @@ const FilteredPiloteInput = ({ circuits, client, selectedQuantite, defaultStart 
   const pilotesEligibles = useMemo(() => {
     if (!selectedCircuit) return enabledPilots;
     const qualificationsRequises = selectedCircuit?.qualifications?.map(q => q['@id']) || [];
-    const needsEncadrant = selectedCircuit?.needsEncadrant;
+    const needsEncadrant = selectedCircuit?.nature?.needsEncadrant;
     return qualificationsRequises.length === 0
       ? (needsEncadrant ? enabledPilots.filter(({profil, ...p}) => isDefined(profil.pilotQualifications.find(q => isDefined(q.qualification.encadrant) && q.qualification.encadrant && isValid(q.validUntil, q.dateObtention, debut)))) : enabledPilots)
       : enabledPilots.filter(({profil, ...p}) =>

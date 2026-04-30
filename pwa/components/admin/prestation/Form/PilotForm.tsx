@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import BadgeIcon from '@mui/icons-material/Badge';
 import { useDataProvider } from "react-admin";
 import { isDefined, isDefinedAndNotVoid, isValid } from "../../../../app/lib/utils";
+import { useSession } from "next-auth/react";
 
 // @ts-ignore
 export const PilotForm: React.FC = ({ selectedPilot, setSelectedPilot, pilots, setPilots, setEncadrants, autoSelect = true, date = new Date() }) => {
 
   const dataProvider = useDataProvider();
+  const { data: session } = useSession() as any;
+  const currentUserEmail = session?.user?.email;
   const changeTextColor = () => setIsPilotSelected(true);
+  const autoSelectedWithEmail = useRef(false);
 
   const [isPilotSelected, setIsPilotSelected] = useState<boolean>(false);
   const [unfilteredPilots, setUnfilteredPilots] = useState([]);
@@ -23,13 +27,27 @@ export const PilotForm: React.FC = ({ selectedPilot, setSelectedPilot, pilots, s
       setPilots(enabledPilots);
       setEncadrants(encadrants);
 
-      if (autoSelect && (!isDefined(selectedPilot) || !enabledPilots.map(p => p['@id']).includes(selectedPilot?.['@id'])))
-          setSelectedPilot(enabledPilots[0]);
+      if (!autoSelect || autoSelectedWithEmail.current) return;
+
+      const needsAutoSelect = !isDefined(selectedPilot) || !enabledPilots.map(p => p['@id']).includes(selectedPilot?.['@id']);
+      const canUpgradeToCurrentUser = currentUserEmail && isDefined(selectedPilot) && enabledPilots.map(p => p['@id']).includes(selectedPilot?.['@id']);
+
+      if (needsAutoSelect || canUpgradeToCurrentUser) {
+          const currentUserPilot = currentUserEmail
+            ? enabledPilots.find(p => p.email === currentUserEmail)
+            : null;
+          if (currentUserPilot) {
+            setSelectedPilot(currentUserPilot);
+            autoSelectedWithEmail.current = true;
+          } else if (needsAutoSelect) {
+            setSelectedPilot(enabledPilots[0]);
+          }
+      }
     } else {
         setPilots([]);
         setEncadrants([]);
     }
-  }, [date, unfilteredPilots]);
+  }, [date, unfilteredPilots, currentUserEmail]);
 
   const getProfiles = () => {
     dataProvider

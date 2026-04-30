@@ -85,7 +85,7 @@ class User implements UserInterface
      * @see https://schema.org/email
      */
     #[ORM\Column(unique: true)]
-    #[Groups(groups: ['User:read', 'User:write', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Profil_pilote:read', 'CarnetVol:read', 'Disponibilite:read', 'ClientAccessRequest:read', 'Training:read'])]
+    #[Groups(groups: ['User:read', 'User:write', 'Prestation:read', 'Vol:read', 'Reservation:read', 'Entretien:read', 'Profil_pilote:read', 'Profil_pilote:list', 'CarnetVol:read', 'Disponibilite:read', 'ClientAccessRequest:read', 'Training:read'])]
     public ?string $email = null;
 
     /**

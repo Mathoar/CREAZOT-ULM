@@ -68,7 +68,7 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
             let pilotesEligibles = [];
             if (isDefinedAndNotVoid(pilots)) {
                 const qualificationsRequises = selectedCircuit?.qualifications?.map(q => q['@id']) || [];
-                const needsEncadrant = selectedCircuit?.needsEncadrant;
+                const needsEncadrant = selectedCircuit?.nature?.needsEncadrant;
                 pilotesEligibles = qualificationsRequises.length === 0
                     ? (needsEncadrant ? pilots.filter(({profil, ...p}) => isDefined(profil.pilotQualifications.find(q => isDefined(q.qualification.encadrant) && q.qualification.encadrant && isValid(q.validUntil, q.dateObtention, consumer.debut)))) : pilots)
                     : pilots.filter(({profil, ...p}) =>

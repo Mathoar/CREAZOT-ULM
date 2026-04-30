@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import FlightIcon from '@mui/icons-material/Flight';
 import { useDataProvider } from "react-admin";
 import { isDefined } from "../../../../app/lib/utils";
@@ -13,39 +13,40 @@ export const AircraftForm: React.FC = ({ selectedAircraft, setSelectedAircraft, 
   const { client } = useClient();
   const dataProvider = useDataProvider();
   const changeTextColor = () => setIsAircraftSelected(true);
+  const fetchedRef = useRef(false);
 
   const [isAircraftSelected, setIsAircraftSelected] = useState<boolean>(false);
 
-  const filterParams = useMemo(() => {
-      if (!isDefined(reservation)) return {};
-      const { debut, fin, originId } = reservation;
-      return {
-        debut: new Date(debut).toISOString(),
-        fin: new Date(fin).toISOString(),
-        id: originId,
-      };
+  const reservationKey = useMemo(() => {
+      if (!isDefined(reservation)) return 'none';
+      return `${reservation.debut}-${reservation.fin}-${reservation.originId}`;
     }, [reservation]);
 
-  const getAeronefs = useCallback(() => {
-      let endpoint = "aeronefs";
-      let filters = { isAvailable : true };
-      if (resource === "reservations") {
-          if (!isDefined(reservation)) return;
-          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          const { debut, fin, originId } = reservation;
-          endpoint = clientUsingAvailabilityFilter(client) ? "aeronefs/disponibles" : "aeronefs";
-          //@ts-ignore
-          filters = clientUsingAvailabilityFilter(client) ? { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), timezone, reservationId: originId } : { isAvailable : true };
-      } 
+  useEffect(() => {
+      if (resource !== "reservations") {
+          if (fetchedRef.current) return;
+          fetchedRef.current = true;
+          dataProvider
+            .getList("aeronefs", { filter: { isAvailable: true } })
+            .then(({ data }) => {
+              setAircrafts(data);
+              if (autoSelect) setSelectedAircraft(data[0]);
+            });
+          return;
+      }
+      if (!isDefined(reservation)) return;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const { debut, fin, originId } = reservation;
+      const endpoint = clientUsingAvailabilityFilter(client) ? "aeronefs/disponibles" : "aeronefs";
+      //@ts-ignore
+      const filters = clientUsingAvailabilityFilter(client) ? { debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString(), timezone, reservationId: originId } : { isAvailable: true };
       dataProvider
         .getList(endpoint, { filter: filters })
         .then(({ data }) => {
           setAircrafts(data);
-          if (autoSelect) setSelectedAircraft(data[0]);  
-        })
-  }, [dataProvider, reservation, setAircrafts, setSelectedAircraft]);
-  
-  useEffect(() => getAeronefs(), [getAeronefs, filterParams]);
+          if (autoSelect && !isDefined(selectedAircraft)) setSelectedAircraft(data[0]);
+        });
+  }, [reservationKey]);
 
   const handleAircraftChange = e => {
     changeTextColor();

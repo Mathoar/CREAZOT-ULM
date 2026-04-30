@@ -7,6 +7,7 @@ export const NatureShow = () => (
             <TextField source="code" label="Code"/>
             <TextField source="label" label="Label"/>
             <BooleanField source="isParticularActivity" label="Activité Particulière (AP)" />
+            <BooleanField source="needsEncadrant" label="Encadrant requis" />
         </SimpleShowLayout>
     </Show>
 )

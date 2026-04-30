@@ -42,7 +42,7 @@ export const CircuitShow = () => {
                         render={record => record.qualifications?.map((q, i) => <Chip key={i} label={q.slug} size="small" sx={ getShipStyle(q) }/>)}
                     />
                     { clientWithOptions(client) && <BooleanField source="avecOptions" label="Options disponibles"/> }
-                    <BooleanField source="needsEncadrant" label="Encadrant requis"/>
+                    <FunctionField label="Encadrant requis" render={(record) => record?.nature?.needsEncadrant ? "Oui" : "Non"} />
                     { clientWithLandingManagement(client) && <BooleanField source="requireLandingDeclaration" label="Déclaration atterrissages"/> }
                     { clientWithLandingManagement(client) && <BooleanField source="hadDefaultLanding" label="Atterrissage par défaut"/> }
                     <BooleanField source="isAvailable" label="Disponible (réservable)" />

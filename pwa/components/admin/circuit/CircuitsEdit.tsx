@@ -16,7 +16,7 @@ export const CircuitsEdit = () => {
 
   const OptionsInput = () => {
     return !clientWithOptions(client) ? null :
-      <BooleanInput source="avecOptions" label="Options disponibles" defaultValue={ false }/>
+      <BooleanInput source="avecOptions" label="Avec options" defaultValue={ false }/>
   };
 
   const IdsInput = () => {
@@ -97,23 +97,22 @@ export const CircuitsEdit = () => {
             <ReferenceInput reference="qualifications" source="@id" label="Qualifications" />
           </SimpleFormIterator>
         </ArrayInput>
-        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
-            <Box flex={1} display="flex" alignItems="center">
-              <OptionsInput/>
-            </Box>
-            <Box flex={1}>
-              <BooleanInput source="needsEncadrant" label="Encadrant requis" defaultValue={ false } fullWidth/>
-            </Box>
-        </Box>
-        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
-            <Box flex={1} display="flex" alignItems="center">
+        <Box display="flex" gap={2} flexWrap={{ xs: 'wrap', sm: 'nowrap' }} width="100%">
+            <Box flex={1} flexBasis={{ xs: '100%', sm: 'auto' }} display="flex" alignItems="center">
               <LandingsInput/>
             </Box>
-            <Box flex={1}>
+            <Box flex={1} flexBasis={{ xs: '100%', sm: 'auto' }} display="flex" alignItems="center">
               <AddDefaultLandingInput/>
             </Box>
         </Box>
-        <BooleanInput source="isAvailable" label="Circuit disponible (réservable)" defaultValue={true} helperText="Décocher pour masquer ce circuit des formulaires de réservation et de prestation" />
+        <Box display="flex" gap={2} flexWrap={{ xs: 'wrap', sm: 'nowrap' }} width="100%">
+            <Box flex={1} flexBasis={{ xs: '100%', sm: 'auto' }} display="flex" alignItems="center">
+              <OptionsInput/>
+            </Box>
+            <Box flex={1} flexBasis={{ xs: '100%', sm: 'auto' }} display="flex" alignItems="center">
+              <BooleanInput source="isAvailable" label="Circuit disponible" defaultValue={true} helperText="Décocher pour masquer ce circuit des formulaires" />
+            </Box>
+        </Box>
       </TabbedForm.Tab>
       { clientWithPlanification(client) &&
         <TabbedForm.Tab label="Briefing commercial">

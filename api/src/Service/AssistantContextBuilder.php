@@ -98,7 +98,7 @@ class AssistantContextBuilder
                     fn($q) => $q->getNom(),
                     $c->getQualifications()->toArray()
                 ),
-                'needsEncadrant' => $c->isNeedsEncadrant(),
+                'needsEncadrant' => $c->getNature()?->getNeedsEncadrant() ?? false,
             ], $circuits),
             'options' => array_map(fn(Option $o) => [
                 'nom' => $o->getNom(),

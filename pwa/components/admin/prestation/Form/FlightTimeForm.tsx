@@ -1,13 +1,31 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { isDefined } from "../../../../app/lib/utils";
 
 // @ts-ignore
 export const FlightTimeForm: React.FC = ({ aircrafts, selectedAircraft, selectedCircuits, selectedFlightTime, setSelectedFlightTime }) => {
 
+  const userEditedRef = useRef(false);
+  const prevAircraftIdRef = useRef<string | null>(null);
+  const prevCircuitsLenRef = useRef<number>(0);
+
   useEffect(() => {
     if (selectedAircraft !== null && selectedAircraft !== undefined) { 
+      const aircraftId = selectedAircraft['@id'] || selectedAircraft.id;
+      const circuitsLen = selectedCircuits?.length ?? 0;
+      const aircraftChanged = prevAircraftIdRef.current !== null && prevAircraftIdRef.current !== aircraftId;
+      const circuitsChanged = prevCircuitsLenRef.current !== circuitsLen;
+
+      if (aircraftChanged || circuitsChanged) {
+        userEditedRef.current = false;
+      }
+
+      prevAircraftIdRef.current = aircraftId;
+      prevCircuitsLenRef.current = circuitsLen;
+
+      if (userEditedRef.current) return;
+
       if (selectedCircuits.find(c => !c.circuit.prixFixe) === undefined) {
         const newFlightTime = selectedAircraft.decimal ? 
             getTimeInDecimal(selectedAircraft, selectedCircuits) : 
@@ -21,7 +39,10 @@ export const FlightTimeForm: React.FC = ({ aircrafts, selectedAircraft, selected
 
   const getDecimalTime = time => new Date(time).getHours() + new Date(time).getMinutes()/60;
 
-  const HandleChange = e => setSelectedFlightTime(e.target.value);
+  const HandleChange = e => {
+    userEditedRef.current = true;
+    setSelectedFlightTime(e.target.value);
+  };
 
   const getCircuitTimeInMinutes = (sum, time, qte) => {
       const currentTimeHours = new Date(time).getHours() + Number((new Date(time).getMinutes()).toFixed(2)) / 60;
