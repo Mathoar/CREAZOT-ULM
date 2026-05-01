@@ -1,10 +1,10 @@
 -- Patterns SMS sous moteur d'intégration générique
 -- Idempotent : suppression préalable si déjà présents
 DELETE FROM integration_variable
-  WHERE pattern_id IN (SELECT id FROM integration_pattern WHERE code IN ('twilio_sms', 'messagebird_sms'));
+  WHERE pattern_id IN (SELECT id FROM integration_pattern WHERE code IN ('twilio_sms', 'messagebird_sms', 'textinghouse_sms'));
 DELETE FROM integration_pattern_client
-  WHERE integration_pattern_id IN (SELECT id FROM integration_pattern WHERE code IN ('twilio_sms', 'messagebird_sms'));
-DELETE FROM integration_pattern WHERE code IN ('twilio_sms', 'messagebird_sms');
+  WHERE integration_pattern_id IN (SELECT id FROM integration_pattern WHERE code IN ('twilio_sms', 'messagebird_sms', 'textinghouse_sms'));
+DELETE FROM integration_pattern WHERE code IN ('twilio_sms', 'messagebird_sms', 'textinghouse_sms');
 
 -- ============================================================
 -- Pattern 1 : Twilio SMS
@@ -69,7 +69,7 @@ INSERT INTO integration_variable (pattern_id, variable_name, source, source_fiel
 
 -- ============================================================
 -- Auto-association : tout client qui a hasSMS = true → pattern Twilio par défaut
--- (le super_admin pourra basculer vers MessageBird via l'UI Patterns API)
+-- (le super_admin pourra basculer vers MessageBird ou TextingHouse via l'UI Patterns API)
 -- ============================================================
 INSERT INTO integration_pattern_client (integration_pattern_id, client_id)
 SELECT
@@ -78,3 +78,35 @@ SELECT
 FROM client c
 WHERE c.has_sms = TRUE
 ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- Pattern 3 : TextingHouse SMS (Réunion)
+-- ============================================================
+INSERT INTO integration_pattern
+  (name, code, capability, required_module, method, url_template, headers, query_params, body_template, content_type, description, active, cache_ttl, fallback_url_template, response_format, created_at, updated_at)
+VALUES (
+  'TextingHouse SMS',
+  'textinghouse_sms',
+  'sms_send',
+  'hasSMS',
+  'POST',
+  'https://api.textinghouse.com/http/v1/do',
+  NULL,
+  NULL,
+  'user={{th_user}}&pass={{th_pass}}&cmd=sendsms&to={{to_raw}}&txt={{body}}&from={{sender_id_raw}}&iscom=N',
+  'application/x-www-form-urlencoded',
+  'Envoi SMS via TextingHouse (capability sms_send). Provider réunionnais, Sender ID alphanumérique supporté +33/+262. Réponse texte brut (ID:xxx).',
+  TRUE,
+  NULL,
+  'https://api2.textinghouse.com/http/v1/do',
+  'text',
+  NOW(),
+  NOW()
+);
+
+INSERT INTO integration_variable (pattern_id, variable_name, source, source_field, default_value, required) VALUES
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'th_user',   'site_settings', 'textingHouseUser', NULL, TRUE),
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'th_pass',   'site_settings', 'textingHousePass', NULL, TRUE),
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'to_raw',    'context',       'to_raw',           NULL, TRUE),
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'body',      'context',       'body',             NULL, TRUE),
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'sender_id_raw', 'context', 'sender_id_raw', NULL, FALSE);

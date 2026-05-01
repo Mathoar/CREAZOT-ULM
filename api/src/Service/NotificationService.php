@@ -81,8 +81,10 @@ class NotificationService
 
         $result = $this->engine->executeByCapability(self::SMS_CAPABILITY, $client, null, [
             'to' => $formattedTo,
+            'to_raw' => ltrim($formattedTo, '+'),
             'body' => $sanitizedBody,
             'sender_id' => $this->getSenderId($client) ?? '',
+            'sender_id_raw' => $client->getSmsSenderId() ? substr($client->getSmsSenderId(), 0, 11) : '',
         ]);
 
         $messageId = $result['normalized']['messageId']

@@ -75,6 +75,8 @@ export const useAiReservationStats = (
 ): AiReservationStats => {
   const [stats, setStats] = useState<AiReservationStats>(EMPTY_STATS);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
 
   useEffect(() => {
     if (!enabled || !clientId || !accessToken) {
@@ -95,7 +97,7 @@ export const useAiReservationStats = (
       try {
         const initial = await axios.get<AiReservationStats>(
           `${ENTRYPOINT}/admin/ai-reservation/stats?clientId=${clientId}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
+          { headers: { Authorization: `Bearer ${accessTokenRef.current}` } }
         );
         if (cancelled) return;
         setStats(initial.data);
@@ -104,7 +106,7 @@ export const useAiReservationStats = (
       }
 
       try {
-        await ensureMercureCookie(accessToken);
+        await ensureMercureCookie(accessTokenRef.current ?? undefined);
       } catch {
         return;
       }
@@ -137,7 +139,7 @@ export const useAiReservationStats = (
       cancelled = true;
       cleanup();
     };
-  }, [clientId, accessToken, enabled]);
+  }, [clientId, enabled]);
 
   return stats;
 };

@@ -157,6 +157,14 @@ class SiteSettings
     #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
     private ?string $messageBirdOriginator = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
+    private ?string $textingHouseUser = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(groups: ['SiteSettings:write'])]
+    private ?string $textingHousePass = null;
+
     #[ORM\Column(type: 'decimal', precision: 6, scale: 4, nullable: true)]
     #[Groups(groups: ['SiteSettings:read', 'SiteSettings:write'])]
     private ?string $smsCostPerUnit = null;
@@ -600,6 +608,39 @@ class SiteSettings
     {
         $this->messageBirdOriginator = $messageBirdOriginator;
         return $this;
+    }
+
+    public function getTextingHouseUser(): ?string
+    {
+        return $this->textingHouseUser;
+    }
+
+    public function setTextingHouseUser(?string $textingHouseUser): static
+    {
+        $this->textingHouseUser = $textingHouseUser;
+        return $this;
+    }
+
+    public function getTextingHousePass(): ?string
+    {
+        return $this->textingHousePass;
+    }
+
+    public function setTextingHousePass(?string $textingHousePass): static
+    {
+        if ($textingHousePass === self::API_KEY_MASK) {
+            return $this;
+        }
+        $this->textingHousePass = $textingHousePass;
+        return $this;
+    }
+
+    #[Groups(groups: ['SiteSettings:read'])]
+    public function getTextingHousePassMask(): ?string
+    {
+        return ($this->textingHousePass !== null && $this->textingHousePass !== '')
+            ? self::API_KEY_MASK
+            : null;
     }
 
     public function getDelaiNotificationDGACHeures(): int { return $this->delaiNotificationDGACHeures; }

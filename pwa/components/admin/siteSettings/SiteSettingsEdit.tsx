@@ -220,11 +220,15 @@ export const SiteSettingsEdit = () => {
         if (result.vapiApiKey === API_KEY_MASK || result.vapiApiKey == null) {
             delete result.vapiApiKey;
         }
+        if (result.textingHousePass === API_KEY_MASK || result.textingHousePass == null) {
+            delete result.textingHousePass;
+        }
 
         delete result.notamifyApiKeyMask;
         delete result.odooApiKeyMask;
         delete result.kimiApiKeyMask;
         delete result.vapiApiKeyMask;
+        delete result.textingHousePassMask;
 
         return result;
     };
@@ -453,6 +457,24 @@ export const SiteSettingsEdit = () => {
                             </Typography>
                             <ApiKeyInput source="messageBirdAccessKey" label="Access Key MessageBird" fullWidth />
                             <TextInput source="messageBirdOriginator" label="Originator par défaut (numéro ou alphanumérique 11 chars)" fullWidth helperText="Fallback si le client n'a pas de smsSenderId" />
+                        </AccordionDetails>
+                    </Accordion>
+
+                    <Accordion sx={{ mt: 3, width: "100%" }} defaultExpanded={false}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <SmsIcon sx={{ mr: 1 }} />
+                            <Typography>Notifications SMS — TextingHouse</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Provider SMS basé à la Réunion. Sender ID alphanumérique supporté vers +33 et +262.
+                                L'expéditeur affiché est le nom du client (11 chars max).{" "}
+                                <Link href="https://api.textinghouse.com" target="_blank" rel="noopener">
+                                    Interface API TextingHouse
+                                </Link>
+                            </Typography>
+                            <TextInput source="textingHouseUser" label="Identifiant API TextingHouse" fullWidth />
+                            <ApiKeyInput source="textingHousePass" label="Mot de passe API TextingHouse" fullWidth />
                         </AccordionDetails>
                     </Accordion>
                 </SimpleForm>

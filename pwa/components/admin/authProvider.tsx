@@ -3,6 +3,11 @@ import { getSession, signIn, signOut } from "next-auth/react";
 
 import { NEXT_PUBLIC_OIDC_SERVER_URL } from "../../config/keycloak";
 
+const forceSignIn = () => {
+  sessionStorage.removeItem('client');
+  window.location.href = `/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`;
+};
+
 const authProvider: AuthProvider = {
   login: async () => Promise.resolve(),
   logout: async () => {
@@ -23,7 +28,7 @@ const authProvider: AuthProvider = {
     const status = error.status;
     // @ts-ignore
     if (!session || session?.error === "RefreshAccessTokenError" || status === 401) {
-      await signIn("keycloak");
+      forceSignIn();
       return;
     }
 
@@ -35,7 +40,7 @@ const authProvider: AuthProvider = {
     const session = await getSession();
     // @ts-ignore
     if (!session || session?.error === "RefreshAccessTokenError") {
-      await signIn("keycloak");
+      forceSignIn();
       return;
     }
 

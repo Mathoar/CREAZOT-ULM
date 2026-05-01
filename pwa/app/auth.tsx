@@ -42,8 +42,11 @@ export const { handlers: { GET, POST }, auth } = NextAuth({
           expiresAt: Math.floor(Date.now() / 1000 + account.expires_in),
           refreshToken: account.refresh_token,
         };
-      } else if (Date.now() < token.expiresAt * 1000) {
+      } else if (Date.now() < token.expiresAt * 1000 - 60_000) {
         // If the access token has not expired yet, return it
+        return token;
+      } else if (token.error === "RefreshAccessTokenError") {
+        // Already failed to refresh, don't retry in a loop
         return token;
       } else {
         // If the access token has expired, try to refresh it

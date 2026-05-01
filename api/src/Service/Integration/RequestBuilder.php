@@ -46,6 +46,10 @@ class RequestBuilder
             $contentType = $pattern->getContentType() ?? 'application/json';
             $body = $this->interpolateBody($pattern->getBodyTemplate(), $variables, $contentType);
 
+            if (str_contains($contentType, 'x-www-form-urlencoded')) {
+                $body = $this->stripEmptyFormParams($body);
+            }
+
             $options['headers']['Content-Type'] = $contentType;
             $options['body'] = $body;
         }
@@ -92,5 +96,20 @@ class RequestBuilder
 
             return (string) $value;
         }, $template);
+    }
+
+    /**
+     * Retire les paires clé= vides d'un body form-urlencoded.
+     * Ex: "user=foo&from=&cmd=sendsms" → "user=foo&cmd=sendsms"
+     */
+    private function stripEmptyFormParams(string $body): string
+    {
+        $parts = explode('&', $body);
+        $filtered = array_filter($parts, function (string $part) {
+            $eqPos = strpos($part, '=');
+            if ($eqPos === false) return true;
+            return substr($part, $eqPos + 1) !== '';
+        });
+        return implode('&', $filtered);
     }
 }

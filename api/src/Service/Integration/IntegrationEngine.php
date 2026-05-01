@@ -125,13 +125,16 @@ class IntegrationEngine
         $rawData = null;
         $usedUrl = $request['url'];
         $statusCode = 0;
+        $isTextFormat = $pattern->getResponseFormat() === 'text';
 
         try {
             $response = $this->httpClient->request($request['method'], $request['url'], $request['options']);
             $statusCode = $response->getStatusCode();
 
             if ($statusCode >= 200 && $statusCode < 300) {
-                $rawData = $response->toArray(false);
+                $rawData = $isTextFormat
+                    ? $this->parseTextResponse($response->getContent(false))
+                    : $response->toArray(false);
             }
         } catch (\Throwable $e) {
             $this->logger->warning('IntegrationEngine: primary URL failed: {error}', [
@@ -152,7 +155,9 @@ class IntegrationEngine
                 $statusCode = $response->getStatusCode();
 
                 if ($statusCode >= 200 && $statusCode < 300) {
-                    $rawData = $response->toArray(false);
+                    $rawData = $isTextFormat
+                        ? $this->parseTextResponse($response->getContent(false))
+                        : $response->toArray(false);
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('IntegrationEngine: fallback also failed: {error}', [
@@ -190,5 +195,30 @@ class IntegrationEngine
         return preg_replace_callback('/\{\{(\w+)\}\}/', function (array $matches) use ($variables) {
             return $variables[$matches[1]] ?? $matches[0];
         }, $template);
+    }
+
+    /**
+     * Parse une réponse texte brut (ex: TextingHouse).
+     * "ID:xxx" → ['messageId' => 'xxx']
+     * "ERR: code | desc" → exception
+     * Nombre seul (credit) → ['credit' => N]
+     */
+    private function parseTextResponse(string $content): array
+    {
+        $content = trim($content);
+
+        if (str_starts_with($content, 'ERR:')) {
+            throw new \RuntimeException(sprintf('SMS provider error: %s', $content));
+        }
+
+        if (str_starts_with($content, 'ID:')) {
+            return ['messageId' => trim(substr($content, 3))];
+        }
+
+        if (is_numeric($content)) {
+            return ['credit' => (int) $content];
+        }
+
+        return ['raw' => $content];
     }
 }

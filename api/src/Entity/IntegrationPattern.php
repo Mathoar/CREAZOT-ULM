@@ -107,6 +107,11 @@ class IntegrationPattern
     #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
     private ?string $fallbackUrlTemplate = null;
 
+    /** Format de réponse attendu : 'json' (défaut) ou 'text' (plain text comme TextingHouse) */
+    #[ORM\Column(length: 10, options: ['default' => 'json'])]
+    #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
+    private string $responseFormat = 'json';
+
     /** @var Collection<int, IntegrationVariable> */
     #[ORM\OneToMany(targetEntity: IntegrationVariable::class, mappedBy: 'pattern', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[Groups(['IntegrationPattern:read', 'IntegrationPattern:write'])]
@@ -247,4 +252,7 @@ class IntegrationPattern
 
     public function getFallbackUrlTemplate(): ?string { return $this->fallbackUrlTemplate; }
     public function setFallbackUrlTemplate(?string $fallbackUrlTemplate): static { $this->fallbackUrlTemplate = $fallbackUrlTemplate; return $this; }
+
+    public function getResponseFormat(): string { return $this->responseFormat; }
+    public function setResponseFormat(string $responseFormat): static { $this->responseFormat = $responseFormat; return $this; }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useClient } from './ClientProvider';
 import type { Session } from '../../app/auth';
@@ -36,9 +36,11 @@ export const PermissionProvider = ({ children }: { children: React.ReactNode }) 
   const [role, setRole] = useState<string | null>(null);
   const [roleLabel, setRoleLabel] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const accessTokenRef = useRef(session?.accessToken);
+  accessTokenRef.current = session?.accessToken;
 
   const fetchPermissions = useCallback(async () => {
-    if (!session?.accessToken || !client?.id) {
+    if (!accessTokenRef.current || !client?.id) {
       setLoading(false);
       return;
     }
@@ -46,7 +48,7 @@ export const PermissionProvider = ({ children }: { children: React.ReactNode }) 
     try {
       const res = await fetch('/api/me/permissions', {
         headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
+          'Authorization': `Bearer ${accessTokenRef.current}`,
           'X-Client-Id': String(client.id),
           'Accept': 'application/json',
         },
@@ -63,7 +65,7 @@ export const PermissionProvider = ({ children }: { children: React.ReactNode }) 
     } finally {
       setLoading(false);
     }
-  }, [session?.accessToken, client?.id]);
+  }, [client?.id]);
 
   useEffect(() => {
     setLoading(true);

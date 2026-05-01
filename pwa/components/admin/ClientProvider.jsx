@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 const ClientContext = createContext(null);
@@ -20,6 +20,10 @@ export const ClientProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [clientRole, setClientRole] = useState(null);
     const [roleMap, setRoleMap] = useState({});
+    const [userStatus, setUserStatus] = useState('loading');
+    const [currentUser, setCurrentUser] = useState(null);
+    const accessTokenRef = useRef(null);
+    accessTokenRef.current = session?.accessToken;
 
     useEffect(() => {
         const storedClient = sessionStorage.getItem('client');
@@ -35,13 +39,14 @@ export const ClientProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        if (status !== 'authenticated' || !session?.accessToken) return;
+        if (status !== 'authenticated' || !accessTokenRef.current) return;
         fetchClients();
-    }, [status, session?.accessToken]);
+    }, [status]);
 
     const fetchClients = async () => {
         try {
-            const token = session.accessToken;
+            const token = accessTokenRef.current;
+            if (!token) return;
             const decoded = decodeJwt(token);
             const roles = decoded?.realm_access?.roles || [];
             const isSuperAdmin = roles.includes('super_admin') || roles.includes('ROLE_SUPER_ADMIN');
@@ -54,37 +59,63 @@ export const ClientProvider = ({ children }) => {
             let ucrEntries = [];
 
             if (isSuperAdmin) {
+                setUserStatus('ok');
                 const res = await fetch('/clients?pagination=false', { headers });
                 const data = await res.json();
                 memberList = data['hydra:member'] || [];
             } else {
-                const email = decoded?.email || session.user?.email;
+                const email = decoded?.email || session?.user?.email;
                 if (email) {
                     const res = await fetch(`/users?email=${encodeURIComponent(email)}`, { headers });
                     const data = await res.json();
                     const users = data['hydra:member'] || [];
-                    if (users.length > 0) {
-                        const userId = users[0]['@id']?.split('/').pop() || users[0].id;
-                        const userClients = users[0].clients || [];
-                        const clientIds = userClients.map(c => {
-                            if (typeof c === 'string') return c.split('/').pop();
-                            return c.id || c['@id']?.split('/').pop();
-                        }).filter(Boolean);
 
-                        if (clientIds.length > 0) {
-                            const params = clientIds.map(id => `id[]=${id}`).join('&');
-                            const fullRes = await fetch(`/clients?${params}&pagination=false`, { headers });
-                            const fullData = await fullRes.json();
-                            memberList = fullData['hydra:member'] || [];
-                        }
-
-                        const ucrRes = await fetch(
-                            `/user_client_roles?user=/users/${userId}&pagination=false`,
-                            { headers }
-                        );
-                        const ucrData = await ucrRes.json();
-                        ucrEntries = ucrData['hydra:member'] || [];
+                    if (users.length === 0) {
+                        setUserStatus('no_clients');
+                        setLoading(false);
+                        return;
                     }
+
+                    const user = users[0];
+                    setCurrentUser(user);
+                    const userClients = user.clients || [];
+
+                    if (userClients.length === 0) {
+                        setUserStatus('no_clients');
+                        setLoading(false);
+                        return;
+                    }
+
+                    const usableClients = userClients.filter(c =>
+                        c.active !== false && c.subscriptionStatus !== 'suspended' && c.subscriptionStatus !== 'cancelled'
+                    );
+
+                    if (usableClients.length === 0) {
+                        setUserStatus('no_active');
+                        setLoading(false);
+                        return;
+                    }
+
+                    setUserStatus('ok');
+                    const userId = user['@id']?.split('/').pop() || user.id;
+                    const clientIds = userClients.map(c => {
+                        if (typeof c === 'string') return c.split('/').pop();
+                        return c.id || c['@id']?.split('/').pop();
+                    }).filter(Boolean);
+
+                    if (clientIds.length > 0) {
+                        const params = clientIds.map(id => `id[]=${id}`).join('&');
+                        const fullRes = await fetch(`/clients?${params}&pagination=false`, { headers });
+                        const fullData = await fullRes.json();
+                        memberList = fullData['hydra:member'] || [];
+                    }
+
+                    const ucrRes = await fetch(
+                        `/user_client_roles?user=/users/${userId}&pagination=false`,
+                        { headers }
+                    );
+                    const ucrData = await ucrRes.json();
+                    ucrEntries = ucrData['hydra:member'] || [];
                 }
             }
 
@@ -176,7 +207,8 @@ export const ClientProvider = ({ children }) => {
         <ClientContext.Provider value={{
             client, clients, loading,
             clientRole, isAdmin, isSuperAdmin,
-            updateClient, switchClient
+            updateClient, switchClient,
+            userStatus, currentUser, refreshUser: fetchClients,
         }}>
             { children }
         </ClientContext.Provider>
