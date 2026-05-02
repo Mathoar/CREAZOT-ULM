@@ -84,7 +84,9 @@ class NotificationService
             'to_raw' => ltrim($formattedTo, '+'),
             'body' => $sanitizedBody,
             'sender_id' => $this->getSenderId($client) ?? '',
-            'sender_id_raw' => $client->getSmsSenderId() ? substr($client->getSmsSenderId(), 0, 11) : '',
+            'sender_id_raw' => $client->isSmsSenderIdApproved() && $client->getSmsSenderId()
+                ? substr($client->getSmsSenderId(), 0, 11)
+                : '',
         ]);
 
         $messageId = $result['normalized']['messageId']

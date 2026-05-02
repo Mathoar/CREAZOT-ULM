@@ -471,12 +471,19 @@ const SmsSenderIdInput = () => {
     const hasSMS = useWatch({ name: 'hasSMS' });
     if (!hasSMS) return null;
     return (
-        <TextInput
-            source="smsSenderId"
-            label="Expéditeur SMS (nom ou numéro)"
-            fullWidth
-            helperText="Max 11 caractères alphanumériques (ex: Survol Run, Planetair) ou numéro au format +33..."
-        />
+        <>
+            <TextInput
+                source="smsSenderId"
+                label="Expéditeur SMS (nom ou numéro)"
+                fullWidth
+                helperText="Max 11 caractères alphanumériques (ex: Survol Run, Planetair) ou numéro au format +33..."
+            />
+            <BooleanInput
+                source="smsSenderIdApproved"
+                label="Nom d'expéditeur approuvé par le fournisseur SMS"
+                helperText="Activez uniquement lorsque le Sender ID a été validé par le fournisseur (ex: TextingHouse). Tant que désactivé, les SMS partent avec un expéditeur générique."
+            />
+        </>
     );
 };
 
@@ -711,80 +718,76 @@ export const ClientsEdit = () => {
                             </Box>
                         </Box>
                         <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
-                            <Box flex={1} />
                             <Box flex={1}>
                                 <BooleanInput source="hasWeightCollection" label="Collecte du poids passager" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasMicrotrakTag" label="Balise(s) Microtrak" fullWidth/>
                             </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasWebshop" label="Site e-commerce lié" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasIndividualFlightLogs" label="Carnets de vols individuels" fullWidth/>
                             </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="useAvailabilityFilter" label="Fitrer sur les disponibilités" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasPaymentManagement" label="Gestion des paiements" fullWidth/>
                             </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasGifts" label="Gestion des prépaiements" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasExpensesManagement" label="Gestion des dépenses" fullWidth/>
                             </Box>
-                            <Box flex={1}>
-                            <BooleanInput source="hasGroupUpdate" label="Mise à jour des groupes" fullWidth/>
-                        </Box>
                         </Box>
                         <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
+                            <Box flex={1}>
+                                <BooleanInput source="hasGroupUpdate" label="Mise à jour des groupes" fullWidth/>
+                            </Box>
                             <Box flex={1}>
                                 <BooleanInput source="hasNotam" label="NOTAMs / SNOWTAMs" fullWidth/>
                             </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasAI" label="Fonctions IA (Briefing, NOTAM, Kimi)" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasCams" label="Caméras Windy" fullWidth/>
                             </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasAiReservationAssistant" label="Assistant IA réservation (email)" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasVoiceAssistant" label="Assistant Vocal (téléphone)" fullWidth/>
                             </Box>
+                        </Box>
+                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasSMS" label="Notifications SMS" fullWidth/>
                             </Box>
-                        </Box>
-                        <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
                                 <BooleanInput source="hasPlanification" label="Planification" fullWidth/>
                             </Box>
-                            <Box flex={1}>
-                                <BooleanInput source="hasTraining" label="Module Formation" fullWidth/>
-                            </Box>
                         </Box>
                         <Box display="flex" gap={2} flexWrap="nowrap" width="100%">
                             <Box flex={1}>
+                                <BooleanInput source="hasTraining" label="Module Formation" fullWidth/>
+                            </Box>
+                            <Box flex={1}>
                                 <BooleanInput source="hasManex" label="Module MANEX" fullWidth/>
                             </Box>
-                            <Box flex={1} />
                         </Box>
                         <SmsSenderIdInput />
                         <SmsBillingInfo />

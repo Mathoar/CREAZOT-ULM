@@ -4,7 +4,18 @@ import { getSession, signIn, signOut } from "next-auth/react";
 import { NEXT_PUBLIC_OIDC_SERVER_URL } from "../../config/keycloak";
 
 const forceSignIn = () => {
-  sessionStorage.removeItem('client');
+  const key = '_signInAttempt';
+  const now = Date.now();
+  const last = Number(sessionStorage.getItem(key) || '0');
+
+  if (now - last < 15_000) {
+    sessionStorage.removeItem(key);
+    sessionStorage.removeItem('client');
+    window.location.href = '/auth/error';
+    return;
+  }
+
+  sessionStorage.setItem(key, String(now));
   window.location.href = `/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`;
 };
 

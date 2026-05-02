@@ -428,6 +428,10 @@ class Client
     #[Assert\Length(max: 11, maxMessage: 'Le Sender ID SMS ne peut pas dépasser 11 caractères')]
     private ?string $smsSenderId = null;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private bool $smsSenderIdApproved = false;
+
     #[ORM\Column(type: 'integer', options: ['default' => 0])]
     private int $smsCount = 0;
 
@@ -1635,6 +1639,17 @@ class Client
     public function setSmsSenderId(?string $smsSenderId): static
     {
         $this->smsSenderId = $smsSenderId;
+        return $this;
+    }
+
+    public function isSmsSenderIdApproved(): bool
+    {
+        return $this->smsSenderIdApproved;
+    }
+
+    public function setSmsSenderIdApproved(bool $smsSenderIdApproved): static
+    {
+        $this->smsSenderIdApproved = $smsSenderIdApproved;
         return $this;
     }
 

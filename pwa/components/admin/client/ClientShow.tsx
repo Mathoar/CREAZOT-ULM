@@ -54,6 +54,7 @@ export const ClientShow = () => {
                     <BooleanField source="hasOriginContact" label="Origine du contact" textAlign="center"/>
                     <BooleanField source="hasLandingManagement" label="Gestion des atterrissages" textAlign="center"/>
                     <BooleanField source="hasPassengerRegistration" label="Enregistrement des passagers" textAlign="center"/>
+                    <BooleanField source="hasWeightCollection" label="Collecte du poids passager" textAlign="center"/>
                     <BooleanField source="hasMicrotrakTag" label="Balise(s) Microtrak" textAlign="center"/>
                     <BooleanField source="hasWebshop" label="Site e-commerce lié" textAlign="center"/>
                     <BooleanField source="hasIndividualFlightLogs" label="Carnets de vols individuels" textAlign="center"/>
@@ -69,7 +70,10 @@ export const ClientShow = () => {
                     <BooleanField source="hasVoiceAssistant" label="Assistant Vocal (téléphone)" textAlign="center"/>
                     <BooleanField source="hasSMS" label="Notifications SMS" textAlign="center"/>
                     <BooleanField source="hasPlanification" label="Planification" textAlign="center"/>
+                    <BooleanField source="hasTraining" label="Module Formation" textAlign="center"/>
+                    <BooleanField source="hasManex" label="Module MANEX" textAlign="center"/>
                     <TextField source="smsSenderId" label="Expéditeur SMS"/>
+                    <BooleanField source="smsSenderIdApproved" label="Expéditeur SMS approuvé" textAlign="center"/>
                     <TextField source="assistantCustomInstructions" label="Consignes personnalisées IA"/>
                 </TabbedShowLayout.Tab> }
                 <TabbedShowLayout.Tab label="Dashboard">
