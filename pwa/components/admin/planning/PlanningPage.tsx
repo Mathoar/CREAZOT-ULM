@@ -348,12 +348,12 @@ export const PlanningPage = () => {
           label="Message à envoyer"
           value={messageBody}
           onChange={(e) => setMessageBody(e.target.value)}
-          placeholder="Bonjour {{nom}}, votre vol {{circuit}} est confirmé le {{date}} à {{heure}}. Pilote : {{pilote}}. — {{structure}}"
+          placeholder="Bonjour {{nom}}, votre vol {{circuit}} est confirmé le {{date}} à {{heure}}. Pilote : {{pilote}}. — {{enseigne}}"
           sx={{ mb: 1 }}
         />
 
         <Typography variant="caption" color="text.secondary" display="block" mb={2}>
-          Variables : {"{{nom}}"}, {"{{circuit}}"}, {"{{date}}"}, {"{{heure}}"}, {"{{pilote}}"}, {"{{code}}"}, {"{{structure}}"}, {"{{telephone}}"}, {"{{email}}"}, {"{{nb_personnes}}"}, {"{{lien_briefing}}"}
+          Variables : {"{{nom}}"}, {"{{circuit}}"}, {"{{date}}"}, {"{{heure}}"}, {"{{pilote}}"}, {"{{code}}"}, {"{{enseigne}}"}, {"{{structure}}"}, {"{{telephone}}"}, {"{{email}}"}, {"{{nb_personnes}}"}, {"{{lien_briefing}}"}
         </Typography>
 
         {method === "sms" && (

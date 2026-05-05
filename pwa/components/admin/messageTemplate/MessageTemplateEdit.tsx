@@ -13,7 +13,7 @@ export const MessageTemplateEdit = () => (
         helperText="Estimation calculée en remplaçant les variables par des valeurs typiques (le résultat final pourra varier selon les réservations)."
       />
       <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-        Variables disponibles : {"{{nom}}"}, {"{{circuit}}"}, {"{{date}}"}, {"{{heure}}"}, {"{{pilote}}"}, {"{{code}}"}, {"{{structure}}"}, {"{{telephone}}"}, {"{{email}}"}, {"{{nb_personnes}}"}, {"{{lien_briefing}}"} (lien vers la page publique de briefing — uniquement si module Planification actif)
+        Variables disponibles : {"{{nom}}"}, {"{{circuit}}"}, {"{{date}}"}, {"{{heure}}"}, {"{{pilote}}"}, {"{{code}}"}, {"{{enseigne}}"}, {"{{structure}}"}, {"{{telephone}}"}, {"{{email}}"}, {"{{nb_personnes}}"}, {"{{lien_briefing}}"} (lien vers la page publique de briefing — uniquement si module Planification actif)
       </Typography>
     </SimpleForm>
   </Edit>

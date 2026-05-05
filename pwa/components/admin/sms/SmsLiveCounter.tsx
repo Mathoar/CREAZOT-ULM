@@ -14,6 +14,7 @@ const TYPICAL_VALUES: Record<string, string> = {
   pilote: "Marc Hoarau",
   code: "RESA-1773645712810-UN206N",
   structure: "Planetair974",
+  enseigne: "Planetair974",
   telephone: "+33612345678",
   email: "passager@exemple.fr",
   nb_personnes: "2",

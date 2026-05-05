@@ -60,6 +60,7 @@ class NotificationService
             '{{pilote}}' => $pilote ? trim($pilote->getFirstName() . ' ' . $pilote->getLastName()) : '',
             '{{code}}' => $code ?? '',
             '{{structure}}' => $client->getName() ?? '',
+            '{{enseigne}}' => $client->getName() ?? '',
             '{{telephone}}' => $reservation->getTelephone() ?? '',
             '{{email}}' => $reservation->getEmail() ?? '',
             '{{nb_personnes}}' => (string) $nbPersonnes,
