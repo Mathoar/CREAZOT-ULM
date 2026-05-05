@@ -75,6 +75,10 @@ class PricingTier
     #[Groups(groups: ['PricingTier:read', 'PricingTier:write', 'PricingCategory:read'])]
     private ?float $pricePerAeronef = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    #[Groups(groups: ['PricingTier:read', 'PricingTier:write', 'PricingCategory:read'])]
+    private ?string $tierGroup = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -124,6 +128,18 @@ class PricingTier
     public function setPricePerAeronef(float $pricePerAeronef): static
     {
         $this->pricePerAeronef = $pricePerAeronef;
+
+        return $this;
+    }
+
+    public function getTierGroup(): ?string
+    {
+        return $this->tierGroup;
+    }
+
+    public function setTierGroup(?string $tierGroup): static
+    {
+        $this->tierGroup = $tierGroup;
 
         return $this;
     }

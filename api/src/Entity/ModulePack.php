@@ -97,6 +97,14 @@ class ModulePack
     #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
     private ?string $featuresList = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
+    private ?string $addonFrom = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
+    private bool $isAddon = false;
+
     /**
      * @var Collection<int, ModulePackPrice>
      */
@@ -218,6 +226,30 @@ class ModulePack
     public function setFeaturesList(?string $featuresList): static
     {
         $this->featuresList = $featuresList;
+
+        return $this;
+    }
+
+    public function getAddonFrom(): ?string
+    {
+        return $this->addonFrom;
+    }
+
+    public function setAddonFrom(?string $addonFrom): static
+    {
+        $this->addonFrom = $addonFrom;
+
+        return $this;
+    }
+
+    public function isAddon(): bool
+    {
+        return $this->isAddon;
+    }
+
+    public function setIsAddon(bool $isAddon): static
+    {
+        $this->isAddon = $isAddon;
 
         return $this;
     }
