@@ -117,12 +117,13 @@ class NotificationController extends AbstractController
 
         if ($status === 'delivered') {
             $phone = $this->normalizePhone($to);
+            $suffix = substr($phone, -9);
             $reservations = $this->em->getRepository(Reservation::class)
                 ->createQueryBuilder('r')
-                ->where('r.telephone LIKE :phone')
+                ->where("REPLACE(REPLACE(REPLACE(r.telephone, ' ', ''), '-', ''), '.', '') LIKE :phone")
                 ->andWhere('r.notificationSent = true')
                 ->andWhere('r.notificationReceived IS NULL OR r.notificationReceived = false')
-                ->setParameter('phone', '%' . substr($phone, -9))
+                ->setParameter('phone', '%' . $suffix)
                 ->orderBy('r.id', 'DESC')
                 ->setMaxResults(10)
                 ->getQuery()
