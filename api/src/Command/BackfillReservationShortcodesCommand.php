@@ -48,10 +48,8 @@ final class BackfillReservationShortcodesCommand extends Command
         $qb = $this->em->createQueryBuilder()
             ->select('r')
             ->from(Reservation::class, 'r')
-            ->join('r.client', 'c')
             ->where('r.publicShortcode IS NULL')
             ->andWhere('r.debut >= :now')
-            ->andWhere('c.hasPlanification = true')
             ->setParameter('now', $now);
 
         $reservations = $qb->getQuery()->getResult();

@@ -69,25 +69,39 @@ class NotificationService
         return str_replace(array_keys($variables), array_values($variables), $body);
     }
 
+    private const PATTERN_TEXTINGHOUSE = 'textinghouse_sms';
+    private const PATTERN_TWILIO = 'twilio_sms';
+
     /**
-     * Envoie un SMS via le pattern d'intégration associé au client (capability sms_send).
-     * Supporte plusieurs providers (Twilio, MessageBird, …) sans modifier ce service.
-     * @return string L'identifiant du message renvoyé par le provider (sid Twilio, id MessageBird, …)
+     * Envoie un SMS via le bon provider selon le préfixe du numéro :
+     *   +262 → TextingHouse (route locale Réunion)
+     *   Tout le reste → Twilio (numéro +33 dédié)
+     * @return string L'identifiant du message renvoyé par le provider
      */
     public function sendSms(string $to, string $body, Client $client): string
     {
-        $formattedTo = $this->formatPhoneNumber($to);
+        $formattedTo = $this->formatPhoneNumber($to, $client);
         $sanitizedBody = $this->gsmSanitizer->sanitize($body);
+        $patternCode = $this->resolveSmsPattern($formattedTo);
 
-        $result = $this->engine->executeByCapability(self::SMS_CAPABILITY, $client, null, [
+        $context = [
             'to' => $formattedTo,
             'to_raw' => ltrim($formattedTo, '+'),
             'body' => $sanitizedBody,
-            'sender_id' => $this->getSenderId($client) ?? '',
-            'sender_id_raw' => $client->isSmsSenderIdApproved() && $client->getSmsSenderId()
+        ];
+
+        if ($patternCode === self::PATTERN_TEXTINGHOUSE) {
+            $context['sender_id_raw'] = $client->isSmsSenderIdApproved() && $client->getSmsSenderId()
                 ? substr($client->getSmsSenderId(), 0, 11)
-                : '',
-        ]);
+                : '';
+            $context['sender_id'] = '';
+        } else {
+            $settings = $this->getSiteSettings();
+            $context['sender_id'] = $settings->getTwilioFromNumber() ?? '';
+            $context['sender_id_raw'] = '';
+        }
+
+        $result = $this->engine->execute($patternCode, $client, null, $context);
 
         $messageId = $result['normalized']['messageId']
             ?? $result['raw']['sid']
@@ -97,15 +111,28 @@ class NotificationService
         $client->incrementSmsCount();
         $this->em->flush();
 
-        $this->logger->info('SMS envoyé via pattern', [
+        $this->logger->info('SMS envoyé via {pattern}', [
             'to' => $formattedTo,
             'messageId' => $messageId,
-            'pattern' => $result['meta']['pattern'] ?? null,
+            'pattern' => $patternCode,
             'clientId' => $client->getId(),
             'smsCount' => $client->getSmsCount(),
         ]);
 
         return (string) $messageId;
+    }
+
+    /**
+     * +262 → TextingHouse (route locale Réunion, fiable)
+     * Tout le reste → Twilio (numéro +33, routes directes opérateurs métro)
+     */
+    private function resolveSmsPattern(string $formattedPhone): string
+    {
+        if (str_starts_with($formattedPhone, '+262')) {
+            return self::PATTERN_TEXTINGHOUSE;
+        }
+
+        return self::PATTERN_TWILIO;
     }
 
     /**
@@ -209,19 +236,39 @@ class NotificationService
         return substr($clean, 0, 11) ?: null;
     }
 
-    private function formatPhoneNumber(string $phone): string
+    private const COUNTRY_DIAL_CODES = [
+        'FR' => '33',
+        'RE' => '262',
+        'GP' => '590',
+        'MQ' => '596',
+        'GF' => '594',
+        'YT' => '262',
+        'NC' => '687',
+        'PF' => '689',
+        'BE' => '32',
+        'CH' => '41',
+        'LU' => '352',
+    ];
+
+    private function formatPhoneNumber(string $phone, ?Client $client = null): string
     {
         $phone = preg_replace('/[^0-9+]/', '', $phone);
-        if (str_starts_with($phone, '0') && strlen($phone) === 10) {
-            return '+33' . substr($phone, 1);
+
+        if (str_starts_with($phone, '+')) {
+            return $phone;
         }
-        if (str_starts_with($phone, '06') || str_starts_with($phone, '07')) {
-            return '+33' . substr($phone, 1);
+
+        $dialCode = '33';
+        if ($client?->getCountryCode()) {
+            $isoCode = $client->getCountryCode()->getCode();
+            $dialCode = self::COUNTRY_DIAL_CODES[$isoCode] ?? '33';
         }
-        if (!str_starts_with($phone, '+')) {
-            return '+' . $phone;
+
+        if (str_starts_with($phone, '0')) {
+            return '+' . $dialCode . substr($phone, 1);
         }
-        return $phone;
+
+        return '+' . $phone;
     }
 
     private function getSiteSettings(): SiteSettings

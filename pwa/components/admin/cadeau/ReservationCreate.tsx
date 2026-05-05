@@ -186,9 +186,10 @@ const PrepaymentHelperText = ({ prepayments }) => {
     const  data = prepayments.find(p => p.id === selectedId);
     
     if (!data) return null;
-    const {quantite, circuit, options } = data;
+    const {quantite, circuit, selectedOptions } = data;
+    const hasOptions = Array.isArray(selectedOptions) && selectedOptions.length > 0;
 
-    return `${quantite ?? 1} ${ circuit?.nom } ${ isDefined(options) ? ` avec ${ options.nom }` : ''}`;
+    return `${quantite ?? 1} ${ circuit?.nom } ${ hasOptions ? ` avec ${ selectedOptions.map(o => o.nom).join(', ') }` : ''}`;
 };
 
 const CustomToolbar = ({ debut }) => {
@@ -237,7 +238,6 @@ export const ReservationCreate = () => {
   const location = useLocation();
   const dataProvider = useDataProvider();
   const isOperating = useRef(false);
-  const [options, setOptions] = useState([]);
   const [circuits, setCircuits] = useState([]);
   const [prepayments, setPrepayments] = useState([]);
   const searchParams = new URLSearchParams(location.search);
@@ -246,7 +246,6 @@ export const ReservationCreate = () => {
   const [defaultValues, setDefaultValues] = useState({ debut: debut || new Date((new Date()).setHours(7,0,0)), prepayment: '' });
 
   useEffect(() => {
-    getOptions();
     getCircuits();
   }, []);
 
@@ -267,12 +266,6 @@ export const ReservationCreate = () => {
   fetchPrepayment();
 }, [prepaymentIdFromUrl])
 
-  const getOptions = () => {
-    dataProvider
-        .getList("options", {})
-        .then(({ data }) => setOptions(data));
-  };
-
   const getCircuits = () => {
     dataProvider
         .getList("circuits", {})
@@ -287,7 +280,11 @@ export const ReservationCreate = () => {
     try {  
       const selection = prepayments.find(p => p['@id'] === prepayment);
       const { telephone, email, quantite, beneficiaire, circuit, origine } = selection;
-      const selectedOptions = clientWithOptions(client) ? getOptionsArray(selection.options, quantite ?? 1, options) : [];
+      const prepaymentOpts = selection.selectedOptions || [];
+      const optionIris = clientWithOptions(client) && isDefinedAndNotVoid(prepaymentOpts)
+        ? prepaymentOpts.map(o => typeof o === 'string' ? o : o['@id']).filter(Boolean)
+        : [];
+      const prix = getTotalPrice(circuit, prepaymentOpts, origine);
       const data = {
         telephone: telephone ?? '',
         email: email ?? '',
@@ -311,13 +308,9 @@ export const ReservationCreate = () => {
       };
 
       for (let i = 0; i < data.quantite; i++) {
-        const option = isDefined(selectedOptions?.[i]) ? selectedOptions[i] : null;
-        const prix = getTotalPrice(circuit, option, origine);
-        const newData = {...data, option: getFormattedValueForBackEnd(option), prix };
-
-        await create('reservations', {data: newData});
-        await updatePrepayment(selection);
+        await create('reservations', {data: {...data, selectedOptions: optionIris, prix }});
       }
+      await updatePrepayment(selection);
       notify(`${ data.quantite > 1 ? 'Les réservations ont bien été enregistrées.' : 'La réservation a bien été enregistrée.' }`, { type: 'info' });
       if (debut) {
         const dateStr = new Date(data.debut).toISOString().slice(0, 10);
@@ -338,38 +331,29 @@ export const ReservationCreate = () => {
     }
   };
 
-  const getTotalPrice = (circuit, option, origines) => {
+  const getTotalPrice = (circuit, selectedOpts, origines) => {
       const maxOriginDiscount = isDefinedAndNotVoid(origines) ? getMaxDiscountFromOrigin(origines) : 0;
-      return (isDefined(circuit?.prix) ? circuit.prix : 0) * (1 - (maxOriginDiscount / 100)) + (isDefined(option?.prix) ? option.prix : 0);
+      const optionsTotal = Array.isArray(selectedOpts) ? selectedOpts.reduce((sum, o) => sum + (o?.prix || 0), 0) : 0;
+      return (isDefined(circuit?.prix) ? circuit.prix : 0) * (1 - (maxOriginDiscount / 100)) + optionsTotal;
   };
         
   const getMaxDiscountFromOrigin = origines =>  origines.map(o => o.discount).reduce((max, current) => current > max ? current : max, 0);
 
-  const getOptionsArray = (selectedOptions, quantite, bddOptions) => {
-      let options = isDefinedAndNotVoid(selectedOptions?.options) ? selectedOptions.options.map(o => bddOptions.find(option => option['@id'] === getFormattedValueForBackEnd(o))) : [];
-      const missingInputs = quantite - options.length;
-      if (missingInputs > 0) {
-        for (let i = 0; i < missingInputs; i++) {
-          options.unshift(null);
-        }
-      }
-      return options;
-  };
-
   const getFormattedPrepayment = prepayment => {
-    const { circuit, options, option, origine } = prepayment; 
+    const { circuit, options, option, origine, selectedOptions } = prepayment; 
     return {
       ...prepayment, 
       circuit: isDefined(circuit) ? typeof circuit === 'string' ? circuit : circuit['@id'] : null,
       options: isDefined(options) ? typeof options === 'string' ? options : options['@id'] : null,
       option: isDefined(option) ? typeof option === 'string' ? option : option['@id'] : null,
+      selectedOptions: isDefinedAndNotVoid(selectedOptions) ? selectedOptions.map(o => typeof o === 'string' ? o : o['@id']) : [],
       origine: isDefinedAndNotVoid(origine) ? origine.map(o => typeof o === 'string' ? o : o['@id']) : []
     };
   };
 
   const updatePrepayment = async prepayment => {
     const formattedPrepayment = getFormattedPrepayment(prepayment);
-    await update('reservations', {
+    await update('cadeaux', {
       id: formattedPrepayment.id,
       data: {...formattedPrepayment, used: true, sendEmail: false},
       previousData: formattedPrepayment

@@ -6,9 +6,11 @@ use App\Entity\Cadeau;
 use App\Entity\Client;
 use App\Entity\Combinaison;
 use App\Entity\Circuit;
+use App\Entity\Option;
 use App\Entity\Origine;
 use App\Repository\CircuitRepository;
 use App\Repository\CombinaisonRepository;
+use App\Repository\OptionRepository;
 use App\Repository\OrigineRepository;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
@@ -18,6 +20,7 @@ class WixPrepaymentFactory implements PrepaymentFactoryInterface
     public function __construct(
         private CircuitRepository $circuitRepository,
         private CombinaisonRepository $combinaisonRepository,
+        private OptionRepository $optionRepository,
         private OrigineRepository $origineRepository,
         private LoggerInterface $logger,
     ) {}
@@ -48,7 +51,8 @@ class WixPrepaymentFactory implements PrepaymentFactoryInterface
             $quantity = $this->getInt($item['quantity'] ?? 1, 1);
 
             $circuit = $this->findCircuit($webshopId, $client);
-            $options = $this->getOptions($item, $quantity, $client);
+            $combinaison = $this->getCombinaison($item, $quantity, $client);
+            $options = $this->resolveOptionsFromCombinaison($combinaison);
             $prixTotal = $this->getFloat($item['totalPrice'] ?? null, $this->getDefaultPrice($circuit, $options, $quantity));
 
             if ($client) {
@@ -68,15 +72,18 @@ class WixPrepaymentFactory implements PrepaymentFactoryInterface
                 ->setSendEmail(false)
                 ->setUsed(false)
                 ->setCircuit($circuit)
-                ->setOptions($options)
                 ->addOrigine($origine)
                 ->setPrix($prixTotal);
+
+            foreach ($options as $option) {
+                $prepayment->addSelectedOption($option);
+            }
 
             $this->logger->info('Wix: Cadeau créé', [
                 'code' => $code,
                 'webshopId' => $webshopId,
                 'circuit' => $circuit?->getNom(),
-                'options' => $options?->getNom(),
+                'options' => array_map(fn(Option $o) => $o->getNom(), $options),
                 'clientId' => $client?->getId(),
                 'prix' => $prixTotal,
             ]);
@@ -142,7 +149,7 @@ class WixPrepaymentFactory implements PrepaymentFactoryInterface
         return substr(base_convert(time(), 10, 36), -6) . substr(base_convert(mt_rand(), 10, 36), 0, 6);
     }
 
-    private function getOptions(array $item, int $quantity, ?Client $client): ?Combinaison
+    private function getCombinaison(array $item, int $quantity, ?Client $client): ?Combinaison
     {
         $noOptions = ['aucune', 'sans option'];
         if (empty($item['options'])) return null;
@@ -155,6 +162,40 @@ class WixPrepaymentFactory implements PrepaymentFactoryInterface
         }
 
         return null;
+    }
+
+    /**
+     * @return Option[]
+     */
+    private function resolveOptionsFromCombinaison(?Combinaison $combinaison): array
+    {
+        if (!$combinaison) {
+            return [];
+        }
+
+        $jsonOptions = $combinaison->getOptions();
+        if (empty($jsonOptions) || !is_array($jsonOptions)) {
+            return [];
+        }
+
+        $resolved = [];
+        foreach ($jsonOptions as $entry) {
+            $iri = $entry['@id'] ?? null;
+            if (!$iri || !preg_match('#/options/(\d+)#', $iri, $matches)) {
+                continue;
+            }
+            $option = $this->optionRepository->find((int) $matches[1]);
+            if ($option) {
+                $resolved[] = $option;
+            } else {
+                $this->logger->warning('Wix: option introuvable depuis combinaison', [
+                    'iri' => $iri,
+                    'combinaisonId' => $combinaison->getId(),
+                ]);
+            }
+        }
+
+        return $resolved;
     }
 
     /**
@@ -189,11 +230,14 @@ class WixPrepaymentFactory implements PrepaymentFactoryInterface
         return $quantity >= 2 ? '2 Portes Photos' : 'Porte Photos';
     }
 
-    private function getDefaultPrice(?Circuit $circuit, ?Combinaison $options, int $quantity): float
+    /**
+     * @param Option[] $options
+     */
+    private function getDefaultPrice(?Circuit $circuit, array $options, int $quantity): float
     {
         $circuitPrice = $circuit ? $this->getFloat($circuit->getPrix(), 0) : 0;
-        $optionsPrice = $options ? $this->getFloat($options->getPrix(), 0) : 0;
-        return $quantity * ($circuitPrice + $optionsPrice);
+        $optionsPrice = array_sum(array_map(fn(Option $o) => $this->getFloat($o->getPrix(), 0), $options));
+        return $quantity * $circuitPrice + $optionsPrice;
     }
 
     private function getOrigine(string $origine, ?Client $client = null): ?Origine

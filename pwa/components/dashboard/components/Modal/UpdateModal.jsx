@@ -132,6 +132,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
             const reservation = {
                 ...consumer,
                 circuit: selectedCircuit['@id'],
+                option: getFormattedValueForBackEnd(consumer.option),
                 selectedOptions: optionIris,
                 pilote: getFormattedValueForBackEnd(selectedPilot),
                 avion: getFormattedValueForBackEnd(selectedAircraft),
@@ -442,7 +443,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
                                                 resource = "reservations"
                                             />
                                         </div>
-                                        { clientWithPatrolFlight(client) && aircrafts.length > 1 && <div className="my-4">
+                                        { clientWithPatrolFlight(client) && <div className="my-4">
                                             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                                                 Position
                                             </label>
@@ -455,7 +456,7 @@ export const UpdateModal = ({ toUpdate, setToUpdate, reservations, setReservatio
                                                     }}
                                                     className={`relative z-20 w-full appearance-none rounded-lg border border-stroke bg-transparent pl-12 pr-4 py-2 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input text-black dark:text-white h-[41px]`}
                                                 >
-                                                    { getPositionChoices(aircrafts.length).map(p => (
+                                                    { getPositionChoices(Math.max(aircrafts.length, 4)).map(p => (
                                                         <option key={p.id} value={p.id} className="text-body dark:text-bodydark">
                                                             {p.name}
                                                         </option>

@@ -11,9 +11,8 @@ use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Events;
 
 /**
- * À la création d'une réservation, génère automatiquement un publicShortcode si :
- *  - le client a hasPlanification = true
- *  - le shortcode n'est pas déjà défini
+ * À la création d'une réservation, génère automatiquement un publicShortcode
+ * si le shortcode n'est pas déjà défini.
  */
 #[AsDoctrineListener(event: Events::prePersist)]
 final class ReservationShortcodeSubscriber
@@ -28,11 +27,6 @@ final class ReservationShortcodeSubscriber
         }
 
         if ($entity->getPublicShortcode()) {
-            return;
-        }
-
-        $client = $entity->getClient();
-        if (!$client || !$client->getHasPlanification()) {
             return;
         }
 
