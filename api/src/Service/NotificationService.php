@@ -97,7 +97,8 @@ class NotificationService
             $context['sender_id'] = '';
         } else {
             $settings = $this->getSiteSettings();
-            $context['sender_id'] = $settings->getTwilioFromNumber() ?? '';
+            $fromNumber = $settings->getTwilioFromNumber() ?? '';
+            $context['sender_id'] = preg_replace('/[^0-9+]/', '', $fromNumber);
             $context['sender_id_raw'] = '';
         }
 
@@ -258,17 +259,37 @@ class NotificationService
             return $phone;
         }
 
-        $dialCode = '33';
-        if ($client?->getCountryCode()) {
-            $isoCode = $client->getCountryCode()->getCode();
-            $dialCode = self::COUNTRY_DIAL_CODES[$isoCode] ?? '33';
-        }
-
         if (str_starts_with($phone, '0')) {
+            $dialCode = $this->resolveDialCodeForLocalNumber($phone, $client);
             return '+' . $dialCode . substr($phone, 1);
         }
 
         return '+' . $phone;
+    }
+
+    /**
+     * Résout l'indicatif pour un numéro local (commençant par 0) selon le plan ARCEP :
+     *   0692/0693 → +262 (Réunion mobile)
+     *   0694      → +262 (Mayotte mobile)
+     *   06xx/07xx → +33  (métropole mobile, toujours)
+     *   Autres    → indicatif du client ou +33 par défaut
+     */
+    private function resolveDialCodeForLocalNumber(string $phone, ?Client $client): string
+    {
+        if (preg_match('/^069[234]/', $phone)) {
+            return '262';
+        }
+
+        if (preg_match('/^0[67]/', $phone)) {
+            return '33';
+        }
+
+        if ($client?->getCountryCode()) {
+            $isoCode = $client->getCountryCode()->getCode();
+            return self::COUNTRY_DIAL_CODES[$isoCode] ?? '33';
+        }
+
+        return '33';
     }
 
     private function getSiteSettings(): SiteSettings
