@@ -85,6 +85,18 @@ class ModulePack
     #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
     private int $sortOrder = 0;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
+    private ?string $tierGroup = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
+    private ?int $tierOrder = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(groups: ['ModulePack:read', 'ModulePack:write'])]
+    private ?string $featuresList = null;
+
     /**
      * @var Collection<int, ModulePackPrice>
      */
@@ -170,6 +182,42 @@ class ModulePack
     public function setSortOrder(int $sortOrder): static
     {
         $this->sortOrder = $sortOrder;
+
+        return $this;
+    }
+
+    public function getTierGroup(): ?string
+    {
+        return $this->tierGroup;
+    }
+
+    public function setTierGroup(?string $tierGroup): static
+    {
+        $this->tierGroup = $tierGroup;
+
+        return $this;
+    }
+
+    public function getTierOrder(): ?int
+    {
+        return $this->tierOrder;
+    }
+
+    public function setTierOrder(?int $tierOrder): static
+    {
+        $this->tierOrder = $tierOrder;
+
+        return $this;
+    }
+
+    public function getFeaturesList(): ?string
+    {
+        return $this->featuresList;
+    }
+
+    public function setFeaturesList(?string $featuresList): static
+    {
+        $this->featuresList = $featuresList;
 
         return $this;
     }
