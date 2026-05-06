@@ -113,7 +113,7 @@ const ADDON_FEATURES: { title: string; description: string; highlights: string[]
   },
   {
     title: "Briefing météo",
-    description: "IA pour l'analyse météo et l'aide à la décision pré-vol.",
+    description: "IA pour l'analyse météo et l'aide à la décision pré-vol. Inclus dans l'offre Premium.",
     highlights: ["Briefing intelligent", "Aide à la décision pré-vol", "Interprétation NOTAM"],
   },
 ];

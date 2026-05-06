@@ -84,7 +84,11 @@ export default function PricingPage() {
     const grouped: Record<string, Pack[]> = {};
     for (const tier of TIER_ORDER) grouped[tier] = [];
     for (const pack of packs) {
-      if (pack.addonFrom) continue;
+      if (pack.addonFrom && pack.addonFrom !== "essentiel") continue;
+      if (pack.addonFrom === "essentiel") {
+        grouped["premium"]?.push(pack);
+        continue;
+      }
       const tg = pack.tierGroup || "essentiel";
       if (!grouped[tg]) grouped[tg] = [];
       grouped[tg].push(pack);
@@ -96,6 +100,8 @@ export default function PricingPage() {
   }, [packs]);
 
   const addonPacks = useMemo(() => packs.filter((p) => !!p.addonFrom), [packs]);
+
+  const includedInPremium = (pack: Pack) => pack.addonFrom === "essentiel";
 
   const getAddonPrice = (packIri: string, catIri: string) =>
     prices.find((p) => p.modulePack === packIri && p.pricingCategory === catIri);
@@ -114,14 +120,15 @@ export default function PricingPage() {
     const aeronefTotal = activeAeronefCost + maintenanceCost;
 
     let addonsTotal = 0;
-    const addonDetails: { name: string; price: number }[] = [];
+    const addonDetails: { name: string; price: number; included: boolean }[] = [];
     for (const slug of simAddons) {
       const pack = packs.find((p) => p.slug === slug);
       if (!pack) continue;
+      const isFree = simTier === "premium" && pack.addonFrom === "essentiel";
       const pp = getAddonPrice(iri(pack, "module-packs"), simCategory);
-      const price = pp?.monthlyPrice ?? 0;
+      const price = isFree ? 0 : (pp?.monthlyPrice ?? 0);
       addonsTotal += price;
-      addonDetails.push({ name: pack.name, price });
+      addonDetails.push({ name: pack.name, price, included: isFree });
     }
 
     const total = aeronefTotal + addonsTotal;
@@ -333,16 +340,27 @@ export default function PricingPage() {
             <div className="grid gap-5 md:grid-cols-2">
               {addonPacks.map((pack) => {
                 const price = catIri ? getAddonPrice(iri(pack, "module-packs"), catIri) : null;
+                const isPremiumIncluded = includedInPremium(pack);
                 return (
-                  <div key={pack.id} className="rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  <div key={pack.id} className={`rounded-xl border p-6 hover:shadow-md transition-shadow ${isPremiumIncluded ? "border-purple-200 bg-purple-50/30" : "border-gray-200"}`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{pack.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-bold text-gray-900">{pack.name}</h3>
+                          {isPremiumIncluded && (
+                            <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                              Inclus dans Premium
+                            </span>
+                          )}
+                        </div>
                         {pack.description && <p className="mt-1 text-sm text-gray-500">{pack.description}</p>}
                       </div>
                       <div className="text-right flex-shrink-0 ml-4">
                         <span className="text-2xl font-bold text-gray-900">{price?.monthlyPrice ?? "—"}</span>
                         <span className="text-xs text-gray-400"> €/mois</span>
+                        {isPremiumIncluded && (
+                          <p className="text-xs text-purple-600 mt-0.5">si offre Essentiel</p>
+                        )}
                       </div>
                     </div>
                     {pack.featuresList && (
@@ -478,9 +496,13 @@ export default function PricingPage() {
                 )}
 
                 {simResult.addonDetails.map((a) => (
-                  <div key={a.name} className="flex items-center justify-between rounded-lg bg-cyan-50 px-4 py-3">
-                    <span className="text-sm text-cyan-800">Module {a.name}</span>
-                    <span className="font-semibold text-cyan-800">{a.price.toFixed(2)} €</span>
+                  <div key={a.name} className={`flex items-center justify-between rounded-lg px-4 py-3 ${a.included ? "bg-purple-50" : "bg-cyan-50"}`}>
+                    <span className={`text-sm ${a.included ? "text-purple-800" : "text-cyan-800"}`}>
+                      Module {a.name}{a.included && " — inclus dans Premium"}
+                    </span>
+                    <span className={`font-semibold ${a.included ? "text-purple-800" : "text-cyan-800"}`}>
+                      {a.included ? "0,00 €" : `${a.price.toFixed(2)} €`}
+                    </span>
                   </div>
                 ))}
 

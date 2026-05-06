@@ -26,6 +26,8 @@ export interface RegistrationData {
   };
   modules: {
     packIds: number[];
+    tier: string;
+    categorySlug: string;
   };
   user: {
     firstName: string;
@@ -41,7 +43,7 @@ const STEPS = ["Structure", "Modules", "Compte"];
 
 const initialData: RegistrationData = {
   club: { name: "", city: "", phone: "", email: "", nbAeronefs: 1, countryCode: "" },
-  modules: { packIds: [] },
+  modules: { packIds: [], tier: "essentiel", categorySlug: "" },
   user: {
     firstName: "",
     lastName: "",
@@ -125,6 +127,8 @@ export default function RegisterStepper() {
           modules: {
             packIds: data.modules.packIds,
             nbAeronefs: data.club.nbAeronefs,
+            tier: data.modules.tier,
+            categorySlug: data.modules.categorySlug,
           },
           user: {
             firstName: data.user.firstName,
@@ -195,6 +199,8 @@ export default function RegisterStepper() {
           <StepModules
             selectedPackIds={data.modules.packIds}
             nbAeronefs={data.club.nbAeronefs}
+            tier={data.modules.tier}
+            categorySlug={data.modules.categorySlug}
             onChange={updateModules}
           />
         )}
