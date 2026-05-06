@@ -57,13 +57,13 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
     },
     {
       title: "Gestion passagers (RGPD)",
-      description: "Inscription passagers conforme RGPD : fiche de poids, contact d'urgence. Obligation réglementaire ULM 2025.",
-      highlights: ["Formulaire conforme RGPD", "Fiche poids & contact urgence", "Obligation réglementaire"],
+      description: "Inscription passagers conforme RGPD avec fiche de poids. Obligation réglementaire ULM 2025.",
+      highlights: ["Formulaire conforme RGPD", "Fiche poids passager", "Obligation réglementaire"],
     },
     {
       title: "Tracking GPS",
-      description: "Position en temps réel de vos aéronefs via balise Microtrak, avec historique des trajectoires.",
-      highlights: ["Position temps réel", "Historique trajectoires", "Compatible Microtrak"],
+      description: "Position en temps réel de vos aéronefs via balise Microtrak.",
+      highlights: ["Position temps réel", "Compatible Microtrak"],
     },
   ],
   premium: [
@@ -83,9 +83,9 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
       highlights: ["Suivi encaissements & impayés", "Tracking origine client", "Statistiques fréquentation"],
     },
     {
-      title: "NOTAM & Sécurité",
-      description: "Consultation des NOTAM en vigueur pour vos terrains, avec analyse de pertinence.",
-      highlights: ["Mise à jour automatique", "Filtrage par zone", "Alertes critiques"],
+      title: "Espace aérien & Sécurité",
+      description: "Consultation des NOTAM et visualisation des conditions terrain via caméras intégrées.",
+      highlights: ["Consultation NOTAM temps réel", "Caméras terrain intégrées"],
     },
     {
       title: "Partenaires & Revendeurs",
@@ -104,7 +104,7 @@ const ADDON_FEATURES: { title: string; description: string; highlights: string[]
   {
     title: "Notifications SMS",
     description: "Envoi groupé de SMS aux passagers (rappels J-1, confirmations, briefings) avec suivi de livraison.",
-    highlights: ["Envoi groupé automatisé", "Suivi delivery Twilio/TextingHouse", "Templates personnalisables", "Planification J-1"],
+    highlights: ["Envoi groupé automatisé", "250 SMS inclus/mois", "Templates personnalisables", "Planification J-1"],
   },
   {
     title: "Formation pilote",
@@ -112,9 +112,9 @@ const ADDON_FEATURES: { title: string; description: string; highlights: string[]
     highlights: ["Leçons personnalisées", "Programmes structurés", "Grille de progression", "Validation instructeur"],
   },
   {
-    title: "Intelligence Artificielle",
-    description: "IA pour l'analyse météo, l'interprétation NOTAM et l'aide à la décision pré-vol.",
-    highlights: ["Briefing météo intelligent", "Aide à la décision pré-vol", "Interprétation NOTAM", "Caméras terrain intégrées"],
+    title: "Briefing météo",
+    description: "IA pour l'analyse météo et l'aide à la décision pré-vol.",
+    highlights: ["Briefing intelligent", "Aide à la décision pré-vol", "Interprétation NOTAM"],
   },
 ];
 
