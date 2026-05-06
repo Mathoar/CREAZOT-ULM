@@ -55,9 +55,11 @@ export default function PricingPage() {
       axios.get(`${API}/module-packs?pagination=false`, { headers: H }),
       axios.get(`${API}/module-pack-prices?pagination=false`, { headers: H }),
     ]).then(([c, t, p, pp]) => {
-      const cats = c.data["hydra:member"] || [];
+      const allTiers = (t.data["hydra:member"] || []).filter((x: PricingTier) => x.tierGroup && !x.tierGroup.startsWith("legacy"));
+      const activeCatIris = new Set(allTiers.map((x: PricingTier) => x.pricingCategory));
+      const cats = (c.data["hydra:member"] || []).filter((x: Category) => activeCatIris.has(iri(x, "pricing-categories")));
       setCategories(cats);
-      setPricingTiers((t.data["hydra:member"] || []).filter((x: PricingTier) => x.tierGroup && !x.tierGroup.startsWith("legacy")));
+      setPricingTiers(allTiers);
       setPacks((p.data["hydra:member"] || []).filter((x: Pack) => x.tierGroup !== "hidden"));
       setPrices(pp.data["hydra:member"] || []);
       const def = cats.find((x: Category) => x.isDefault) || cats[0];

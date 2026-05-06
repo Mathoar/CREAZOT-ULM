@@ -13,7 +13,7 @@ const TIER_META: Record<string, { label: string; tagline: string; description: s
   essentiel: {
     label: "Essentiel",
     tagline: "Conformité réglementaire & opérationnel",
-    description: "Le socle indispensable pour être conforme à la réglementation ULM 2025 et opérationnel au quotidien. Gestion de flotte, réservations, carnets de vol, NOTAM, passagers et tracking GPS.",
+    description: "Le socle indispensable pour être conforme à la réglementation ULM 2025 et opérationnel au quotidien. Gestion de flotte, réservations, carnets de vol, passagers RGPD et tracking GPS.",
     gradient: "from-blue-500 to-blue-600",
     icon: "🛡️",
   },
@@ -38,7 +38,7 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
     {
       title: "Réservations en ligne",
       description: "Système de réservation complet avec calendrier interactif et confirmations automatiques.",
-      highlights: ["Calendrier drag & drop", "Confirmation email automatique", "Options personnalisables"],
+      highlights: ["Calendrier drag & drop", "Confirmation email automatique", "Calendrier interactif"],
     },
     {
       title: "Gestion de flotte",
@@ -56,19 +56,14 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
       highlights: ["Enregistrement automatique", "Statistiques trafic", "Export données"],
     },
     {
-      title: "NOTAM & Sécurité",
-      description: "Consultation des NOTAM en vigueur pour vos terrains, avec analyse de pertinence.",
-      highlights: ["Mise à jour automatique", "Filtrage par zone", "Alertes critiques"],
-    },
-    {
-      title: "Gestion passagers",
-      description: "Inscription passagers conforme RGPD avec fiche de poids, contact d'urgence et suivi des origines.",
-      highlights: ["Formulaire RGPD", "Tracking origine", "Statistiques clientèle"],
+      title: "Gestion passagers (RGPD)",
+      description: "Inscription passagers conforme RGPD : fiche de poids, contact d'urgence. Obligation réglementaire ULM 2025.",
+      highlights: ["Formulaire conforme RGPD", "Fiche poids & contact urgence", "Obligation réglementaire"],
     },
     {
       title: "Tracking GPS",
       description: "Position en temps réel de vos aéronefs via balise Microtrak, avec historique des trajectoires.",
-      highlights: ["Position temps réel", "Historique trajectoires", "Alertes géofencing"],
+      highlights: ["Position temps réel", "Historique trajectoires", "Compatible Microtrak"],
     },
   ],
   premium: [
@@ -78,14 +73,19 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
       highlights: ["Bons cadeaux personnalisés", "Intégration Wix", "Commissions partenaires"],
     },
     {
-      title: "Suivi financier",
-      description: "Tableau de bord financier complet : encaissements, impayés, dépenses carburant et maintenance.",
-      highlights: ["Suivi encaissements", "Alertes impayés", "Ventilation dépenses"],
-    },
-    {
       title: "Options tarifaires",
       description: "Proposez des options sur vos vols : photos, vidéos, vol en patrouille, avec tarification personnalisable.",
       highlights: ["Tarification flexible", "Combinaisons d'options", "Ajout au panier simplifié"],
+    },
+    {
+      title: "Suivi financier & Analytique",
+      description: "Tableau de bord financier complet, suivi des origines clients et statistiques de fréquentation.",
+      highlights: ["Suivi encaissements & impayés", "Tracking origine client", "Statistiques fréquentation"],
+    },
+    {
+      title: "NOTAM & Sécurité",
+      description: "Consultation des NOTAM en vigueur pour vos terrains, avec analyse de pertinence.",
+      highlights: ["Mise à jour automatique", "Filtrage par zone", "Alertes critiques"],
     },
     {
       title: "Partenaires & Revendeurs",
