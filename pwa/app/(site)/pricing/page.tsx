@@ -17,39 +17,23 @@ const iri = (e: { "@id"?: string; id: number }, r: string) => e["@id"] || `/${r}
 const TIER_META: Record<string, { label: string; tagline: string; color: string; border: string; bg: string; icon: string }> = {
   essentiel: {
     label: "Essentiel",
-    tagline: "Conformité réglementaire",
+    tagline: "Conformité réglementaire & opérationnel",
     color: "text-blue-700",
-    border: "border-blue-200",
+    border: "border-blue-300",
     bg: "bg-blue-50",
     icon: "🛡️",
   },
-  confort: {
-    label: "Confort",
-    tagline: "Gestion commerciale",
-    color: "text-emerald-700",
-    border: "border-emerald-300",
-    bg: "bg-emerald-50",
-    icon: "📈",
-  },
   premium: {
     label: "Premium",
-    tagline: "Intelligence & Communication",
+    tagline: "Gestion commerciale complète",
     color: "text-purple-700",
-    border: "border-purple-200",
+    border: "border-purple-300",
     bg: "bg-purple-50",
     icon: "🚀",
   },
-  excellence: {
-    label: "Excellence",
-    tagline: "Tout inclus + IA Avancée",
-    color: "text-amber-700",
-    border: "border-amber-300",
-    bg: "bg-amber-50",
-    icon: "✨",
-  },
 };
 
-const TIER_ORDER = ["essentiel", "confort", "premium", "excellence"];
+const TIER_ORDER = ["essentiel", "premium"];
 
 export default function PricingPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -58,11 +42,10 @@ export default function PricingPage() {
   const [prices, setPrices] = useState<PackPrice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Simulator state
   const [simCategory, setSimCategory] = useState<string>("");
   const [simAeronefs, setSimAeronefs] = useState(3);
   const [simMaintenance, setSimMaintenance] = useState(0);
-  const [simTier, setSimTier] = useState("confort");
+  const [simTier, setSimTier] = useState("essentiel");
   const [simAddons, setSimAddons] = useState<string[]>([]);
 
   useEffect(() => {
@@ -74,8 +57,8 @@ export default function PricingPage() {
     ]).then(([c, t, p, pp]) => {
       const cats = c.data["hydra:member"] || [];
       setCategories(cats);
-      setPricingTiers(t.data["hydra:member"] || []);
-      setPacks(p.data["hydra:member"] || []);
+      setPricingTiers((t.data["hydra:member"] || []).filter((x: PricingTier) => x.tierGroup && !x.tierGroup.startsWith("legacy")));
+      setPacks((p.data["hydra:member"] || []).filter((x: Pack) => x.tierGroup !== "hidden"));
       setPrices(pp.data["hydra:member"] || []);
       const def = cats.find((x: Category) => x.isDefault) || cats[0];
       if (def) setSimCategory(iri(def, "pricing-categories"));
@@ -85,19 +68,16 @@ export default function PricingPage() {
 
   const defaultCat = categories.find((c) => c.isDefault) || categories[0];
 
-  // Get pricing tiers for a specific offer tier + category
   const getTierPricing = (tierGroup: string, catIri: string) =>
     pricingTiers
       .filter((t) => t.tierGroup === tierGroup && t.pricingCategory === catIri)
       .sort((a, b) => a.minAeronefs - b.minAeronefs);
 
-  // Get the per-aeronef price for specific fleet size
   const getAeronefPrice = (tierGroup: string, catIri: string, fleetSize: number) => {
     const tiers = getTierPricing(tierGroup, catIri);
     return tiers.find((t) => fleetSize >= t.minAeronefs && (t.maxAeronefs === null || fleetSize <= t.maxAeronefs));
   };
 
-  // Group packs by tier (non-addon packs)
   const packsByTier = useMemo(() => {
     const grouped: Record<string, Pack[]> = {};
     for (const tier of TIER_ORDER) grouped[tier] = [];
@@ -108,28 +88,16 @@ export default function PricingPage() {
       grouped[tg].push(pack);
     }
     for (const tier of TIER_ORDER) {
-      grouped[tier].sort((a, b) => (a.tierOrder ?? 0) - (b.tierOrder ?? 0));
+      grouped[tier]?.sort((a, b) => (a.tierOrder ?? 0) - (b.tierOrder ?? 0));
     }
     return grouped;
   }, [packs]);
 
-  // Addon packs (has addonFrom set)
   const addonPacks = useMemo(() => packs.filter((p) => !!p.addonFrom), [packs]);
 
-  // Available addons for a given tier
-  const availableAddons = (tierKey: string) => {
-    const tierIdx = TIER_ORDER.indexOf(tierKey);
-    return addonPacks.filter((p) => {
-      const addonTierIdx = TIER_ORDER.indexOf(p.addonFrom || "essentiel");
-      return tierIdx >= addonTierIdx;
-    });
-  };
-
-  // Get addon price
   const getAddonPrice = (packIri: string, catIri: string) =>
     prices.find((p) => p.modulePack === packIri && p.pricingCategory === catIri);
 
-  // Simulator computation
   const simResult = useMemo(() => {
     if (!simCategory || !categories.length) return null;
     const totalFleet = simAeronefs + simMaintenance;
@@ -179,54 +147,53 @@ export default function PricingPage() {
         <div className="mx-auto max-w-4xl px-6 text-center">
           <p className="mb-4 text-sm font-medium uppercase tracking-widest text-cyan-500">Tarification</p>
           <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
-            Un prix unique par aéronef
+            Simple, transparent, adapté à votre activité
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-400">
-            Choisissez votre offre, tout est inclus dans le prix par machine.
-            Ajoutez des modules complémentaires si besoin.
+            Deux offres claires. Des modules complémentaires à la carte.
+            Payez uniquement ce dont vous avez besoin.
           </p>
         </div>
       </section>
 
       {/* Tier cards */}
       <section className="bg-white py-20">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-5xl px-6">
           <div className="mx-auto max-w-3xl text-center mb-14">
-            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Nos offres</h2>
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Choisissez votre offre</h2>
             <p className="mt-4 text-base text-gray-500">
-              Chaque offre supérieure inclut toutes les fonctionnalités de l&apos;offre précédente.
-              Tarif dégressif selon la taille de votre flotte.
+              Tarif dégressif selon la taille de votre flotte. L&apos;offre Premium inclut toutes les fonctionnalités de l&apos;offre Essentiel.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {TIER_ORDER.map((tierKey, idx) => {
+          <div className="grid gap-8 md:grid-cols-2">
+            {TIER_ORDER.map((tierKey) => {
               const meta = TIER_META[tierKey];
               const tierPacks = packsByTier[tierKey] || [];
               const pricing = catIri ? getTierPricing(tierKey, catIri) : [];
               const startPrice = pricing[0]?.pricePerAeronef;
-              const isPopular = tierKey === "confort";
+              const isPopular = tierKey === "premium";
 
               return (
                 <div
                   key={tierKey}
-                  className={`relative flex flex-col rounded-2xl border-2 p-6 transition-all hover:shadow-lg ${
+                  className={`relative flex flex-col rounded-2xl border-2 p-8 transition-all hover:shadow-lg ${
                     isPopular ? `${meta.border} shadow-md` : "border-gray-200"
                   }`}
                 >
                   {isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-4 py-1 text-xs font-bold uppercase tracking-wide text-white">
-                      Populaire
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-purple-600 px-4 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                      Recommandé pour les pros
                     </span>
                   )}
 
-                  <div className="text-3xl mb-2">{meta.icon}</div>
-                  <h3 className={`text-xl font-bold ${meta.color}`}>{meta.label}</h3>
+                  <div className="text-4xl mb-3">{meta.icon}</div>
+                  <h3 className={`text-2xl font-bold ${meta.color}`}>{meta.label}</h3>
                   <p className="mt-1 text-sm text-gray-500">{meta.tagline}</p>
 
-                  <div className="my-5">
+                  <div className="my-6">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold text-gray-900">{startPrice ?? "—"}</span>
+                      <span className="text-5xl font-bold text-gray-900">{startPrice ?? "—"}</span>
                       <span className="text-sm text-gray-400">€/aéronef/mois</span>
                     </div>
                     {pricing.length > 1 && (
@@ -239,9 +206,9 @@ export default function PricingPage() {
                   <div className="h-px bg-gray-100 my-3" />
 
                   <div className="flex-1 space-y-3">
-                    {idx > 0 && (
-                      <p className="text-xs font-semibold text-gray-400 uppercase">
-                        Tout {TIER_META[TIER_ORDER[idx - 1]].label} +
+                    {tierKey === "premium" && (
+                      <p className="text-xs font-semibold text-gray-400 uppercase mb-2">
+                        Tout Essentiel +
                       </p>
                     )}
                     {tierPacks.map((pack) => (
@@ -249,7 +216,7 @@ export default function PricingPage() {
                         <p className="text-sm font-semibold text-gray-700">{pack.name}</p>
                         {pack.featuresList && (
                           <ul className="mt-0.5 space-y-0.5">
-                            {pack.featuresList.split(",").slice(0, 3).map((f, i) => (
+                            {pack.featuresList.split(",").map((f, i) => (
                               <li key={i} className="flex items-start gap-1.5 text-xs text-gray-500">
                                 <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>
                                 {f.trim()}
@@ -263,9 +230,9 @@ export default function PricingPage() {
 
                   <Link
                     href="/register"
-                    className={`mt-6 block w-full rounded-xl py-3 text-center text-sm font-bold transition ${
+                    className={`mt-8 block w-full rounded-xl py-3.5 text-center text-sm font-bold transition ${
                       isPopular
-                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                        ? "bg-purple-600 text-white hover:bg-purple-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
@@ -278,9 +245,9 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Grille tarifaire détaillée */}
+      {/* Grille tarifaire */}
       <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-4xl px-6">
           <div className="mx-auto max-w-2xl text-center mb-14">
             <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Grille tarifaire</h2>
             <p className="mt-4 text-base text-gray-500">
@@ -292,9 +259,9 @@ export default function PricingPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-900 text-white">
-                  <th className="px-4 py-4 text-left text-sm font-semibold">Flotte</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Flotte</th>
                   {TIER_ORDER.map((tk) => (
-                    <th key={tk} className="px-4 py-4 text-center text-sm font-semibold">
+                    <th key={tk} className="px-6 py-4 text-center text-sm font-semibold">
                       {TIER_META[tk].icon} {TIER_META[tk].label}
                     </th>
                   ))}
@@ -303,7 +270,7 @@ export default function PricingPage() {
               <tbody>
                 {catIri && getTierPricing("essentiel", catIri).map((bracket, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <td className="border-t border-gray-100 px-4 py-3 font-medium text-gray-700 text-sm">
+                    <td className="border-t border-gray-100 px-6 py-4 font-medium text-gray-700 text-sm">
                       {bracket.maxAeronefs
                         ? `${bracket.minAeronefs} à ${bracket.maxAeronefs}`
                         : `${bracket.minAeronefs}+`} aéronefs
@@ -311,9 +278,9 @@ export default function PricingPage() {
                     {TIER_ORDER.map((tk) => {
                       const t = getAeronefPrice(tk, catIri, bracket.minAeronefs);
                       return (
-                        <td key={tk} className="border-t border-gray-100 px-4 py-3 text-center">
+                        <td key={tk} className="border-t border-gray-100 px-6 py-4 text-center">
                           {t ? (
-                            <span className="text-lg font-bold text-gray-900">{t.pricePerAeronef}<span className="text-xs font-normal text-gray-400"> €</span></span>
+                            <span className="text-xl font-bold text-gray-900">{t.pricePerAeronef}<span className="text-xs font-normal text-gray-400"> €</span></span>
                           ) : "—"}
                         </td>
                       );
@@ -322,11 +289,11 @@ export default function PricingPage() {
                 ))}
                 {defaultCat?.maintenanceDiscount && (
                   <tr className="bg-amber-50">
-                    <td className="border-t border-amber-200 px-4 py-3 font-medium text-amber-800 text-sm">
+                    <td className="border-t border-amber-200 px-6 py-4 font-medium text-amber-800 text-sm">
                       Aéronef en maintenance
                     </td>
                     {TIER_ORDER.map((tk) => (
-                      <td key={tk} className="border-t border-amber-200 px-4 py-3 text-center">
+                      <td key={tk} className="border-t border-amber-200 px-6 py-4 text-center">
                         <span className="rounded-full bg-amber-200 px-3 py-0.5 text-xs font-semibold text-amber-800">
                           -{defaultCat.maintenanceDiscount}%
                         </span>
@@ -354,39 +321,37 @@ export default function PricingPage() {
         <section className="bg-white py-20">
           <div className="mx-auto max-w-5xl px-6">
             <div className="mx-auto max-w-2xl text-center mb-14">
-              <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Modules complémentaires</h2>
+              <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Modules à la carte</h2>
               <p className="mt-4 text-base text-gray-500">
-                Ajoutez des fonctionnalités à la carte, en forfait mensuel fixe.
+                Complétez votre offre avec les modules dont vous avez besoin.
+                Accessibles depuis n&apos;importe quelle offre, en forfait mensuel fixe.
               </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2">
               {addonPacks.map((pack) => {
                 const price = catIri ? getAddonPrice(iri(pack, "module-packs"), catIri) : null;
                 return (
-                  <div key={pack.id} className="rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                  <div key={pack.id} className="rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-base font-bold text-gray-900">{pack.name}</h3>
-                        {pack.description && <p className="mt-1 text-xs text-gray-500">{pack.description}</p>}
+                        <h3 className="text-lg font-bold text-gray-900">{pack.name}</h3>
+                        {pack.description && <p className="mt-1 text-sm text-gray-500">{pack.description}</p>}
                       </div>
-                      <div className="text-right flex-shrink-0 ml-3">
-                        <span className="text-lg font-bold text-gray-900">{price?.monthlyPrice ?? "—"}</span>
+                      <div className="text-right flex-shrink-0 ml-4">
+                        <span className="text-2xl font-bold text-gray-900">{price?.monthlyPrice ?? "—"}</span>
                         <span className="text-xs text-gray-400"> €/mois</span>
                       </div>
                     </div>
                     {pack.featuresList && (
-                      <ul className="mt-3 space-y-1">
+                      <ul className="mt-4 space-y-1.5">
                         {pack.featuresList.split(",").map((f, i) => (
-                          <li key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
+                          <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
                             <span className="text-green-500">✓</span>{f.trim()}
                           </li>
                         ))}
                       </ul>
                     )}
-                    <p className="mt-3 text-[11px] font-medium text-gray-400 uppercase">
-                      Disponible à partir de : {TIER_META[pack.addonFrom || "essentiel"]?.label}
-                    </p>
                   </div>
                 );
               })}
@@ -395,7 +360,7 @@ export default function PricingPage() {
         </section>
       )}
 
-      {/* Simulateur interactif */}
+      {/* Simulateur */}
       <section className="bg-gray-50 py-20">
         <div className="mx-auto max-w-4xl px-6">
           <div className="mx-auto max-w-2xl text-center mb-10">
@@ -407,7 +372,6 @@ export default function PricingPage() {
 
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Grille tarifaire */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Grille tarifaire</label>
                 <select
@@ -423,12 +387,11 @@ export default function PricingPage() {
                 </select>
               </div>
 
-              {/* Offre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Offre</label>
                 <select
                   value={simTier}
-                  onChange={(e) => { setSimTier(e.target.value); setSimAddons([]); }}
+                  onChange={(e) => { setSimTier(e.target.value); }}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
                 >
                   {TIER_ORDER.map((t) => (
@@ -437,7 +400,6 @@ export default function PricingPage() {
                 </select>
               </div>
 
-              {/* Aéronefs actifs */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Aéronefs actifs : <span className="font-bold text-cyan-700">{simAeronefs}</span>
@@ -452,7 +414,6 @@ export default function PricingPage() {
                 />
               </div>
 
-              {/* En maintenance */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   En maintenance : <span className="font-bold text-amber-700">{simMaintenance}</span>
@@ -468,12 +429,12 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Add-ons selection */}
-            {availableAddons(simTier).length > 0 && (
+            {/* Add-ons */}
+            {addonPacks.length > 0 && (
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <p className="text-sm font-medium text-gray-700 mb-3">Modules complémentaires :</p>
                 <div className="flex flex-wrap gap-2">
-                  {availableAddons(simTier).map((pack) => {
+                  {addonPacks.map((pack) => {
                     const pp = simCategory ? getAddonPrice(iri(pack, "module-packs"), simCategory) : null;
                     const isSelected = simAddons.includes(pack.slug);
                     return (

@@ -345,7 +345,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isDefined(client) && client.hasAI &&
+            { isDefined(client) && (client.hasAI || client.hasManex) &&
               <Menu.Item
                 to="/flight_rules"
                 primaryText="Règles de vol"
@@ -377,7 +377,7 @@ const CustomMenu = () => {
                 sx={{ pl: 3, backgroundColor: '#EFF2F5' }}
               />
             }
-            { isDefined(client) && client.hasPlanification && client.briefing &&
+            { isDefined(client) && (client.hasPlanification || client.hasManex) && client.briefing &&
               <Menu.Item
                 to={`/briefings/${encodeURIComponent(client.briefing['@id'] || '/briefings/' + client.briefing.id)}`}
                 primaryText="Briefing"

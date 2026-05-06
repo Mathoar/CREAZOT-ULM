@@ -79,7 +79,7 @@ class NotificationService
      *   Tout le reste → Twilio (numéro +33 dédié)
      * @return string L'identifiant du message renvoyé par le provider
      */
-    public function sendSms(string $to, string $body, Client $client): string
+    public function sendSms(string $to, string $body, Client $client, ?int $reservationId = null): string
     {
         $formattedTo = $this->formatPhoneNumber($to, $client);
         $sanitizedBody = $this->gsmSanitizer->sanitize($body);
@@ -96,6 +96,7 @@ class NotificationService
                 ? substr($client->getSmsSenderId(), 0, 11)
                 : '';
             $context['sender_id'] = '';
+            $context['climsgid'] = $reservationId ? 'resa-' . $reservationId : '';
         } else {
             $settings = $this->getSiteSettings();
             $fromNumber = $settings->getTwilioFromNumber() ?? '';
@@ -187,7 +188,7 @@ class NotificationService
                         $results['failed']++;
                         continue;
                     }
-                    $this->sendSms($phone, $resolvedBody, $client);
+                    $this->sendSms($phone, $resolvedBody, $client, $firstReservation->getId());
                 } else {
                     $email = $firstReservation->getEmail();
                     if (!$email) {

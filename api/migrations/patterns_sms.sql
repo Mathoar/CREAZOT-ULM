@@ -93,7 +93,7 @@ VALUES (
   'https://api.textinghouse.com/http/v1/do',
   NULL,
   NULL,
-  'user={{th_user}}&pass={{th_pass}}&cmd=sendsms&to={{to_raw}}&txt={{body}}&from={{sender_id_raw}}&iscom=N',
+  'user={{th_user}}&pass={{th_pass}}&cmd=sendsms&to={{to_raw}}&txt={{body}}&from={{sender_id_raw}}&climsgid={{climsgid}}&iscom=N',
   'application/x-www-form-urlencoded',
   'Envoi SMS via TextingHouse (capability sms_send). Provider réunionnais, Sender ID alphanumérique supporté +33/+262. Réponse texte brut (ID:xxx).',
   TRUE,
@@ -109,4 +109,5 @@ INSERT INTO integration_variable (pattern_id, variable_name, source, source_fiel
   ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'th_pass',   'site_settings', 'textingHousePass', NULL, TRUE),
   ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'to_raw',    'context',       'to_raw',           NULL, TRUE),
   ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'body',      'context',       'body',             NULL, TRUE),
-  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'sender_id_raw', 'context', 'sender_id_raw', NULL, FALSE);
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'sender_id_raw', 'context', 'sender_id_raw', NULL, FALSE),
+  ((SELECT id FROM integration_pattern WHERE code = 'textinghouse_sms'), 'climsgid',  'context',       'climsgid',         '',   FALSE);

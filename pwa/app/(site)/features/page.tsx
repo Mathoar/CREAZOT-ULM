@@ -7,40 +7,26 @@ import axios from "axios";
 const API = typeof window !== "undefined" ? window.origin : (process.env.NEXT_PUBLIC_ENTRYPOINT || "");
 const H = { Accept: "application/ld+json" };
 
-interface Pack { id: number; name: string; slug: string; description?: string; tierGroup?: string; tierOrder?: number; featuresList?: string; }
+interface Pack { id: number; name: string; slug: string; description?: string; tierGroup?: string; tierOrder?: number; featuresList?: string; addonFrom?: string; }
 
 const TIER_META: Record<string, { label: string; tagline: string; description: string; gradient: string; icon: string }> = {
   essentiel: {
     label: "Essentiel",
-    tagline: "Conformité réglementaire",
-    description: "Le socle indispensable pour être conforme à la réglementation ULM 2025 et opérationnel au quotidien. Gestion de flotte, vols, carnets, NOTAM et MANEX.",
+    tagline: "Conformité réglementaire & opérationnel",
+    description: "Le socle indispensable pour être conforme à la réglementation ULM 2025 et opérationnel au quotidien. Gestion de flotte, réservations, carnets de vol, NOTAM, passagers et tracking GPS.",
     gradient: "from-blue-500 to-blue-600",
     icon: "🛡️",
   },
-  confort: {
-    label: "Confort",
-    tagline: "Gestion commerciale",
-    description: "Optimisez votre activité commerciale : réservations en ligne, bons cadeaux, gestion financière, suivi passagers et tracking GPS.",
-    gradient: "from-emerald-500 to-emerald-600",
-    icon: "📈",
-  },
   premium: {
     label: "Premium",
-    tagline: "Intelligence & Communication",
-    description: "Passez à la vitesse supérieure avec les notifications SMS, l'intelligence artificielle, les caméras terrain et le module formation.",
+    tagline: "Gestion commerciale complète",
+    description: "Optimisez votre activité commerciale : bons cadeaux, boutique en ligne, suivi financier complet, gestion des partenaires et commissions.",
     gradient: "from-purple-500 to-purple-600",
     icon: "🚀",
   },
-  excellence: {
-    label: "Excellence",
-    tagline: "IA Avancée",
-    description: "L'automatisation complète de la relation client grâce aux assistants IA : réservation par email et assistant vocal disponibles 24/7.",
-    gradient: "from-amber-500 to-amber-600",
-    icon: "✨",
-  },
 };
 
-const TIER_ORDER = ["essentiel", "confort", "premium", "excellence"];
+const TIER_ORDER = ["essentiel", "premium"];
 
 const DETAILED_FEATURES: Record<string, { title: string; description: string; highlights: string[] }[]> = {
   essentiel: [
@@ -48,6 +34,11 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
       title: "Dashboard opérationnel",
       description: "Vue d'ensemble de votre activité en temps réel : météo, vols du jour, disponibilité des machines.",
       highlights: ["Météo METAR/TAF en direct", "Vols planifiés du jour", "État de la flotte"],
+    },
+    {
+      title: "Réservations en ligne",
+      description: "Système de réservation complet avec calendrier interactif et confirmations automatiques.",
+      highlights: ["Calendrier drag & drop", "Confirmation email automatique", "Options personnalisables"],
     },
     {
       title: "Gestion de flotte",
@@ -70,31 +61,9 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
       highlights: ["Mise à jour automatique", "Filtrage par zone", "Alertes critiques"],
     },
     {
-      title: "Manuel d'Exploitation (MANEX)",
-      description: "Génération et maintenance du MANEX réglementaire, avec sections personnalisables et versioning.",
-      highlights: ["Génération automatique", "Sections éditables", "Export PDF", "Historique versions"],
-    },
-  ],
-  confort: [
-    {
-      title: "Réservations en ligne",
-      description: "Système complet de réservation avec options tarifaires, calendrier interactif et confirmations automatiques.",
-      highlights: ["Options photos/vidéo/patrouille", "Calendrier drag & drop", "Confirmation email automatique"],
-    },
-    {
-      title: "Bons cadeaux & Boutique",
-      description: "Vendez des bons cadeaux en ligne, intégrez votre boutique Wix et gérez vos partenaires revendeurs.",
-      highlights: ["Bons cadeaux personnalisés", "Intégration Wix", "Commissions partenaires"],
-    },
-    {
       title: "Gestion passagers",
       description: "Inscription passagers conforme RGPD avec fiche de poids, contact d'urgence et suivi des origines.",
       highlights: ["Formulaire RGPD", "Tracking origine", "Statistiques clientèle"],
-    },
-    {
-      title: "Suivi financier",
-      description: "Tableau de bord financier complet : encaissements, impayés, dépenses carburant et maintenance.",
-      highlights: ["Suivi encaissements", "Alertes impayés", "Ventilation dépenses"],
     },
     {
       title: "Tracking GPS",
@@ -104,39 +73,50 @@ const DETAILED_FEATURES: Record<string, { title: string; description: string; hi
   ],
   premium: [
     {
-      title: "Notifications SMS",
-      description: "Envoi groupé de SMS aux passagers (rappels J-1, confirmations, briefings) avec suivi de livraison.",
-      highlights: ["Envoi groupé automatisé", "Suivi delivery Twilio", "Templates personnalisables", "Planification J-1"],
+      title: "Bons cadeaux & Boutique",
+      description: "Vendez des bons cadeaux en ligne, intégrez votre boutique Wix et gérez vos partenaires revendeurs.",
+      highlights: ["Bons cadeaux personnalisés", "Intégration Wix", "Commissions partenaires"],
     },
     {
-      title: "Briefing IA (KIMI)",
-      description: "Intelligence artificielle pour l'analyse météo, l'interprétation NOTAM et le calcul du Score OPS.",
-      highlights: ["Briefing météo intelligent", "Score OPS automatique", "Interprétation NOTAM"],
+      title: "Suivi financier",
+      description: "Tableau de bord financier complet : encaissements, impayés, dépenses carburant et maintenance.",
+      highlights: ["Suivi encaissements", "Alertes impayés", "Ventilation dépenses"],
     },
     {
-      title: "Caméras terrain",
-      description: "Intégration de vos caméras terrain pour vérification visuelle des conditions météo en temps réel.",
-      highlights: ["Vue directe terrain", "Historique images", "Multi-caméras"],
+      title: "Options tarifaires",
+      description: "Proposez des options sur vos vols : photos, vidéos, vol en patrouille, avec tarification personnalisable.",
+      highlights: ["Tarification flexible", "Combinaisons d'options", "Ajout au panier simplifié"],
     },
     {
-      title: "Formation pilote",
-      description: "Module complet de formation : leçons, programmes, suivi de progression et validation instructeur.",
-      highlights: ["Leçons personnalisées", "Programmes structurés", "Grille de progression", "Validation instructeur"],
-    },
-  ],
-  excellence: [
-    {
-      title: "Assistant email IA",
-      description: "L'IA gère vos emails de réservation de manière autonome : compréhension, vérification disponibilité, confirmation.",
-      highlights: ["Lecture emails automatique", "Vérification disponibilité", "Réponse intelligente", "Création de réservation"],
-    },
-    {
-      title: "Assistant vocal Vapi",
-      description: "Répondeur intelligent disponible 24/7, capable de renseigner les appelants et prendre des réservations par téléphone.",
-      highlights: ["Disponible 24/7", "Compréhension naturelle", "Prise de réservation", "Transfert vers pilote si besoin"],
+      title: "Partenaires & Revendeurs",
+      description: "Gérez vos points de vente partenaires, suivez les commissions et les ventes indirectes.",
+      highlights: ["Gestion multi-partenaires", "Suivi commissions", "Tableau de bord revendeur"],
     },
   ],
 };
+
+const ADDON_FEATURES: { title: string; description: string; highlights: string[] }[] = [
+  {
+    title: "Manuel d'Exploitation (MANEX)",
+    description: "Génération et maintenance du MANEX réglementaire, avec sections personnalisables et versioning.",
+    highlights: ["Génération automatique", "Sections éditables", "Export PDF", "Historique versions"],
+  },
+  {
+    title: "Notifications SMS",
+    description: "Envoi groupé de SMS aux passagers (rappels J-1, confirmations, briefings) avec suivi de livraison.",
+    highlights: ["Envoi groupé automatisé", "Suivi delivery Twilio/TextingHouse", "Templates personnalisables", "Planification J-1"],
+  },
+  {
+    title: "Formation pilote",
+    description: "Module complet de formation : leçons, programmes, suivi de progression et validation instructeur.",
+    highlights: ["Leçons personnalisées", "Programmes structurés", "Grille de progression", "Validation instructeur"],
+  },
+  {
+    title: "Intelligence Artificielle",
+    description: "IA pour l'analyse météo, l'interprétation NOTAM et l'aide à la décision pré-vol.",
+    highlights: ["Briefing météo intelligent", "Aide à la décision pré-vol", "Interprétation NOTAM", "Caméras terrain intégrées"],
+  },
+];
 
 export default function FeaturesPage() {
   const [packs, setPacks] = useState<Pack[]>([]);
@@ -145,7 +125,7 @@ export default function FeaturesPage() {
   useEffect(() => {
     axios.get(`${API}/module-packs?pagination=false`, { headers: H })
       .then((res) => {
-        setPacks(res.data["hydra:member"] || []);
+        setPacks((res.data["hydra:member"] || []).filter((p: Pack) => p.tierGroup !== "hidden"));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -183,7 +163,6 @@ export default function FeaturesPage() {
         return (
           <section key={tierKey} className="py-20 even:bg-gray-50">
             <div className="mx-auto max-w-6xl px-6">
-              {/* Tier header */}
               <div className="flex items-center gap-4 mb-12">
                 <div className={`inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${meta.gradient} text-3xl shadow-lg`}>
                   {meta.icon}
@@ -197,7 +176,6 @@ export default function FeaturesPage() {
                 </div>
               </div>
 
-              {/* Feature cards */}
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {features.map((feature, idx) => (
                   <div key={idx} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -219,6 +197,43 @@ export default function FeaturesPage() {
         );
       })}
 
+      {/* Add-ons section */}
+      <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center gap-4 mb-12">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-3xl shadow-lg">
+              🧩
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 md:text-3xl">
+                Modules à la carte
+                <span className="ml-3 text-base font-normal text-gray-400">— Complétez selon vos besoins</span>
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 max-w-2xl">
+                Ces modules sont accessibles depuis n&apos;importe quelle offre. Ajoutez-les quand vous en avez besoin.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {ADDON_FEATURES.map((feature, idx) => (
+              <div key={idx} className="rounded-xl border border-cyan-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-lg font-bold text-gray-900">{feature.title}</h3>
+                <p className="mt-2 text-sm text-gray-500 leading-relaxed">{feature.description}</p>
+                <ul className="mt-4 space-y-1.5">
+                  {feature.highlights.map((h, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-cyan-600 text-xs">✓</span>
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Réglementation */}
       <section className="bg-blue-50 py-16">
         <div className="mx-auto max-w-4xl px-6">
@@ -226,10 +241,11 @@ export default function FeaturesPage() {
             <div className="flex items-start gap-4">
               <span className="text-3xl">⚖️</span>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Réglementation ULM - Février 2025</h3>
+                <h3 className="text-xl font-bold text-gray-900">Réglementation ULM — Février 2025</h3>
                 <p className="mt-2 text-sm text-gray-600 leading-relaxed">
                   Les nouvelles exigences réglementaires imposent aux structures ULM de maintenir un suivi rigoureux des heures de vol,
-                  des qualifications pilotes, de la maintenance et de la documentation opérationnelle (MANEX).
+                  des qualifications pilotes, de la maintenance, de l&apos;information passagers, de la géolocalisation
+                  et de la documentation opérationnelle.
                   L&apos;offre <strong>Essentiel</strong> de Logic&apos;Ciel couvre l&apos;ensemble de ces obligations
                   pour vous permettre d&apos;être en conformité dès le premier jour.
                 </p>

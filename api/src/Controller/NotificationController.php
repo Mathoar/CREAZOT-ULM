@@ -118,21 +118,52 @@ class NotificationController extends AbstractController
         if ($status === 'delivered') {
             $phone = $this->normalizePhone($to);
             $suffix = substr($phone, -9);
-            $reservations = $this->em->getRepository(Reservation::class)
-                ->createQueryBuilder('r')
-                ->where("REPLACE(REPLACE(REPLACE(r.telephone, ' ', ''), '-', ''), '.', '') LIKE :phone")
-                ->andWhere('r.notificationSent = true')
-                ->andWhere('r.notificationReceived IS NULL OR r.notificationReceived = false')
-                ->setParameter('phone', '%' . $suffix)
-                ->orderBy('r.id', 'DESC')
-                ->setMaxResults(10)
-                ->getQuery()
-                ->getResult();
 
-            foreach ($reservations as $reservation) {
-                $reservation->setNotificationReceived(true);
+            $conn = $this->em->getConnection();
+            $conn->executeStatement(
+                "UPDATE reservation
+                 SET notification_received = true
+                 WHERE notification_sent = true
+                   AND (notification_received IS NULL OR notification_received = false)
+                   AND REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '.', '') LIKE :phone
+                 ",
+                ['phone' => '%' . $suffix]
+            );
+        }
+
+        return new Response('OK', Response::HTTP_OK);
+    }
+
+    /**
+     * Webhook TextingHouse delivery status (DLR).
+     * Payload JSON: {"apimsgid":"...", "climsgid":"...", "status":"3"}
+     * Status 3 = SMS received/delivered.
+     */
+    #[Route('/webhook/textinghouse/status', methods: ['POST'])]
+    public function textinghouseStatus(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
+        $apiMsgId = $data['apimsgid'] ?? '';
+        $status = $data['status'] ?? '';
+        $cliMsgId = $data['climsgid'] ?? '';
+
+        $this->logger->info('TextingHouse status callback', [
+            'apimsgid' => $apiMsgId,
+            'status' => $status,
+            'climsgid' => $cliMsgId,
+        ]);
+
+        if ($status === '3') {
+            if ($cliMsgId && str_starts_with($cliMsgId, 'resa-')) {
+                $reservationId = (int) substr($cliMsgId, 5);
+                $conn = $this->em->getConnection();
+                $conn->executeStatement(
+                    "UPDATE reservation
+                     SET notification_received = true
+                     WHERE id = :id AND notification_sent = true",
+                    ['id' => $reservationId]
+                );
             }
-            $this->em->flush();
         }
 
         return new Response('OK', Response::HTTP_OK);
