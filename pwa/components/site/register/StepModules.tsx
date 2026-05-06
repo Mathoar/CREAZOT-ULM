@@ -148,7 +148,7 @@ export default function StepModules({
         t.pricingCategory === catIri &&
         t.tierGroup === tier &&
         nbAeronefs >= t.minAeronefs &&
-        (t.maxAeronefs === null || nbAeronefs <= t.maxAeronefs)
+        (t.maxAeronefs == null || nbAeronefs <= t.maxAeronefs)
     );
     return t ? t.pricePerAeronef : 0;
   };
@@ -234,7 +234,7 @@ export default function StepModules({
                 pt.pricingCategory === catIri &&
                 pt.tierGroup === t &&
                 nbAeronefs >= pt.minAeronefs &&
-                (pt.maxAeronefs === null || nbAeronefs <= pt.maxAeronefs)
+                (pt.maxAeronefs == null || nbAeronefs <= pt.maxAeronefs)
             );
             return (
               <Card

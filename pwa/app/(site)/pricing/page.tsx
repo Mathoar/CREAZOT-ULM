@@ -77,7 +77,7 @@ export default function PricingPage() {
 
   const getAeronefPrice = (tierGroup: string, catIri: string, fleetSize: number) => {
     const tiers = getTierPricing(tierGroup, catIri);
-    return tiers.find((t) => fleetSize >= t.minAeronefs && (t.maxAeronefs === null || fleetSize <= t.maxAeronefs));
+    return tiers.find((t) => fleetSize >= t.minAeronefs && (t.maxAeronefs == null || fleetSize <= t.maxAeronefs));
   };
 
   const packsByTier = useMemo(() => {

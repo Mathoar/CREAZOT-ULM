@@ -937,6 +937,15 @@ export const ClientsEdit = () => {
                             ]}
                             defaultValue="monthly"
                         />
+                        <SelectInput
+                            source="subscriptionTier"
+                            label="Offre souscrite"
+                            choices={[
+                                { id: 'essentiel', name: 'Essentiel' },
+                                { id: 'premium', name: 'Premium' },
+                            ]}
+                            defaultValue="essentiel"
+                        />
                         <NumberInput
                             source="annualDiscount"
                             label="Remise annuelle (%)"

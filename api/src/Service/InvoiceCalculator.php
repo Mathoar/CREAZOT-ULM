@@ -24,12 +24,16 @@ class InvoiceCalculator
             return 0.0;
         }
 
+        $tierGroup = $client->getSubscriptionTier() ?? 'essentiel';
+
         $tier = $this->em->getRepository(PricingTier::class)
             ->createQueryBuilder('t')
             ->where('t.pricingCategory = :category')
+            ->andWhere('t.tierGroup = :tierGroup')
             ->andWhere('t.minAeronefs <= :count')
             ->andWhere('(t.maxAeronefs >= :count OR t.maxAeronefs IS NULL)')
             ->setParameter('category', $category)
+            ->setParameter('tierGroup', $tierGroup)
             ->setParameter('count', $client->getMaxAeronefs() ?? 0)
             ->setMaxResults(1)
             ->getQuery()
@@ -41,6 +45,10 @@ class InvoiceCalculator
 
         $packTotal = 0.0;
         foreach ($client->getModulePacks() as $pack) {
+            if ($tierGroup === 'premium' && $pack->getAddonFrom() === 'essentiel') {
+                continue;
+            }
+
             $packPrice = $this->em->getRepository(ModulePackPrice::class)
                 ->createQueryBuilder('mpp')
                 ->where('mpp.modulePack = :pack')
@@ -114,6 +122,7 @@ class InvoiceCalculator
         $discount = $client->getAnnualDiscount() ?? 30.0;
         $multiplier = $isAnnual ? 12 * (1 - $discount / 100) : 1;
         $suffix = $isAnnual ? sprintf(' (engagement annuel, -%g%%)', $discount) : '';
+        $tierGroup = $client->getSubscriptionTier() ?? 'essentiel';
 
         $tier = null;
         $pricePerAeronef = 0.0;
@@ -121,9 +130,11 @@ class InvoiceCalculator
             $tier = $this->em->getRepository(PricingTier::class)
                 ->createQueryBuilder('t')
                 ->where('t.pricingCategory = :category')
+                ->andWhere('t.tierGroup = :tierGroup')
                 ->andWhere('t.minAeronefs <= :count')
                 ->andWhere('(t.maxAeronefs >= :count OR t.maxAeronefs IS NULL)')
                 ->setParameter('category', $category)
+                ->setParameter('tierGroup', $tierGroup)
                 ->setParameter('count', $client->getMaxAeronefs() ?? 0)
                 ->setMaxResults(1)
                 ->getQuery()
@@ -137,7 +148,8 @@ class InvoiceCalculator
         $aeronefs = $client->getMaxAeronefs() ?? 0;
         $lines[] = [
             'name' => sprintf(
-                "Forfait Logic'Ciel — %d aéronefs × %s€%s",
+                "Forfait Logic'Ciel %s — %d aéronefs × %s€%s",
+                ucfirst($tierGroup),
                 $aeronefs,
                 number_format($pricePerAeronef, 2, ',', ' '),
                 $suffix,
@@ -147,6 +159,10 @@ class InvoiceCalculator
         ];
 
         foreach ($client->getModulePacks() as $pack) {
+            if ($tierGroup === 'premium' && $pack->getAddonFrom() === 'essentiel') {
+                continue;
+            }
+
             $packPrice = null;
             if ($category !== null) {
                 $packPrice = $this->em->getRepository(ModulePackPrice::class)

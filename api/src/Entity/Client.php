@@ -317,6 +317,10 @@ class Client
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?string $billingCycle = 'monthly';
 
+    #[ORM\Column(length: 20, nullable: true, options: ['default' => 'essentiel'])]
+    #[Groups(groups: ['Client:write', 'Client:read'])]
+    private ?string $subscriptionTier = 'essentiel';
+
     #[ORM\Column(nullable: true, options: ['default' => 30.0])]
     #[Groups(groups: ['Client:write', 'Client:read'])]
     private ?float $annualDiscount = 30.0;
@@ -1392,6 +1396,18 @@ class Client
     public function setBillingCycle(?string $billingCycle): static
     {
         $this->billingCycle = $billingCycle;
+
+        return $this;
+    }
+
+    public function getSubscriptionTier(): ?string
+    {
+        return $this->subscriptionTier;
+    }
+
+    public function setSubscriptionTier(?string $subscriptionTier): static
+    {
+        $this->subscriptionTier = $subscriptionTier;
 
         return $this;
     }
