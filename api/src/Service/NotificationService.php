@@ -177,6 +177,7 @@ class NotificationService
         }
 
         foreach ($grouped as $code => $groupReservations) {
+            usort($groupReservations, fn($a, $b) => $a->getDebut() <=> $b->getDebut());
             $firstReservation = $groupReservations[0];
             $resolvedBody = $this->resolveTemplate($body, $firstReservation, $client);
 
