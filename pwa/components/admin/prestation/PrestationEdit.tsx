@@ -65,12 +65,19 @@ const EncadrantInput = ({ pilotes, circuits }) => {
   const currentEncadrant = pilotes.find(p => p["@id"] === currentId);
 
   let needsEncadrant = false;
+  let encadrantIsOptional = false;
   if (isDefinedAndNotVoid(vols) && isDefinedAndNotVoid(circuits)) {
     vols.forEach(({ circuit }) => {
       const selectedCircuit = circuits.find(c => c['@id'] === circuit['@id']);
-      needsEncadrant = selectedCircuit?.nature?.needsEncadrant === true ? true : needsEncadrant;
+      if (selectedCircuit?.nature?.needsEncadrant === true || selectedCircuit?.needsEncadrant === true) {
+        needsEncadrant = true;
+      }
+      if (selectedCircuit?.nature?.encadrantOptional === true) {
+        encadrantIsOptional = true;
+      }
     });
   }
+  const encadrantEnabled = needsEncadrant || encadrantIsOptional;
 
   const encadrants = React.useMemo(() => {
     return (pilotes || []).filter(p =>
@@ -90,8 +97,8 @@ const EncadrantInput = ({ pilotes, circuits }) => {
 
 
   useEffect(() => {
-    if (!needsEncadrant) setValue("encadrant.@id", null);
-  }, [needsEncadrant, setValue]);
+    if (!encadrantEnabled) setValue("encadrant.@id", null);
+  }, [encadrantEnabled, setValue]);
 
   useEffect(() => {
     if (needsEncadrant && !isDefined(currentId) && isDefinedAndNotVoid(encadrants)) { 
@@ -111,7 +118,7 @@ const EncadrantInput = ({ pilotes, circuits }) => {
       source="encadrant.@id"
       label="Encadrant @id"
       choices={choices}
-      disabled={!needsEncadrant}
+      disabled={!encadrantEnabled}
       optionText={r =>
         r?.firstName ? r.firstName[0].toUpperCase() + r.firstName.slice(1) : " "
       }

@@ -73,6 +73,10 @@ class Nature
     #[Groups(groups: ['Nature:write', 'Nature:read', 'Circuit:read', 'Reservation:read', 'Prestation:read'])]
     private bool $needsEncadrant = false;
 
+    #[ORM\Column(name: 'encadrant_optional', type: 'boolean', options: ['default' => false])]
+    #[Groups(groups: ['Nature:write', 'Nature:read', 'Circuit:read', 'Reservation:read', 'Prestation:read'])]
+    private bool $encadrantOptional = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -122,6 +126,18 @@ class Nature
     public function setNeedsEncadrant(bool $needsEncadrant): static
     {
         $this->needsEncadrant = $needsEncadrant;
+
+        return $this;
+    }
+
+    public function getEncadrantOptional(): bool
+    {
+        return $this->encadrantOptional;
+    }
+
+    public function setEncadrantOptional(bool $encadrantOptional): static
+    {
+        $this->encadrantOptional = $encadrantOptional;
 
         return $this;
     }

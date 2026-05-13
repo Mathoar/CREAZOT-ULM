@@ -13,10 +13,16 @@ export const EncadrantForm: React.FC = ({ selectedPilot, encadrants, selectedEnc
   const [isEncadrantSelected, setIsEncadrantSelected] = useState<boolean>(false);
 
   useEffect(() => {
-      const circuitNeedingEncadrant = selectedCircuits.find(c => isDefined(c.circuit?.nature?.needsEncadrant) && c.circuit.nature.needsEncadrant);
-      if (isDefined(circuitNeedingEncadrant)) {
+      const circuitNeedingEncadrant = selectedCircuits.find(c =>
+        (isDefined(c.circuit?.nature?.needsEncadrant) && c.circuit.nature.needsEncadrant) ||
+        c.circuit?.needsEncadrant === true
+      );
+      const circuitOptionalEncadrant = selectedCircuits.find(c =>
+        c.circuit?.nature?.encadrantOptional === true
+      );
+      if (isDefined(circuitNeedingEncadrant) || isDefined(circuitOptionalEncadrant)) {
         setEncadrantNeeded(true);
-        if (autoSelect && isDefinedAndNotVoid(encadrants))
+        if (isDefined(circuitNeedingEncadrant) && autoSelect && isDefinedAndNotVoid(encadrants))
           setSelectedEncadrant(encadrants[0]);
       } else {
         setEncadrantNeeded(false);

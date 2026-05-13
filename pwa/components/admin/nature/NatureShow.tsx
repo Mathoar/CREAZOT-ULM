@@ -8,6 +8,7 @@ export const NatureShow = () => (
             <TextField source="label" label="Label"/>
             <BooleanField source="isParticularActivity" label="Activité Particulière (AP)" />
             <BooleanField source="needsEncadrant" label="Encadrant requis" />
+            <BooleanField source="encadrantOptional" label="Encadrant optionnel (sélectionnable, non obligatoire)" />
         </SimpleShowLayout>
     </Show>
 )
