@@ -19,3 +19,10 @@ api/.env
 **/.env.local
 **/.env.*.local
 ###< Fichiers secrets ###
+
+###> Dumps BDD (données clients sensibles — ne JAMAIS commit) ###
+*.dump
+*.sql
+!api/migrations/*.sql
+!docs/**/*.sql
+###< Dumps BDD ###
