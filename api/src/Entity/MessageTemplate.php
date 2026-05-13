@@ -48,6 +48,10 @@ class MessageTemplate implements TenantAwareInterface
     #[Groups(groups: ['MessageTemplate:read', 'MessageTemplate:write'])]
     private ?Client $client = null;
 
+    #[ORM\Column(nullable: true, options: ['default' => false])]
+    #[Groups(groups: ['MessageTemplate:read', 'MessageTemplate:write'])]
+    private ?bool $isSmsMessage = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -83,6 +87,17 @@ class MessageTemplate implements TenantAwareInterface
     public function setClient(?Client $client): static
     {
         $this->client = $client;
+        return $this;
+    }
+
+    public function getIsSmsMessage(): ?bool
+    {
+        return $this->isSmsMessage;
+    }
+
+    public function setIsSmsMessage(?bool $isSmsMessage): static
+    {
+        $this->isSmsMessage = $isSmsMessage;
         return $this;
     }
 }

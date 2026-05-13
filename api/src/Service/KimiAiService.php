@@ -215,6 +215,42 @@ PROMPT;
         }
     }
 
+    public function translate(string $text, string $targetLang, string $sourceLang = 'fr'): string
+    {
+        $langMap = [
+            'fr' => 'français',
+            'en' => 'anglais',
+            'es' => 'espagnol',
+            'de' => 'allemand',
+            'it' => 'italien',
+        ];
+        $sourceLabel = $langMap[$sourceLang] ?? $sourceLang;
+        $targetLabel = $langMap[$targetLang] ?? $targetLang;
+
+        $system = <<<PROMPT
+Tu es un traducteur professionnel littéral, spécialisé dans les communications client courtes (SMS, emails de confirmation).
+
+RÈGLES STRICTES — À RESPECTER ABSOLUMENT :
+1. Traduis le texte fourni du {$sourceLabel} vers le {$targetLabel}
+2. NE REFORMULE PAS, NE PARAPHRASE PAS, NE COMMENTE PAS — traduis le sens littéral
+3. PRÉSERVE EXACTEMENT toutes les variables au format {{xxx}} (par ex. {{nom}}, {{circuit}}, {{date}}, {{heure}}, {{pilote}}, {{code}}, {{enseigne}}, {{structure}}, {{telephone}}, {{email}}, {{nb_personnes}}, {{lien_briefing}}) — ne les traduis PAS, ne les modifie PAS, ne les supprime PAS
+4. Préserve les sauts de ligne et la ponctuation
+5. Garde le même registre (familier/formel) que l'original
+6. Garde la même longueur approximative (ne pas allonger inutilement)
+7. Réponds UNIQUEMENT avec la traduction, sans préambule ("Voici la traduction :"), sans guillemets autour, sans markdown
+
+Exemples de variables à NE PAS traduire :
+- {{nom}} reste {{nom}}
+- {{circuit}} reste {{circuit}}
+- {{lien_briefing}} reste {{lien_briefing}}
+PROMPT;
+
+        return $this->call([
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => $text],
+        ], false);
+    }
+
     public function analyzeImage(string $base64Image, string $mimeType, string $question): string
     {
         $system = <<<PROMPT

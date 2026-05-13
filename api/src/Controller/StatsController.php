@@ -27,7 +27,7 @@ class StatsController extends AbstractController
         $client = $this->clientGetter->get();
         $clientId = $client->getId();
         $from = $request->query->get('from', date('Y-01-01'));
-        $to = $request->query->get('to', date('Y-m-d'));
+        $to = $this->normalizeToEndOfDay($request->query->get('to', date('Y-m-d')));
         $granularity = $request->query->get('granularity', 'month');
         $usePayments = (bool) $client->getHasPaymentManagement();
 
@@ -143,7 +143,7 @@ class StatsController extends AbstractController
              FROM reservation r
              WHERE r.client_id = :cid AND r.debut >= :from AND r.debut <= :to
              GROUP BY r.statut ORDER BY count DESC",
-            ['cid' => $clientId, 'from' => $from, 'to' => $to . ' 23:59:59']
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
 
         $timeline = $this->conn->fetchAllAssociative(
@@ -151,7 +151,7 @@ class StatsController extends AbstractController
              FROM reservation r
              WHERE r.client_id = :cid AND r.debut >= :from AND r.debut <= :to
              GROUP BY period, r.statut ORDER BY period",
-            ['cid' => $clientId, 'from' => $from, 'to' => $to . ' 23:59:59']
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
 
         return ['by_status' => $byStatus, 'timeline' => $timeline];
@@ -195,7 +195,7 @@ class StatsController extends AbstractController
              FROM cadeau c
              LEFT JOIN reservation r ON r.cadeau_id = c.id
              WHERE c.client_id = :cid AND c.date >= :from AND c.date <= :to",
-            ['cid' => $clientId, 'from' => $from, 'to' => $to . ' 23:59:59']
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
 
         $total = (int) $result['total'];
@@ -215,7 +215,7 @@ class StatsController extends AbstractController
     {
         $clientId = $this->clientGetter->get()->getId();
         $from = $request->query->get('from', date('Y-01-01'));
-        $to = $request->query->get('to', date('Y-m-d'));
+        $to = $this->normalizeToEndOfDay($request->query->get('to', date('Y-m-d')));
         $granularity = $request->query->get('granularity', 'month');
 
         $truncPay = $this->getTruncExpr($granularity, 'pay.date');
@@ -329,7 +329,7 @@ class StatsController extends AbstractController
     {
         $clientId = $this->clientGetter->get()->getId();
         $from = $request->query->get('from', date('Y-01-01'));
-        $to = $request->query->get('to', date('Y-m-d'));
+        $to = $this->normalizeToEndOfDay($request->query->get('to', date('Y-m-d')));
         $granularity = $request->query->get('granularity', 'month');
 
         $truncExpr = match ($granularity) {
@@ -429,7 +429,7 @@ class StatsController extends AbstractController
              FROM reservation r
              WHERE r.client_id = :cid AND r.debut >= :from AND r.debut <= :to
              GROUP BY period ORDER BY period",
-            ['cid' => $clientId, 'from' => $from, 'to' => $to . ' 23:59:59']
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
     }
 
@@ -440,7 +440,7 @@ class StatsController extends AbstractController
     {
         $clientId = $this->clientGetter->get()->getId();
         $from = $request->query->get('from', date('Y-01-01'));
-        $to = $request->query->get('to', date('Y-m-d'));
+        $to = $this->normalizeToEndOfDay($request->query->get('to', date('Y-m-d')));
         $granularity = $request->query->get('granularity', 'month');
 
         $truncExpr = match ($granularity) {
@@ -531,7 +531,15 @@ class StatsController extends AbstractController
              JOIN reservation r ON ro.reservation_id = r.id
              WHERE r.client_id = :cid AND r.debut >= :from AND r.debut <= :to
              GROUP BY o.id, o.name ORDER BY count DESC",
-            ['cid' => $clientId, 'from' => $from, 'to' => $to . ' 23:59:59']
+            ['cid' => $clientId, 'from' => $from, 'to' => $to]
         );
+    }
+
+    private function normalizeToEndOfDay(string $to): string
+    {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
+            return $to . ' 23:59:59';
+        }
+        return $to;
     }
 }

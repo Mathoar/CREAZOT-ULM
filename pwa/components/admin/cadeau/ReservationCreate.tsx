@@ -251,7 +251,10 @@ export const ReservationCreate = () => {
 
   useEffect(() => {
   const fetchPrepayment = async () => {
-    const { data } = await dataProvider.getList('cadeaux', { pagination: { page: 1, perPage: 100 }, sort: { field: 'id', order: 'ASC' } });
+    const { data } = await dataProvider.getList('cadeaux', {
+      pagination: { page: 1, perPage: 1000 },
+      filter: { valid: prepaymentIdFromUrl || 'null' },
+    });
     setPrepayments(data.map(d => ({...d, quantite: d.quantite ?? 1})));
     if (prepaymentIdFromUrl) {
       const selected = data.find(p => String(p.originId) === String(prepaymentIdFromUrl));
@@ -366,7 +369,7 @@ export const ReservationCreate = () => {
       <SimpleForm onSubmit={onSubmit} defaultValues={defaultValues} toolbar={<CustomToolbar debut={ debut }/>}>
         <ConversionLink client={ client } debut={ debut }/>
         <DateTimeInput source="debut" defaultValue={ isNotBlank(debut) ? new Date(debut) : new Date((new Date()).setHours(7,0,0)) } label="Décollage" validate={required()}/>
-        <ReferenceInput reference="cadeaux" source="prepayment" label="Prépaiement" filter={{ used: false }}>
+        <ReferenceInput reference="cadeaux" source="prepayment" label="Prépaiement" filter={{ valid: prepaymentIdFromUrl || 'null' }} perPage={1000}>
           <SelectInput optionText="name" label="Prépaiement" validate={required()} helperText={ <PrepaymentHelperText prepayments={ prepayments }/> }/>
         </ReferenceInput>
         <SelectInput source="statut" choices={ status } defaultValue={ status[0].id } validate={required()}/>

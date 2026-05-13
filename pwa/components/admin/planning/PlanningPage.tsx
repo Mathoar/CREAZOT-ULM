@@ -1,17 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box, Typography, Paper, Table, TableHead, TableRow, TableCell,
   TableBody, Checkbox, TextField as MuiTextField, Button, Chip,
   MenuItem, Select, FormControl, InputLabel, Alert, CircularProgress,
-  IconButton,
+  IconButton, Tooltip,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import SmsIcon from "@mui/icons-material/Sms";
 import EmailIcon from "@mui/icons-material/Email";
+import TranslateIcon from "@mui/icons-material/Translate";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { Title, useDataProvider, useNotify } from "react-admin";
 import { useClient } from "../ClientProvider";
 import { useSessionContext } from "../SessionContextProvider";
 import { SmsLiveCounter } from "../sms/SmsLiveCounter";
+
+const SUPPORTED_LANGUAGES: { code: string; label: string; flag: string }[] = [
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+];
 
 const API_DOMAIN = process.env.NEXT_PUBLIC_ENTRYPOINT || "";
 
@@ -35,6 +45,7 @@ interface MessageTemplate {
   id: number;
   title: string;
   body: string;
+  isSmsMessage?: boolean;
 }
 
 interface ReservationGroup {
@@ -54,11 +65,19 @@ export const PlanningPage = () => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const hasSms = client?.hasSMS === true;
+  const hasAi = client?.hasAI === true;
   const [method, setMethod] = useState<"sms" | "email">(hasSms ? "sms" : "email");
   const [messageBody, setMessageBody] = useState("");
+  const [originalBody, setOriginalBody] = useState("");
+  const [language, setLanguage] = useState<string>("fr");
+  const [translating, setTranslating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number; errors: string[] } | null>(null);
+
+  const filteredTemplates = useMemo(() => {
+    return templates.filter((t) => (method === "sms" ? t.isSmsMessage === true : t.isSmsMessage !== true));
+  }, [templates, method]);
 
   const fetchReservations = useCallback(async () => {
     if (!client?.id) return;
@@ -86,7 +105,7 @@ export const PlanningPage = () => {
       setGroups(
         Object.entries(grouped).map(([code, reservations]) => ({
           code,
-          reservations,
+          reservations: reservations.sort((a, b) => new Date(a.debut).getTime() - new Date(b.debut).getTime()),
           selected: false,
         }))
       );
@@ -135,6 +154,78 @@ export const PlanningPage = () => {
     const tpl = templates.find((t) => String(t.id) === templateId);
     if (tpl) {
       setMessageBody(tpl.body);
+      setOriginalBody(tpl.body);
+      setLanguage("fr");
+    } else {
+      setOriginalBody("");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTemplateId) {
+      const stillValid = filteredTemplates.some((t) => String(t.id) === selectedTemplateId);
+      if (!stillValid) {
+        setSelectedTemplateId("");
+        setMessageBody("");
+        setOriginalBody("");
+        setLanguage("fr");
+      }
+    }
+  }, [filteredTemplates, selectedTemplateId]);
+
+  const handleTranslate = async (targetLang: string) => {
+    if (!hasAi) return;
+    if (targetLang === language) return;
+
+    if (targetLang === "fr") {
+      if (originalBody) {
+        setMessageBody(originalBody);
+        setLanguage("fr");
+      }
+      return;
+    }
+
+    const sourceText = language === "fr" ? messageBody : originalBody;
+    if (!sourceText.trim()) {
+      notify("Aucun texte à traduire", { type: "warning" });
+      return;
+    }
+
+    setTranslating(true);
+    try {
+      const res = await fetch(`${API_DOMAIN}/admin/ai/translate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.accessToken}`,
+          "X-Client-Id": String(client?.id),
+        },
+        body: JSON.stringify({
+          text: sourceText,
+          targetLang,
+          sourceLang: "fr",
+        }),
+      });
+      const data = await res.json();
+      if (data.translation) {
+        if (!originalBody) setOriginalBody(messageBody);
+        setMessageBody(data.translation);
+        setLanguage(targetLang);
+        notify(`Traduction en ${SUPPORTED_LANGUAGES.find((l) => l.code === targetLang)?.label} appliquée`, { type: "success" });
+      } else {
+        notify(data.error || "Erreur de traduction", { type: "error" });
+      }
+    } catch (e: any) {
+      notify("Erreur réseau pendant la traduction : " + e.message, { type: "error" });
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const restoreOriginal = () => {
+    if (originalBody) {
+      setMessageBody(originalBody);
+      setLanguage("fr");
     }
   };
 
@@ -299,25 +390,7 @@ export const PlanningPage = () => {
           Composer le message
         </Typography>
 
-        <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 250 }}>
-            <InputLabel>Modèle de message</InputLabel>
-            <Select
-              value={selectedTemplateId}
-              label="Modèle de message"
-              onChange={(e) => handleTemplateChange(e.target.value)}
-            >
-              <MenuItem value="">
-                <em>— Message libre —</em>
-              </MenuItem>
-              {templates.map((t) => (
-                <MenuItem key={t.id} value={String(t.id)}>
-                  {t.title}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
+        <Box display="flex" gap={2} mb={2} flexWrap="wrap" alignItems="center">
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Méthode</InputLabel>
             <Select
@@ -339,7 +412,69 @@ export const PlanningPage = () => {
               </MenuItem>
             </Select>
           </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 280 }}>
+            <InputLabel>Modèle de message ({method === "sms" ? "SMS" : "Email"})</InputLabel>
+            <Select
+              value={selectedTemplateId}
+              label={`Modèle de message (${method === "sms" ? "SMS" : "Email"})`}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+            >
+              <MenuItem value="">
+                <em>— Message libre —</em>
+              </MenuItem>
+              {filteredTemplates.length === 0 ? (
+                <MenuItem value="" disabled>
+                  <em>Aucun modèle {method === "sms" ? "SMS" : "Email"} disponible</em>
+                </MenuItem>
+              ) : (
+                filteredTemplates.map((t) => (
+                  <MenuItem key={t.id} value={String(t.id)}>
+                    {t.title}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
+          {hasAi && (
+            <>
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <InputLabel>Langue d'envoi</InputLabel>
+                <Select
+                  value={language}
+                  label="Langue d'envoi"
+                  onChange={(e) => handleTranslate(e.target.value)}
+                  disabled={translating || !messageBody.trim()}
+                  startAdornment={translating ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
+                >
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <MenuItem key={lang.code} value={lang.code}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <span>{lang.flag}</span> {lang.label}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {language !== "fr" && originalBody && (
+                <Tooltip title="Restaurer le texte d'origine en français">
+                  <IconButton size="small" onClick={restoreOriginal} disabled={translating}>
+                    <RestartAltIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </>
+          )}
         </Box>
+
+        {hasAi && language !== "fr" && (
+          <Alert severity="info" icon={<TranslateIcon />} sx={{ mb: 2 }}>
+            Texte traduit en <strong>{SUPPORTED_LANGUAGES.find((l) => l.code === language)?.label}</strong> par IA.
+            Vérifie le contenu et modifie-le librement avant l'envoi — les variables <code>{"{{...}}"}</code> sont préservées et résolues par le serveur au moment de l'envoi.
+          </Alert>
+        )}
 
         <MuiTextField
           multiline

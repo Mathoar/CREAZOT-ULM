@@ -85,6 +85,38 @@ PROMPT;
         }
     }
 
+    #[Route('/admin/ai/translate', name: 'ai_translate', methods: ['POST'])]
+    public function translate(Request $request): JsonResponse
+    {
+        $payload = json_decode($request->getContent(), true) ?? [];
+        $text = trim($payload['text'] ?? '');
+        $targetLang = strtolower(trim($payload['targetLang'] ?? ''));
+        $sourceLang = strtolower(trim($payload['sourceLang'] ?? 'fr'));
+
+        if (!$text) {
+            return $this->json(['error' => 'Le texte à traduire est requis.'], 422);
+        }
+        if (!$targetLang) {
+            return $this->json(['error' => 'La langue cible est requise.'], 422);
+        }
+
+        $supportedLangs = ['fr', 'en', 'es', 'de', 'it'];
+        if (!in_array($targetLang, $supportedLangs, true)) {
+            return $this->json(['error' => "Langue cible non supportée. Langues acceptées : " . implode(', ', $supportedLangs)], 422);
+        }
+
+        if ($sourceLang === $targetLang) {
+            return $this->json(['translation' => $text]);
+        }
+
+        try {
+            $result = $this->kimiService->translate($text, $targetLang, $sourceLang);
+            return $this->json(['translation' => $result]);
+        } catch (\RuntimeException $e) {
+            return $this->json(['error' => $e->getMessage()], 422);
+        }
+    }
+
     #[Route('/admin/ai/analyze-image', name: 'ai_analyze_image', methods: ['POST'])]
     public function analyzeImage(Request $request): JsonResponse
     {

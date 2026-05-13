@@ -100,7 +100,7 @@ export const RegisterModal = ({ visible, setVisible, slot, reservations, setRese
 
     const getPrepayments = () => {
         dataProvider
-            .getList('cadeaux', {filter: { used: false }})
+            .getList('cadeaux', { pagination: { page: 1, perPage: 1000 }, filter: { valid: 'null' } })
             .then(({ data }) => setPrepayments([defaultPrepayment, ...data.map(d => ({...d, quantite: d.quantite ?? 1}))]))
     };
 
